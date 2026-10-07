@@ -1,0 +1,10 @@
+{
+  "name": "helperbook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simple Staff Management for Small Businesses",
+  "scripts": {
+    "mobile": "npm --prefix mobile start",
+    "server": "npm --prefix server run dev"
+  }
+}
