@@ -1,6 +1,8 @@
 import { StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthProvider } from "./src/context/AuthContext";
+import { ShopProvider } from "./src/context/ShopContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { colors } from "./src/theme";
 
@@ -8,7 +10,11 @@ export default function App() {
   return (
     <SafeAreaProvider style={styles.root}>
       <StatusBar style="dark" />
-      <RootNavigator />
+      <AuthProvider>
+        <ShopProvider>
+          <RootNavigator />
+        </ShopProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

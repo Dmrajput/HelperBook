@@ -1,37 +1,61 @@
-import { useCallback, useState } from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { DevPreviewProvider } from "../context/devPreviewContext";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import ErrorView from "../components/ErrorView";
+import ScreenContainer from "../components/ScreenContainer";
+import { useAuth } from "../context/AuthContext";
+import { useShop } from "../context/ShopContext";
+import ShopSetupScreen from "../screens/shop/ShopSetupScreen";
 import SplashScreen from "../screens/SplashScreen";
+import { colors } from "../theme";
 import AppNavigator from "./AppNavigator";
 import AuthNavigator from "./AuthNavigator";
 
+const SetupStack = createNativeStackNavigator();
+
+function SetupNavigator() {
+  return (
+    <SetupStack.Navigator screenOptions={{ headerShown: false }}>
+      <SetupStack.Screen name="ShopSetup" component={ShopSetupScreen} />
+    </SetupStack.Navigator>
+  );
+}
+
+const navigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: colors.background,
+  },
+};
+
 export default function RootNavigator() {
-  const [showSplash, setShowSplash] = useState(true);
-  const [showAppPreview, setShowAppPreview] = useState(false);
+  const { isLoading, isAuthenticated, startupError, retrySession } = useAuth();
+  const { hasShop, isLoading: isShopLoading, loadError, fetchShop } = useShop();
+  const waitingForShop = isAuthenticated && isShopLoading && !hasShop;
 
-  const finishSplash = useCallback(() => {
-    setShowSplash(false);
-  }, []);
+  if (isLoading || waitingForShop) {
+    return <SplashScreen />;
+  }
 
-  const openAppPreview = useCallback(() => {
-    if (__DEV__) {
-      setShowAppPreview(true);
-    }
-  }, []);
+  if (startupError) {
+    return (
+      <ScreenContainer>
+        <ErrorView onRetry={retrySession} />
+      </ScreenContainer>
+    );
+  }
 
-  const closeAppPreview = useCallback(() => {
-    setShowAppPreview(false);
-  }, []);
-
-  if (showSplash) {
-    return <SplashScreen onFinish={finishSplash} />;
+  if (isAuthenticated && loadError && !hasShop) {
+    return (
+      <ScreenContainer>
+        <ErrorView title="Unable to load your shop." message={loadError} onRetry={fetchShop} />
+      </ScreenContainer>
+    );
   }
 
   return (
-    <DevPreviewProvider onOpen={openAppPreview} onClose={closeAppPreview}>
-      <NavigationContainer>
-        {showAppPreview ? <AppNavigator /> : <AuthNavigator />}
-      </NavigationContainer>
-    </DevPreviewProvider>
+    <NavigationContainer theme={navigationTheme}>
+      {!isAuthenticated ? <AuthNavigator /> : hasShop ? <AppNavigator /> : <SetupNavigator />}
+    </NavigationContainer>
   );
 }

@@ -1,16 +1,10 @@
-import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import AppText from "../components/AppText";
 import ScreenContainer from "../components/ScreenContainer";
 import { APP_NAME, APP_TAGLINE } from "../constants/app";
 import { colors, spacing } from "../theme";
 
-export default function SplashScreen({ onFinish }) {
-  useEffect(() => {
-    const timer = setTimeout(onFinish, 1200);
-    return () => clearTimeout(timer);
-  }, [onFinish]);
-
+export default function SplashScreen() {
   return (
     <ScreenContainer centered>
       {/* Replace this wordmark with the HelperBook logo when the asset is ready. */}

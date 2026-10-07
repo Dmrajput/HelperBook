@@ -11,10 +11,21 @@ export function errorHandler(err, req, res, next) {
     return;
   }
 
-  const loggedError = isProduction()
-    ? redactSensitive(err?.message || "Unknown error")
-    : redactSensitive(err?.stack || err?.message || "Unknown error");
+  const loggedError =
+    err?.expose === true || isProduction()
+      ? redactSensitive(err?.message || "Unknown error")
+      : redactSensitive(err?.stack || err?.message || "Unknown error");
   console.error(loggedError);
+
+  if (
+    err?.expose === true &&
+    Number.isInteger(err.statusCode) &&
+    err.statusCode >= 400 &&
+    err.statusCode !== 500
+  ) {
+    sendFailure(res, err.message, err.statusCode);
+    return;
+  }
 
   if (err?.name === "ValidationError") {
     sendFailure(res, "The submitted information is invalid.", 422);

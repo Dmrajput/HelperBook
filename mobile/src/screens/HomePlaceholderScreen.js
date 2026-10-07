@@ -3,11 +3,17 @@ import AppButton from "../components/AppButton";
 import AppText from "../components/AppText";
 import ScreenContainer from "../components/ScreenContainer";
 import { HOME_MESSAGE, HOME_TITLE } from "../constants/app";
-import { useDevPreview } from "../context/devPreviewContext";
+import { useAuth } from "../context/AuthContext";
+import { useShop } from "../context/ShopContext";
 import { colors, spacing } from "../theme";
+import { businessLabel, formatTime, formatWorkingDays } from "../utils/shopFormat";
 
-export default function HomePlaceholderScreen() {
-  const { closeAppPreview } = useDevPreview();
+export default function HomePlaceholderScreen({ navigation }) {
+  const { logout, isLoggingOut } = useAuth();
+  const { shop } = useShop();
+  const hours = shop
+    ? `${formatTime(shop.workingSchedule.startTime)} – ${formatTime(shop.workingSchedule.endTime)}`
+    : "";
 
   return (
     <ScreenContainer>
@@ -18,10 +24,30 @@ export default function HomePlaceholderScreen() {
         <AppText variant="body" color={colors.textSecondary}>
           {HOME_MESSAGE}
         </AppText>
+        {shop ? (
+          <View style={styles.shop}>
+            <AppText variant="subtitle">{shop.name}</AppText>
+            <AppText variant="body">{businessLabel(shop)}</AppText>
+            <AppText variant="body" color={colors.textSecondary}>
+              {shop.address.city}, {shop.address.state}
+            </AppText>
+            <AppText variant="body" color={colors.textSecondary}>
+              {formatWorkingDays(shop.workingSchedule.workingDays)} · {hours}
+            </AppText>
+            <AppText variant="body">Currency ₹</AppText>
+          </View>
+        ) : null}
       </View>
-      {__DEV__ ? (
-        <AppButton label="Back to login" variant="secondary" onPress={closeAppPreview} />
-      ) : null}
+      <View style={styles.actions}>
+        <AppButton label="Employees" onPress={() => navigation.navigate("EmployeeList")} />
+        <AppButton label="Shop profile" variant="secondary" onPress={() => navigation.navigate("ShopProfile")} />
+        <AppButton
+          label={isLoggingOut ? "Logging out..." : "Logout"}
+          variant="secondary"
+          onPress={logout}
+          loading={isLoggingOut}
+        />
+      </View>
     </ScreenContainer>
   );
 }
@@ -31,5 +57,12 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.md,
     paddingTop: spacing.xxl,
+  },
+  shop: {
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  actions: {
+    gap: spacing.sm,
   },
 });

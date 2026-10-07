@@ -28,6 +28,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "HelperBook uses your photos so you can add a shop logo.",
+          "cameraPermission": "HelperBook uses the camera so you can take a shop logo photo."
+        }
+      ]
+    ]
   }
 }

@@ -11,6 +11,7 @@ export default function AppTextInput({
   maxLength,
   autoCapitalize = "none",
   onSubmitEditing,
+  multiline = false,
 }) {
   return (
     <View style={styles.wrap}>
@@ -25,7 +26,9 @@ export default function AppTextInput({
         autoCapitalize={autoCapitalize}
         autoCorrect={false}
         onSubmitEditing={onSubmitEditing}
-        style={styles.input}
+        multiline={multiline}
+        textAlignVertical={multiline ? "top" : "center"}
+        style={[styles.input, multiline && styles.multiline]}
         accessibilityLabel={label || placeholder}
       />
     </View>
@@ -46,5 +49,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     color: colors.text,
     fontSize: 17,
+  },
+  multiline: {
+    minHeight: 110,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
   },
 });

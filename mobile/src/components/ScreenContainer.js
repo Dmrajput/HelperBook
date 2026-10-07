@@ -2,9 +2,9 @@ import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, spacing } from "../theme";
 
-export default function ScreenContainer({ children, style, centered = false }) {
+export default function ScreenContainer({ children, style, centered = false, edges }) {
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={edges}>
       <View style={[styles.content, centered && styles.centered, style]}>{children}</View>
     </SafeAreaView>
   );

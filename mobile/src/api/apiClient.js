@@ -1,6 +1,7 @@
 import axios from "axios";
 import { ENV } from "../config/env";
-import { toApiError } from "../utils/apiError";
+import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from "../utils/tokenStorage";
+import { attachAuthInterceptors } from "./authInterceptor";
 
 const apiClient = axios.create({
   baseURL: ENV.API_URL,
@@ -10,18 +11,20 @@ const apiClient = axios.create({
   },
 });
 
-apiClient.interceptors.request.use(
-  (config) => {
-    config.headers.set("Accept", "application/json");
-    config.headers.set("Content-Type", "application/json");
-    return config;
-  },
-  (error) => Promise.reject(toApiError(error))
-);
+let sessionExpiredHandler = null;
 
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => Promise.reject(toApiError(error))
-);
+attachAuthInterceptors(apiClient, {
+  getAccessToken,
+  getRefreshToken,
+  saveTokens,
+  clearTokens,
+  onSessionExpired() {
+    sessionExpiredHandler?.();
+  },
+});
+
+export function setSessionExpiredHandler(handler) {
+  sessionExpiredHandler = handler;
+}
 
 export default apiClient;

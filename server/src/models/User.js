@@ -1,0 +1,47 @@
+import mongoose from "mongoose";
+
+const userSchema = new mongoose.Schema(
+  {
+    phoneNumber: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    countryCode: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    fullName: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 100,
+    },
+    role: {
+      type: String,
+      enum: ["owner"],
+      default: "owner",
+      required: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  { timestamps: true }
+);
+
+userSchema.index({ countryCode: 1, phoneNumber: 1 }, { unique: true });
+
+const User = mongoose.model("User", userSchema);
+
+export default User;

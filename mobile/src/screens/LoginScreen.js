@@ -1,33 +1,64 @@
 import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, TextInput, View } from "react-native";
 import AppButton from "../components/AppButton";
 import AppText from "../components/AppText";
-import AppTextInput from "../components/AppTextInput";
 import ErrorView from "../components/ErrorView";
 import ScreenContainer from "../components/ScreenContainer";
 import {
   APP_NAME,
   LOGIN_HEADLINE,
-  LOGIN_PHASE_MESSAGE,
   SERVER_CONNECTED_MESSAGE,
   SERVER_UNREACHABLE_BODY,
   SERVER_UNREACHABLE_TITLE,
 } from "../constants/app";
-import { useDevPreview } from "../context/devPreviewContext";
+import { useAuth } from "../context/AuthContext";
 import { useServerConnection } from "../hooks/useServerConnection";
-import { colors, spacing } from "../theme";
+import theme, { colors, spacing } from "../theme";
 
-export default function LoginScreen() {
-  const { openAppPreview } = useDevPreview();
+function validateMobile(value) {
+  if (!value) {
+    return "Enter your mobile number.";
+  }
+
+  if (!/^[6-9]\d{9}$/.test(value)) {
+    return "Enter a valid 10-digit mobile number.";
+  }
+
+  return "";
+}
+
+export default function LoginScreen({ navigation }) {
+  const { requestOtp } = useAuth();
   const { status, checkConnection } = useServerConnection();
   const [mobileNumber, setMobileNumber] = useState("");
-
-  const onContinue = () => {
-    Alert.alert(APP_NAME, LOGIN_PHASE_MESSAGE);
-  };
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const onChangeMobileNumber = (value) => {
     setMobileNumber(value.replace(/\D/g, "").slice(0, 10));
+  };
+
+  const onSendOtp = async () => {
+    const validationMessage = validateMobile(mobileNumber);
+    if (validationMessage) {
+      setError(validationMessage);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await requestOtp(mobileNumber);
+      navigation.navigate("OtpVerification", {
+        phoneNumber: mobileNumber,
+        resendAfter: result?.resendAfter || 30,
+      });
+    } catch (requestError) {
+      setError(requestError?.message || "Unable to send OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,16 +78,34 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
-          <AppTextInput
-            label="Mobile Number"
-            value={mobileNumber}
-            onChangeText={onChangeMobileNumber}
-            placeholder="Mobile Number"
-            keyboardType="phone-pad"
-            maxLength={10}
-            onSubmitEditing={onContinue}
+          <AppText variant="label">Mobile Number</AppText>
+          <View style={styles.phoneRow}>
+            <View style={styles.codeBox}>
+              <AppText variant="button">+91</AppText>
+            </View>
+            <TextInput
+              value={mobileNumber}
+              onChangeText={onChangeMobileNumber}
+              placeholder="Enter mobile number"
+              placeholderTextColor={colors.placeholder}
+              keyboardType="phone-pad"
+              maxLength={10}
+              editable={!loading}
+              onSubmitEditing={onSendOtp}
+              style={styles.phoneInput}
+              accessibilityLabel="Mobile number"
+            />
+          </View>
+          {error ? (
+            <AppText variant="body" color={colors.error}>
+              {error}
+            </AppText>
+          ) : null}
+          <AppButton
+            label={loading ? "Sending OTP..." : "Send OTP"}
+            onPress={onSendOtp}
+            loading={loading}
           />
-          <AppButton label="Continue" onPress={onContinue} />
         </View>
 
         {__DEV__ ? (
@@ -84,11 +133,6 @@ export default function LoginScreen() {
                 onRetry={checkConnection}
               />
             ) : null}
-            <AppButton
-              label="Preview home screen"
-              variant="secondary"
-              onPress={openAppPreview}
-            />
           </View>
         ) : null}
       </ScrollView>
@@ -109,7 +153,34 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   form: {
-    gap: spacing.lg,
+    gap: spacing.md,
+  },
+  phoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  codeBox: {
+    minHeight: theme.controlHeight,
+    minWidth: 72,
+    borderRadius: theme.radius,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+  },
+  phoneInput: {
+    flex: 1,
+    minHeight: theme.controlHeight,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: theme.radius,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.surface,
+    color: colors.text,
+    fontSize: 17,
   },
   devSection: {
     marginTop: spacing.xl,
