@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import PaymentStatusBadge from "../../components/subscription/PaymentStatusBadge";
 import { getPaymentHistory } from "../../services/subscriptionService";
 import { colors, spacing } from "../../theme";
@@ -34,12 +34,11 @@ export default function PaymentHistoryScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(false); }, [load]));
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Payment history" subtitle="Subscription payments" icon="card">
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
       >
-        <AppText variant="heading" accessibilityRole="header">Payment History</AppText>
         {loading ? <ActivityIndicator color={colors.primary} /> : null}
         {error ? <ErrorView title="Unable to load payments." message={error} onRetry={() => load(false)} /> : null}
         {!loading && !error && rows.length === 0 ? (
@@ -57,9 +56,8 @@ export default function PaymentHistoryScreen({ navigation }) {
             <AppText variant="caption" color={colors.textSecondary}>{row.reference}</AppText>
           </View>
         ))}
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

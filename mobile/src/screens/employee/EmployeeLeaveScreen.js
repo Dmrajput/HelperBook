@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployeeLeaves } from "../../services/employeePortalService";
 import { colors, spacing } from "../../theme";
 
@@ -31,9 +31,8 @@ export default function EmployeeLeaveScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Leave" subtitle="Your requests" icon="calendar" showBack={false}>
       <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={styles.content}>
-        <AppText variant="title">My Leave</AppText>
         <AppButton label="Request Leave" onPress={() => navigation.navigate("EmployeeCreateLeave")} />
         <AppText variant="body">Pending {data?.summary?.pending || 0}  Approved {data?.summary?.approved || 0}  Upcoming {data?.summary?.upcoming || 0}</AppText>
         <View style={styles.filters}>
@@ -52,7 +51,7 @@ export default function EmployeeLeaveScreen({ navigation }) {
           />
         ))}
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

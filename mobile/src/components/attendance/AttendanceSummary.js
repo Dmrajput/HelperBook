@@ -2,36 +2,40 @@ import { StyleSheet, View } from "react-native";
 import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
 
+const TILES = [
+  { key: "present", label: "Present", color: "#1C8A52", background: "#E8F8EF" },
+  { key: "absent", label: "Absent", color: "#D4535E", background: "#FDECEC" },
+  { key: "halfDay", label: "Half Day", color: "#C8881A", background: "#FFF6E4" },
+  { key: "leave", label: "Leave", color: "#4C6FE0", background: "#EEF3FF" },
+];
+
 export default function AttendanceSummary({ summary }) {
   if (!summary) {
     return null;
   }
 
-  const items = [
-    ["Present", summary.present],
-    ["Absent", summary.absent],
-    ["Half Day", summary.halfDay],
-    ["Leave", summary.leave],
-  ];
+  const tiles = TILES.filter((tile) => summary[tile.key] !== undefined && summary[tile.key] !== null);
 
   return (
     <View style={styles.wrap}>
       {summary.total === undefined || summary.total === null ? null : (
-        <AppText variant="body">{summary.total} Employees</AppText>
+        <AppText variant="label">{`${summary.total} employees`}</AppText>
       )}
       <View style={styles.row}>
-        {items.map(([label, value]) => (
-          <View key={label} style={styles.item}>
-            <AppText variant="caption" color={colors.textSecondary}>
-              {label}
+        {tiles.map((tile) => (
+          <View key={tile.key} style={[styles.tile, { backgroundColor: tile.background }]}>
+            <AppText variant="subtitle" align="center" color={tile.color} style={styles.value}>
+              {String(summary[tile.key] ?? 0)}
             </AppText>
-            <AppText variant="label">{value ?? 0}</AppText>
+            <AppText variant="caption" align="center" color={colors.textSecondary} numberOfLines={1}>
+              {tile.label}
+            </AppText>
           </View>
         ))}
       </View>
-      {summary.notMarked === undefined ? null : (
+      {summary.notMarked === undefined || summary.notMarked === null ? null : (
         <AppText variant="caption" color={colors.textSecondary}>
-          Not Marked: {summary.notMarked}
+          {`${summary.notMarked} not marked yet`}
         </AppText>
       )}
     </View>
@@ -44,16 +48,18 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+    gap: 6,
   },
-  item: {
-    width: "48%",
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.xs,
+  tile: {
+    flex: 1,
+    minWidth: 0,
+    borderRadius: 14,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 2,
+    alignItems: "center",
+    gap: 2,
+  },
+  value: {
+    fontWeight: "700",
   },
 });

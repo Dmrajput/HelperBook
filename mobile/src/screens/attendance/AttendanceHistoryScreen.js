@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import AttendanceDateSelector from "../../components/attendance/AttendanceDateSelector";
 import AttendanceHistoryItem from "../../components/attendance/AttendanceHistoryItem";
 import AttendanceEmptyState from "../../components/attendance/AttendanceEmptyState";
@@ -68,11 +68,8 @@ export default function AttendanceHistoryScreen({ navigation }) {
   );
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Attendance history" subtitle="Past attendance by day" icon="time">
       <ScrollView contentContainerStyle={styles.content}>
-        <AppText variant="heading" accessibilityRole="header">
-          Attendance History
-        </AppText>
         <AppText variant="label">From</AppText>
         <AttendanceDateSelector date={startDate} onChange={setStartDate} />
         <AppText variant="label">To</AppText>
@@ -115,8 +112,7 @@ export default function AttendanceHistoryScreen({ navigation }) {
         ))}
         {page < totalPages ? <AppButton label="Load more" variant="secondary" onPress={() => load(page + 1)} /> : null}
       </ScrollView>
-      <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

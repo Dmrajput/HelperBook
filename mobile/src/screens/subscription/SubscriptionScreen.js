@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from "react-na
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import CurrentPlanCard from "../../components/subscription/CurrentPlanCard";
 import PlanCard from "../../components/subscription/PlanCard";
 import PlanComparison from "../../components/subscription/PlanComparison";
@@ -136,9 +136,8 @@ export default function SubscriptionScreen({ navigation }) {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Subscription" subtitle="Plan and billing" icon="ribbon">
       <ScrollView contentContainerStyle={styles.content}>
-        <AppText variant="heading" accessibilityRole="header">Subscription</AppText>
         {loading ? <ActivityIndicator color={colors.primary} /> : null}
         {error ? (
           <ErrorView
@@ -189,10 +188,9 @@ export default function SubscriptionScreen({ navigation }) {
         <PlanComparison plans={plans} />
         <AppButton label="Payment History" variant="secondary" onPress={() => navigation.navigate("PaymentHistory")} />
         <AppButton label="Subscription History" variant="secondary" onPress={() => navigation.navigate("SubscriptionHistory")} />
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
       <RazorpayCheckout checkout={checkout} onResult={onPaymentResult} onClose={() => { setCheckout(null); setPaymentState("Payment failed"); }} />
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

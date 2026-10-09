@@ -25,7 +25,7 @@ function isSafeServerMessage(message) {
     return false;
   }
 
-  return !/at\s+\S+\s+\(|node_modules|stack trace|mongodb(\+srv)?:\/\/|password|secret|jwt/i.test(
+  return !/at\s+\S+\s+\(|node_modules|stack trace|mongodb(\+srv)?:\/\/|password\s*[:=]|secret\s*[:=]|jwt/i.test(
     trimmed
   );
 }

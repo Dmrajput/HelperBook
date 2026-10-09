@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import AttendanceCalendar from "../../components/attendance/AttendanceCalendar";
 import AttendanceSummary from "../../components/attendance/AttendanceSummary";
 import { colors, spacing } from "../../theme";
@@ -64,11 +64,8 @@ export default function MonthlyAttendanceScreen({ navigation }) {
   const selectedName = employees.find((employee) => employee.id === employeeId)?.name || "All Employees";
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Monthly attendance" subtitle={selectedName} icon="calendar">
       <ScrollView contentContainerStyle={styles.content}>
-        <AppText variant="heading" accessibilityRole="header">
-          Monthly Attendance
-        </AppText>
         <View style={styles.monthRow}>
           <AppButton label="Previous" variant="secondary" onPress={() => shiftMonth(-1)} />
           <AppText variant="label">{formatMonth(year, month)}</AppText>
@@ -114,8 +111,7 @@ export default function MonthlyAttendanceScreen({ navigation }) {
           </>
         ) : null}
       </ScrollView>
-      <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

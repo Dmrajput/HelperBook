@@ -3,7 +3,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } f
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { createEmployee } from "../../services/employeeService";
 import { spacing } from "../../theme";
 import { buildEmployeePayload, createEmptyEmployeeForm, validateEmployeeForm } from "../../utils/employeeForm";
@@ -54,12 +54,9 @@ export default function AddEmployeeScreen({ navigation }) {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Add employee" subtitle="Name, role and salary" icon="person-add">
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <AppText variant="heading" accessibilityRole="header">
-            Add Employee
-          </AppText>
           <EmployeeForm form={form} onChange={updateForm} errors={errors} />
           <FieldError message={formError} />
         </ScrollView>
@@ -69,10 +66,9 @@ export default function AddEmployeeScreen({ navigation }) {
             onPress={submit}
             disabled={submitting}
           />
-          <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} disabled={submitting} />
         </View>
       </KeyboardAvoidingView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

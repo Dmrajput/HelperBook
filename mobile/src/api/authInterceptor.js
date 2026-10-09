@@ -2,11 +2,14 @@ import { toApiError } from "../utils/apiError";
 import { createRefreshQueue } from "./refreshQueue";
 
 const OPEN_AUTH_PATHS = [
-  "/auth/request-otp",
-  "/auth/verify-otp",
+  "/auth/register",
+  "/auth/login",
+  "/auth/forgot-password",
+  "/auth/reset-password",
   "/auth/refresh",
-  "/employee-auth/request-otp",
-  "/employee-auth/verify-otp",
+  "/employee-auth/login",
+  "/employee-auth/forgot-password",
+  "/employee-auth/reset-password",
   "/employee-auth/refresh",
   "/employee-auth/logout",
 ];

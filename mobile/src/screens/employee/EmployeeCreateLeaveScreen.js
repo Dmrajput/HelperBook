@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, TextInput } from "react-native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import LeaveDateRangePicker from "../../components/leave/LeaveDateRangePicker";
 import LeaveTypeSelector from "../../components/leave/LeaveTypeSelector";
 import { createEmployeeLeave } from "../../services/employeePortalService";
@@ -31,9 +31,8 @@ export default function EmployeeCreateLeaveScreen({ navigation }) {
   };
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Request leave" subtitle="Dates and a reason" icon="calendar">
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <AppText variant="title">Request Leave</AppText>
         <LeaveTypeSelector value={leaveType} onChange={setLeaveType} />
         <LeaveDateRangePicker
           startDate={startDate}
@@ -54,7 +53,7 @@ export default function EmployeeCreateLeaveScreen({ navigation }) {
         {error ? <AppText variant="body" color={colors.error}>{error}</AppText> : null}
         <AppButton label={loading ? "Sending..." : "Submit Request"} onPress={submit} loading={loading} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

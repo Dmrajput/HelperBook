@@ -168,6 +168,7 @@ export async function updateEmployee(userId, employeeId, payload) {
   employee.notes = payload.notes;
   if (phoneChanged) {
     employee.phoneVerified = false;
+    employee.passwordHash = "";
     employee.loginEnabled = false;
     const { revokeEmployeeAccess } = await import("./employeeAuth.service.js");
     await revokeEmployeeAccess(employee._id);

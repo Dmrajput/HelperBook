@@ -5,7 +5,7 @@ import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import NotificationCard from "../../components/notifications/NotificationCard";
 import NotificationEmptyState from "../../components/notifications/NotificationEmptyState";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import useNotifications from "../../hooks/useNotifications";
 import { colors, spacing } from "../../theme";
 import { formatAttendanceDate, shiftKey, todayKey } from "../../utils/attendanceFormat";
@@ -75,19 +75,11 @@ export default function NotificationScreen() {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Notifications" subtitle="Shop alerts" icon="notifications">
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} />}
       >
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => navigation.goBack()} style={styles.back}>
-          <AppText variant="label" color={colors.primary}>
-            Back
-          </AppText>
-        </Pressable>
-        <AppText variant="heading" accessibilityRole="header">
-          Notifications
-        </AppText>
         {data?.unreadCount > 0 ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Mark all as read" onPress={readAll} style={styles.back}>
             <AppText variant="label" color={colors.primary}>
@@ -121,7 +113,7 @@ export default function NotificationScreen() {
           </AppText>
         ) : null}
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

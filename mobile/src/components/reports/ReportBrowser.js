@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleS
 import { useNavigation } from "@react-navigation/native";
 import AppText from "../AppText";
 import ErrorView from "../ErrorView";
-import ScreenContainer from "../ScreenContainer";
+import AppScreen from "../AppScreen";
 import { getEmployees } from "../../services/employeeService";
 import useReport from "../../hooks/useReport";
 import { colors, spacing } from "../../theme";
@@ -86,22 +86,11 @@ export default function ReportBrowser({
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title={title} subtitle={description} icon="bar-chart">
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={report.refreshing} onRefresh={report.reload} />}
       >
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => navigation.goBack()} style={styles.back}>
-          <AppText variant="label" color={colors.primary}>
-            Back
-          </AppText>
-        </Pressable>
-        <AppText variant="heading" accessibilityRole="header">
-          {title}
-        </AppText>
-        <AppText variant="body" color={colors.textSecondary}>
-          {description}
-        </AppText>
         <ReportFilterBar
           range={range}
           onRangeChange={(next) => {
@@ -173,13 +162,12 @@ export default function ReportBrowser({
           </>
         ) : null}
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
   content: { gap: spacing.md, paddingBottom: spacing.xl },
-  back: { minHeight: 44, justifyContent: "center", alignSelf: "flex-start" },
   list: { gap: spacing.sm },
   pager: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 44 },
 });

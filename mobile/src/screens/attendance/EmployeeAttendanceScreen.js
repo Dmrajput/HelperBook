@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import AttendanceEmptyState from "../../components/attendance/AttendanceEmptyState";
 import { colors, spacing } from "../../theme";
 import { getEmployeeAttendance } from "../../services/attendanceService";
@@ -42,11 +42,8 @@ export default function EmployeeAttendanceScreen({ navigation, route }) {
   );
 
   return (
-    <ScreenContainer>
+    <AppScreen title={data?.employee?.name || "Attendance"} subtitle="Attendance records" icon="calendar">
       <ScrollView contentContainerStyle={styles.content}>
-        <AppText variant="heading" accessibilityRole="header">
-          {data?.employee?.name || "Attendance"}
-        </AppText>
         {loading ? <AppText color={colors.textSecondary}>Loading attendance...</AppText> : null}
         {error ? (
           <ErrorView
@@ -81,8 +78,7 @@ export default function EmployeeAttendanceScreen({ navigation, route }) {
           </View>
         ))}
       </ScrollView>
-      <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

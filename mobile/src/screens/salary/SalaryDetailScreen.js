@@ -6,7 +6,7 @@ import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import BonusForm from "../../components/salary/BonusForm";
 import DeductionForm from "../../components/salary/DeductionForm";
 import PaidLeaveEditor from "../../components/salary/PaidLeaveEditor";
@@ -117,20 +117,20 @@ export default function SalaryDetailScreen({ navigation, route }) {
 
   if (loading && !salary) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Salary" subtitle="Loading" icon="wallet">
         <View style={styles.skeleton} accessibilityLabel="Loading salary">
           <View style={styles.block} />
           <View style={styles.block} />
         </View>
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
   if (!salary) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Salary" subtitle="Could not load this salary" icon="wallet">
         <ErrorView message={error || "Unable to load salary. Please try again."} onRetry={load} />
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
@@ -139,9 +139,8 @@ export default function SalaryDetailScreen({ navigation, route }) {
   const monthName = `${MONTHS[salary.month - 1]} ${salary.year}`;
 
   return (
-    <ScreenContainer>
+    <AppScreen title={salary.employee?.name || "Salary"} subtitle={monthName} icon="wallet">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">{salary.employee?.name || "Salary"}</AppText>
         <AppText variant="subtitle">{monthName}</AppText>
         <SalaryStatusBadge status={salary.status} />
         <AppText variant="body">Salary type {salary.salaryType === "daily" ? "Daily" : "Monthly"}</AppText>
@@ -355,9 +354,8 @@ export default function SalaryDetailScreen({ navigation, route }) {
             )}
           </>
         )}
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} disabled={Boolean(busy)} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

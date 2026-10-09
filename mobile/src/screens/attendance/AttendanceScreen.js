@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
 import AttendanceDateSelector from "../../components/attendance/AttendanceDateSelector";
 import AttendanceEmployeeCard from "../../components/attendance/AttendanceEmployeeCard";
 import AttendanceEmptyState from "../../components/attendance/AttendanceEmptyState";
@@ -15,9 +16,34 @@ import { colors, spacing } from "../../theme";
 import { bulkMarkAttendance } from "../../services/attendanceService";
 import { formatAttendanceDate, statusLabel, todayKey } from "../../utils/attendanceFormat";
 
+const PAGE_BG = "#F4F7F5";
+const HEADER = "#0F6B4F";
+
+function weekdayLabel(key) {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+function AttendanceSkeleton() {
+  return (
+    <View style={styles.skeleton} accessibilityLabel="Loading attendance">
+      <View style={styles.skeletonSummary} />
+      <View style={styles.skeletonRow} />
+      <View style={styles.skeletonRow} />
+      <View style={styles.skeletonRow} />
+    </View>
+  );
+}
+
 export default function AttendanceScreen({ embedded = false }) {
   const navigation = useNavigation();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
   const routeDate = route.name === "AttendanceDay" ? route.params?.date : "";
   const [date, setDate] = useState(routeDate || todayKey());
   const { data, isLoading, isRefreshing, error, load } = useDailyAttendance(date);
@@ -153,89 +179,241 @@ export default function AttendanceScreen({ embedded = false }) {
       ? "Unable to load attendance. Please check your internet connection and try again."
       : error.message || "Unable to load attendance."
     : "";
+  const pending = changes();
+  const isToday = date === todayKey();
+  const links = [
+    { label: "Bulk", hint: "Mark several people", icon: "checkmark-done-outline", onPress: () => navigation.navigate("BulkAttendance", { date }) },
+    { label: "Month", hint: "Calendar view", icon: "calendar-outline", onPress: () => navigation.navigate("MonthlyAttendance") },
+    { label: "History", hint: "Past records", icon: "time-outline", onPress: () => navigation.navigate("AttendanceHistory") },
+  ];
 
   return (
-    <ScreenContainer edges={embedded ? ["top", "left", "right"] : undefined}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => load({ refresh: true })} />}
-      >
-        <AppText variant="heading" accessibilityRole="header">
-          Attendance
-        </AppText>
-        <AttendanceDateSelector date={date} onChange={setDate} />
-        <View style={styles.links}>
-          <AppButton label="Bulk Attendance" variant="secondary" onPress={() => navigation.navigate("BulkAttendance", { date })} />
-          <AppButton label="Monthly" variant="secondary" onPress={() => navigation.navigate("MonthlyAttendance")} />
-          <AppButton label="History" variant="secondary" onPress={() => navigation.navigate("AttendanceHistory")} />
-        </View>
-        {isLoading && !data ? <AppText color={colors.textSecondary}>Loading attendance...</AppText> : null}
-        {loadError && !data ? <ErrorView title="Unable to load attendance." message={loadError} onRetry={() => load()} /> : null}
-        {data?.shopClosed ? (
-          <View style={styles.banner}>
-            <AppText variant="label">Weekly Off</AppText>
-            <AppText variant="body" color={colors.textSecondary}>
-              The shop is normally closed today.
+    <View style={styles.screen}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={styles.headerRow}>
+          {embedded ? null : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              onPress={() => navigation.goBack()}
+              style={styles.back}
+            >
+              <Ionicons name="chevron-back" size={22} color={colors.textInverse} />
+            </Pressable>
+          )}
+          <View style={styles.headerCopy}>
+            <AppText variant="heading" color={colors.textInverse} accessibilityRole="header" style={styles.title}>
+              Attendance
+            </AppText>
+            <AppText variant="caption" color="#E7F6EF" numberOfLines={1}>
+              {isToday ? `Today · ${weekdayLabel(date)}` : weekdayLabel(date)}
             </AppText>
           </View>
-        ) : null}
-        {data ? <AttendanceSummary summary={data.summary} /> : null}
-        {data && data.employees.length === 0 ? (
-          <AttendanceEmptyState
-            title="No active employees"
-            message="Add employees before marking attendance."
-            actionLabel="Add Employee"
-            onAction={() => navigation.navigate("AddEmployee")}
-          />
-        ) : null}
-        {data?.employees.map((employee) => (
-          <AttendanceEmployeeCard
-            key={employee.employeeId}
-            employee={employee}
-            date={date}
-            value={drafts[employee.employeeId]?.status || null}
-            notes={drafts[employee.employeeId]?.notes || ""}
-            disabled={saving}
-            onChange={(next) => updateDraft(employee.employeeId, next)}
-          />
-        ))}
-        <FieldError message={saveError} />
-      </ScrollView>
-      <View style={styles.footer}>
-        {data?.employees?.length ? (
-          <>
-            <AppButton label="Mark All Present" variant="secondary" onPress={markAllPresent} disabled={saving} />
-            <AppButton
-              label={saving ? "Saving..." : "Save Attendance"}
-              onPress={confirmSave}
-              disabled={saving || changes().length === 0}
-            />
-          </>
-        ) : null}
-        {embedded ? null : <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />}
+          <View style={styles.mark} accessibilityElementsHidden>
+            <Ionicons name="calendar" size={24} color={colors.primary} />
+          </View>
+        </View>
       </View>
-    </ScreenContainer>
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={() => load({ refresh: true })} tintColor={colors.primary} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.body}>
+          <AttendanceDateSelector date={date} onChange={setDate} />
+          <View style={styles.links}>
+            {links.map((item) => (
+              <Pressable
+                key={item.label}
+                accessibilityRole="button"
+                accessibilityLabel={item.hint}
+                onPress={item.onPress}
+                style={({ pressed }) => [styles.link, pressed && styles.pressed]}
+              >
+                <View style={styles.linkIcon}>
+                  <Ionicons name={item.icon} size={16} color={colors.primary} />
+                </View>
+                <AppText variant="label" numberOfLines={1}>{item.label}</AppText>
+              </Pressable>
+            ))}
+          </View>
+          {isLoading && !data ? <AttendanceSkeleton /> : null}
+          {loadError && !data ? (
+            <ErrorView title="Unable to load attendance." message={loadError} onRetry={() => load()} />
+          ) : null}
+          {data?.shopClosed ? (
+            <View style={styles.banner}>
+              <Ionicons name="moon-outline" size={18} color="#9A5B12" />
+              <View style={styles.bannerCopy}>
+                <AppText variant="label" color="#9A5B12">Weekly off</AppText>
+                <AppText variant="caption" color="#9A5B12">
+                  The shop is normally closed today. You can still mark attendance.
+                </AppText>
+              </View>
+            </View>
+          ) : null}
+          {data ? <AttendanceSummary summary={data.summary} /> : null}
+          {data && data.employees.length === 0 ? (
+            <AttendanceEmptyState
+              title="No active employees"
+              message="Add employees before marking attendance."
+              actionLabel="Add Employee"
+              onAction={() => navigation.navigate("AddEmployee")}
+            />
+          ) : null}
+          {data?.employees.map((employee) => (
+            <AttendanceEmployeeCard
+              key={employee.employeeId}
+              employee={employee}
+              date={date}
+              value={drafts[employee.employeeId]?.status || null}
+              notes={drafts[employee.employeeId]?.notes || ""}
+              disabled={saving}
+              onChange={(next) => updateDraft(employee.employeeId, next)}
+            />
+          ))}
+          <FieldError message={saveError} />
+        </View>
+      </ScrollView>
+
+      {data?.employees?.length ? (
+        <View style={[styles.footer, { paddingBottom: embedded ? spacing.md : Math.max(insets.bottom, spacing.md) }]}>
+          <AppText variant="caption" color={colors.textSecondary} align="center">
+            {pending.length
+              ? `${pending.length} change${pending.length === 1 ? "" : "s"} to save`
+              : "Attendance is up to date"}
+          </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Mark all present"
+            disabled={saving}
+            onPress={markAllPresent}
+            style={styles.markAll}
+          >
+            <AppText variant="label" color={colors.primary} align="center">
+              Mark all present
+            </AppText>
+          </Pressable>
+          <AppButton
+            label={saving ? "Saving..." : "Save Attendance"}
+            onPress={confirmSave}
+            disabled={saving || pending.length === 0}
+          />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: spacing.lg,
+  screen: {
+    flex: 1,
+    backgroundColor: PAGE_BG,
+  },
+  header: {
+    backgroundColor: HEADER,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
-  links: {
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
-  banner: {
+  back: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  title: {
+    fontSize: 26,
+    lineHeight: 32,
+  },
+  mark: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: "#F7F3EA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  content: {
+    paddingBottom: spacing.lg,
+  },
+  body: {
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  links: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  link: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 14,
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.xs,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+  },
+  linkIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: "#E7F6EF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pressed: {
+    opacity: 0.88,
+  },
+  banner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    backgroundColor: "#FFF4E8",
+    borderRadius: 16,
+    padding: spacing.md,
+  },
+  bannerCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  skeleton: {
+    gap: spacing.sm,
+  },
+  skeletonSummary: {
+    height: 64,
+    borderRadius: 14,
+    backgroundColor: colors.disabled,
+  },
+  skeletonRow: {
+    height: 108,
+    borderRadius: 18,
+    backgroundColor: colors.disabled,
   },
   footer: {
     gap: spacing.sm,
-    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    backgroundColor: PAGE_BG,
+  },
+  markAll: {
+    minHeight: 36,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

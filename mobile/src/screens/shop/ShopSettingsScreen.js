@@ -4,12 +4,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { updateSickLeaveTreatment } from "../../services/leaveService";
 import { getMyShop } from "../../services/shopService";
 import { colors, spacing } from "../../theme";
 
-export default function ShopSettingsScreen({ navigation }) {
+export default function ShopSettingsScreen() {
   const [treatment, setTreatment] = useState("unpaid");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -47,11 +47,8 @@ export default function ShopSettingsScreen({ navigation }) {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Sick leave" subtitle="Paid or unpaid in salary" icon="medkit">
       <View style={styles.content}>
-        <AppText variant="heading" accessibilityRole="header">
-          Shop Settings
-        </AppText>
         <AppText variant="subtitle">Sick leave</AppText>
         <AppText variant="body" color={colors.textSecondary}>
           Choose how approved sick leave affects salary.
@@ -74,11 +71,8 @@ export default function ShopSettingsScreen({ navigation }) {
         {saved ? <AppText variant="body">{saved}</AppText> : null}
         <FieldError message={error} />
       </View>
-      <AppButton label="Notifications" variant="secondary" onPress={() => navigation.navigate("NotificationSettings")} />
-      <AppButton label="Subscription" variant="secondary" onPress={() => navigation.navigate("Subscription")} />
       <AppButton label="Save" onPress={save} loading={loading} disabled={loading} />
-      <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

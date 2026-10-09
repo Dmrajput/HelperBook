@@ -1,16 +1,15 @@
 import { useCallback, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import AppText from "../../components/AppText";
 import FieldError from "../../components/FieldError";
 import NotificationPreferences from "../../components/notifications/NotificationPreferences";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getNotificationPreferences, updateNotificationPreferences } from "../../services/notificationService";
 import { devicePushPermission } from "../../services/pushNotificationService";
 import { colors, spacing } from "../../theme";
 
 export default function NotificationSettingsScreen() {
-  const navigation = useNavigation();
   const [values, setValues] = useState(null);
   const [permission, setPermission] = useState("");
   const [saving, setSaving] = useState(false);
@@ -53,14 +52,8 @@ export default function NotificationSettingsScreen() {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Notification settings" subtitle="Choose which alerts to receive" icon="notifications">
       <View style={styles.content}>
-        <AppText variant="label" color={colors.primary} onPress={() => navigation.goBack()}>
-          Back
-        </AppText>
-        <AppText variant="heading" accessibilityRole="header">
-          Notifications
-        </AppText>
         {permission === "denied" ? (
           <AppText variant="body" color={colors.textSecondary}>
             Push notifications are disabled in your device settings. You can still view notifications in HelperBook.
@@ -77,7 +70,7 @@ export default function NotificationSettingsScreen() {
         {values ? <NotificationPreferences values={values} onChange={change} disabled={saving} /> : null}
         <FieldError message={error} />
       </View>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

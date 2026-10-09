@@ -2,9 +2,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { setSessionExpiredHandler } from "../api/apiClient";
 import {
   getCurrentUser,
+  loginWithPassword as loginRequest,
   logout as requestLogout,
-  requestOtp as requestOtpRequest,
-  verifyOtp as verifyOtpRequest,
+  registerOwner as registerRequest,
+  requestPasswordReset as requestPasswordResetRequest,
+  resetPassword as resetPasswordRequest,
 } from "../services/authService";
 import { getDeviceInfo } from "../utils/deviceInfo";
 import { unregisterCurrentPushToken } from "../services/pushNotificationService";
@@ -71,24 +73,7 @@ export function AuthProvider({ children }) {
     };
   }, [restoreSession]);
 
-  const requestOtp = useCallback(async (phoneNumber) => {
-    return requestOtpRequest({
-      phoneNumber,
-      countryCode: "+91",
-    });
-  }, []);
-
-  const verifyOtp = useCallback(async ({ phoneNumber, otp }) => {
-    const device = await getDeviceInfo();
-    const result = await verifyOtpRequest({
-      phoneNumber,
-      countryCode: "+91",
-      otp,
-      deviceId: device.deviceId,
-      deviceName: device.deviceName,
-      platform: device.platform,
-    });
-
+  const saveOwnerSession = useCallback(async (result) => {
     await saveTokens({
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
@@ -98,6 +83,54 @@ export function AuthProvider({ children }) {
     setUser(result.user);
     return result;
   }, []);
+
+  const login = useCallback(async ({ phoneNumber, password }) => {
+    const device = await getDeviceInfo();
+    const result = await loginRequest({
+      phoneNumber,
+      countryCode: "+91",
+      password,
+      deviceId: device.deviceId,
+      deviceName: device.deviceName,
+      platform: device.platform,
+    });
+    return saveOwnerSession(result);
+  }, [saveOwnerSession]);
+
+  const register = useCallback(async ({ fullName, phoneNumber, password }) => {
+    const device = await getDeviceInfo();
+    const result = await registerRequest({
+      fullName,
+      phoneNumber,
+      countryCode: "+91",
+      password,
+      deviceId: device.deviceId,
+      deviceName: device.deviceName,
+      platform: device.platform,
+    });
+    return saveOwnerSession(result);
+  }, [saveOwnerSession]);
+
+  const requestPasswordReset = useCallback(async (phoneNumber) => {
+    return requestPasswordResetRequest({
+      phoneNumber,
+      countryCode: "+91",
+    });
+  }, []);
+
+  const resetPassword = useCallback(async ({ phoneNumber, otp, password }) => {
+    const device = await getDeviceInfo();
+    const result = await resetPasswordRequest({
+      phoneNumber,
+      countryCode: "+91",
+      otp,
+      password,
+      deviceId: device.deviceId,
+      deviceName: device.deviceName,
+      platform: device.platform,
+    });
+    return saveOwnerSession(result);
+  }, [saveOwnerSession]);
 
   const completeEmployeeLogin = useCallback(async (result) => {
     await saveEmployeeSession(result);
@@ -146,8 +179,10 @@ export function AuthProvider({ children }) {
       isLoading,
       startupError,
       isLoggingOut,
-      requestOtp,
-      verifyOtp,
+      login,
+      register,
+      requestPasswordReset,
+      resetPassword,
       completeEmployeeLogin,
       logout,
       patchUser,
@@ -159,8 +194,10 @@ export function AuthProvider({ children }) {
       isLoading,
       startupError,
       isLoggingOut,
-      requestOtp,
-      verifyOtp,
+      login,
+      register,
+      requestPasswordReset,
+      resetPassword,
       logout,
       completeEmployeeLogin,
       patchUser,

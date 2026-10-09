@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployeeSalaries } from "../../services/employeePortalService";
 import { colors, spacing } from "../../theme";
 import { formatAttendanceDate, formatMonth } from "../../utils/attendanceFormat";
@@ -31,9 +31,8 @@ export default function EmployeeSalaryScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Salary" subtitle="Finalized pay" icon="wallet" showBack={false}>
       <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={styles.content}>
-        <AppText variant="title">My Salary</AppText>
         {error ? <ErrorView message={error} onRetry={load} /> : null}
         {!loading && !salaries.length ? <AppText variant="body">No finalized salary records available yet.</AppText> : null}
         {salaries.map((salary) => (
@@ -52,11 +51,16 @@ export default function EmployeeSalaryScreen({ navigation }) {
           </View>
         ))}
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
   content: { gap: spacing.md, paddingBottom: spacing.xxl },
-  card: { gap: spacing.xs, paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
+  card: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+  },
 });

@@ -1,13 +1,21 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import AppText from "../AppText";
 import { ATTENDANCE_STATUSES } from "../../constants/attendance";
-import { colors, spacing } from "../../theme";
+import { spacing } from "../../theme";
+
+const TONES = {
+  present: { background: "#E8F8EF", selected: "#1C8A52" },
+  absent: { background: "#FDECEC", selected: "#D4535E" },
+  half_day: { background: "#FFF6E4", selected: "#C8881A" },
+  leave: { background: "#EEF3FF", selected: "#4C6FE0" },
+};
 
 export default function AttendanceStatusSelector({ value, onChange, disabled = false }) {
   return (
     <View style={styles.row}>
       {ATTENDANCE_STATUSES.map((status) => {
         const selected = value === status.value;
+        const tone = TONES[status.value];
         return (
           <Pressable
             key={status.value}
@@ -16,16 +24,21 @@ export default function AttendanceStatusSelector({ value, onChange, disabled = f
             accessibilityState={{ selected, disabled }}
             disabled={disabled}
             onPress={() => onChange(status.value)}
-            style={[styles.chip, selected && styles.selected, disabled && styles.disabled]}
+            style={[
+              styles.chip,
+              { backgroundColor: selected ? tone.selected : tone.background },
+              disabled && styles.disabled,
+            ]}
           >
-            <AppText variant="caption" color={selected ? colors.textInverse : colors.text}>
+            <AppText
+              variant="caption"
+              align="center"
+              numberOfLines={1}
+              color={selected ? "#FFFFFF" : tone.selected}
+              style={styles.label}
+            >
               {status.label}
             </AppText>
-            {selected ? (
-              <AppText variant="caption" color={colors.textInverse}>
-                Selected
-              </AppText>
-            ) : null}
           </Pressable>
         );
       })}
@@ -36,26 +49,20 @@ export default function AttendanceStatusSelector({ value, onChange, disabled = f
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+    gap: 6,
   },
   chip: {
-    minHeight: 44,
-    minWidth: 72,
+    flex: 1,
+    minHeight: 36,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: 4,
   },
-  selected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+  label: {
+    fontWeight: "700",
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.55,
   },
 });

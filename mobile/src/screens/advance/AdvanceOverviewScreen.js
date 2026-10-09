@@ -1,13 +1,12 @@
 import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import ErrorView from "../../components/ErrorView";
 import OutstandingBalanceCard from "../../components/advance/OutstandingBalanceCard";
 import AdvanceSummaryCard from "../../components/advance/AdvanceSummaryCard";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getAdvances } from "../../services/advanceService";
 import { colors, spacing } from "../../theme";
 import { formatInr } from "../../utils/dashboardFormat";
@@ -44,9 +43,8 @@ export default function AdvanceOverviewScreen({ navigation }) {
   );
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Advances" subtitle="Track khata and repayments" icon="book">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Employee Advances</AppText>
         {loading && !data ? <View style={styles.block} accessibilityLabel="Loading advances" /> : null}
         {error && !data ? <ErrorView message={error} onRetry={load} /> : null}
         {data ? (
@@ -93,9 +91,8 @@ export default function AdvanceOverviewScreen({ navigation }) {
             ))}
           </>
         ) : null}
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 
@@ -114,9 +111,7 @@ const styles = StyleSheet.create({
   selected: { backgroundColor: colors.primary, borderColor: colors.primary },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 18,
     padding: spacing.lg,
     gap: spacing.xs,
   },

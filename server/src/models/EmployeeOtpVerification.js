@@ -6,7 +6,7 @@ const employeeOtpVerificationSchema = new mongoose.Schema(
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop", default: null },
     phoneNumber: { type: String, required: true, trim: true },
     hashedOtp: { type: String, required: true },
-    purpose: { type: String, enum: ["login"], default: "login", required: true },
+    purpose: { type: String, enum: ["login", "password_reset"], default: "password_reset", required: true },
     attempts: { type: Number, default: 0 },
     maxAttempts: { type: Number, default: 5 },
     expiresAt: { type: Date, required: true },

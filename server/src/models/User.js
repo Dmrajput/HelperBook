@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: 100,
     },
+    passwordHash: {
+      type: String,
+      default: "",
+      select: false,
+    },
     role: {
       type: String,
       enum: ["owner"],

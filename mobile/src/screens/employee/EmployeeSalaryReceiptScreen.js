@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployeeReceipt, getEmployeeReceiptPdf } from "../../services/employeePortalService";
 import { colors, spacing } from "../../theme";
 import { formatInr } from "../../utils/dashboardFormat";
@@ -40,18 +40,23 @@ export default function EmployeeSalaryReceiptScreen({ route }) {
     }
   };
 
-  if (error && !receipt) return <ScreenContainer><ErrorView message={error} onRetry={load} /></ScreenContainer>;
+  if (error && !receipt) {
+    return (
+      <AppScreen title="Salary receipt" subtitle="Could not load" icon="document-text">
+        <ErrorView message={error} onRetry={load} />
+      </AppScreen>
+    );
+  }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Salary receipt" subtitle={receipt?.employee?.name || ""} icon="document-text">
       <ScrollView contentContainerStyle={styles.content}>
-        <AppText variant="title">Salary Receipt</AppText>
         <AppText variant="body">{receipt?.employee?.name}</AppText>
         <AppText variant="body">{receipt?.receipt?.receiptNumber}</AppText>
         <AppText variant="subtitle">{formatInr(receipt?.finalSalary)}</AppText>
         <AppButton label={busy ? "Preparing..." : "Share Receipt"} onPress={share} loading={busy} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

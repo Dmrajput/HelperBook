@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { cancelEmployeeLeave, getEmployeeLeave } from "../../services/employeePortalService";
 import { colors, spacing } from "../../theme";
 
@@ -46,12 +46,17 @@ export default function EmployeeLeaveDetailScreen({ route }) {
     ]);
   };
 
-  if (error && !leave) return <ScreenContainer><ErrorView message={error} onRetry={load} /></ScreenContainer>;
+  if (error && !leave) {
+    return (
+      <AppScreen title="Leave" subtitle="Request" icon="calendar">
+        <ErrorView message={error} onRetry={load} />
+      </AppScreen>
+    );
+  }
 
   return (
-    <ScreenContainer>
+    <AppScreen title={leave?.status || "Leave"} subtitle="Request details" icon="calendar">
       <ScrollView contentContainerStyle={styles.content}>
-        <AppText variant="title">{leave?.status || "Leave"}</AppText>
         <AppText variant="body">{leave?.startDate} - {leave?.endDate}</AppText>
         <AppText variant="body">{leave?.leaveType} leave, {leave?.totalDays} days</AppText>
         {leave?.reason ? <AppText variant="body">{leave.reason}</AppText> : null}
@@ -60,7 +65,7 @@ export default function EmployeeLeaveDetailScreen({ route }) {
           <AppButton label="Cancel Request" variant="secondary" onPress={cancel} disabled={loading} />
         ) : null}
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import AppButton from "../components/AppButton";
 import AppText from "../components/AppText";
 import ErrorView from "../components/ErrorView";
@@ -27,10 +27,19 @@ function validateMobile(value) {
   return "";
 }
 
+function validatePassword(value) {
+  if (!value) {
+    return "Enter your password.";
+  }
+  return "";
+}
+
 export default function LoginScreen({ navigation }) {
-  const { requestOtp } = useAuth();
+  const { login } = useAuth();
   const { status, checkConnection } = useServerConnection();
   const [mobileNumber, setMobileNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -38,8 +47,8 @@ export default function LoginScreen({ navigation }) {
     setMobileNumber(value.replace(/\D/g, "").slice(0, 10));
   };
 
-  const onSendOtp = async () => {
-    const validationMessage = validateMobile(mobileNumber);
+  const onLogin = async () => {
+    const validationMessage = validateMobile(mobileNumber) || validatePassword(password);
     if (validationMessage) {
       setError(validationMessage);
       return;
@@ -49,13 +58,9 @@ export default function LoginScreen({ navigation }) {
     setError("");
 
     try {
-      const result = await requestOtp(mobileNumber);
-      navigation.navigate("OtpVerification", {
-        phoneNumber: mobileNumber,
-        resendAfter: result?.resendAfter || 30,
-      });
+      await login({ phoneNumber: mobileNumber, password });
     } catch (requestError) {
-      setError(requestError?.message || "Unable to send OTP. Please try again.");
+      setError(requestError?.message || "Unable to sign in. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -91,20 +96,62 @@ export default function LoginScreen({ navigation }) {
               keyboardType="phone-pad"
               maxLength={10}
               editable={!loading}
-              onSubmitEditing={onSendOtp}
+              onSubmitEditing={onLogin}
               style={styles.phoneInput}
               accessibilityLabel="Mobile number"
             />
           </View>
+          <AppText variant="label">Password</AppText>
+          <View style={styles.phoneRow}>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Enter password"
+              placeholderTextColor={colors.placeholder}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading}
+              onSubmitEditing={onLogin}
+              style={styles.phoneInput}
+              accessibilityLabel="Password"
+            />
+            <Pressable
+              onPress={() => setShowPassword((current) => !current)}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+              style={styles.showButton}
+            >
+              <AppText variant="caption" color={colors.primary}>
+                {showPassword ? "Hide" : "Show"}
+              </AppText>
+            </Pressable>
+          </View>
+          <Pressable
+            onPress={() => navigation.navigate("ForgotPassword")}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Forgot password"
+          >
+            <AppText variant="body" color={colors.primary}>
+              Forgot password?
+            </AppText>
+          </Pressable>
           {error ? (
             <AppText variant="body" color={colors.error}>
               {error}
             </AppText>
           ) : null}
           <AppButton
-            label={loading ? "Sending OTP..." : "Send OTP"}
-            onPress={onSendOtp}
+            label={loading ? "Signing in..." : "Log in"}
+            onPress={onLogin}
             loading={loading}
+          />
+          <AppButton
+            label="Create account"
+            variant="secondary"
+            onPress={() => navigation.navigate("Register")}
+            disabled={loading}
           />
           <AppButton
             label="Employee Login"
@@ -187,6 +234,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     color: colors.text,
     fontSize: 17,
+  },
+  showButton: {
+    minHeight: theme.controlHeight,
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
   },
   devSection: {
     marginTop: spacing.xl,

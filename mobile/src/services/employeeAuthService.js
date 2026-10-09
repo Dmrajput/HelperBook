@@ -10,25 +10,26 @@ async function request(work) {
   }
 }
 
-export function requestEmployeeOtp(phoneNumber) {
+function openPost(path, payload) {
   return request(async () => {
-    const response = await apiClient.post(
-      "/employee-auth/request-otp",
-      { phoneNumber, countryCode: "+91" },
-      { skipAuth: true, skipAuthRefresh: true }
-    );
-    return response.data.data;
-  });
-}
-
-export function verifyEmployeeOtp(payload) {
-  return request(async () => {
-    const response = await apiClient.post("/employee-auth/verify-otp", payload, {
+    const response = await apiClient.post(path, payload, {
       skipAuth: true,
       skipAuthRefresh: true,
     });
     return response.data.data;
   });
+}
+
+export function loginEmployee(payload) {
+  return openPost("/employee-auth/login", payload);
+}
+
+export function requestEmployeePasswordReset(phoneNumber) {
+  return openPost("/employee-auth/forgot-password", { phoneNumber, countryCode: "+91" });
+}
+
+export function resetEmployeePassword(payload) {
+  return openPost("/employee-auth/reset-password", payload);
 }
 
 export function logoutEmployee(refreshToken) {

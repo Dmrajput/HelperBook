@@ -3,7 +3,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-n
 import { useFocusEffect } from "@react-navigation/native";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import AttendanceCalendar from "../../components/attendance/AttendanceCalendar";
 import { getEmployeeAttendance } from "../../services/employeePortalService";
 import { colors, spacing } from "../../theme";
@@ -39,9 +39,8 @@ export default function EmployeeAttendanceScreen() {
   const summary = data?.summary || { present: 0, absent: 0, halfDay: 0, leave: 0 };
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Attendance" subtitle={formatMonth(year, monthNumber)} icon="calendar" showBack={false}>
       <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={styles.content}>
-        <AppText variant="title">My Attendance</AppText>
         <View style={styles.row}>
           <Pressable onPress={() => setMonth(shiftMonth(month, -1))} accessibilityRole="button"><AppText variant="button">Previous</AppText></Pressable>
           <AppText variant="subtitle">{formatMonth(year, monthNumber)}</AppText>
@@ -58,7 +57,7 @@ export default function EmployeeAttendanceScreen() {
           <AppText key={record.date} variant="body">{record.date}  {record.status.replace("_", " ")}</AppText>
         ))}
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

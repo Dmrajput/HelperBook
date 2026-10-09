@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
@@ -7,7 +8,7 @@ import AdvanceCard from "../../components/advance/AdvanceCard";
 import AdvanceSummaryCard from "../../components/advance/AdvanceSummaryCard";
 import AdvanceTransactionItem from "../../components/advance/AdvanceTransactionItem";
 import OutstandingBalanceCard from "../../components/advance/OutstandingBalanceCard";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import useAdvance from "../../hooks/useAdvance";
 import { getEmployeeAdvanceTransactions, reverseTransaction } from "../../services/advanceService";
 import { colors, spacing } from "../../theme";
@@ -73,9 +74,8 @@ export default function EmployeeAdvanceScreen({ navigation, route }) {
   const outstanding = summary?.outstanding;
 
   return (
-    <ScreenContainer>
+    <AppScreen title={employee?.name || "Khata"} subtitle="Advance history" icon="book">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">{employee?.name || "Khata"}</AppText>
         {loading && !summary ? <View style={styles.block} accessibilityLabel="Loading khata" /> : null}
         {error && !summary ? <ErrorView message={error} onRetry={reload} /> : null}
         {summary ? (
@@ -83,20 +83,25 @@ export default function EmployeeAdvanceScreen({ navigation, route }) {
             <OutstandingBalanceCard amount={outstanding} />
             <AdvanceSummaryCard summary={summary} />
             {outstanding === 0 && advances.length > 0 ? (
-              <AppText variant="body">No outstanding advance</AppText>
+              <AppText variant="caption" color={colors.textSecondary}>No outstanding advance</AppText>
             ) : null}
             {advances.length === 0 ? (
               <View style={styles.empty}>
-                <AppText variant="subtitle">No advance</AppText>
-                <AppText variant="body" color={colors.textSecondary}>
+                <View style={styles.emptyIcon}>
+                  <Ionicons name="book-outline" size={24} color="#7A5AF8" />
+                </View>
+                <AppText variant="subtitle" align="center">No advance yet</AppText>
+                <AppText variant="body" color={colors.textSecondary} align="center">
                   This employee currently has no outstanding advance.
                 </AppText>
               </View>
             ) : null}
             {employee?.status === "inactive" ? (
-              <AppText variant="body" color={colors.textSecondary}>
-                Employee is inactive. New advances cannot be given.
-              </AppText>
+              <View style={styles.note}>
+                <AppText variant="caption" color="#9A5B12">
+                  This employee is inactive. New advances cannot be given.
+                </AppText>
+              </View>
             ) : (
               <AppButton
                 label="Give Advance"
@@ -112,7 +117,7 @@ export default function EmployeeAdvanceScreen({ navigation, route }) {
             {advances.map((advance) => (
               <AdvanceCard key={advance.id} advance={advance} />
             ))}
-            <AppText variant="subtitle">Khata history</AppText>
+            <AppText variant="label" color={colors.textSecondary} style={styles.sectionTitle}>Khata history</AppText>
             <View style={styles.filters}>
               {FILTERS.map((item) => (
                 <Pressable
@@ -138,26 +143,56 @@ export default function EmployeeAdvanceScreen({ navigation, route }) {
                 No khata entries yet.
               </AppText>
             ) : (
-              rows.map((transaction) => (
-                <AdvanceTransactionItem
-                  key={transaction.id}
-                  transaction={transaction}
-                  onReverse={reversing ? undefined : confirmReverse}
-                />
-              ))
+              <View style={styles.history}>
+                {rows.map((transaction) => (
+                  <AdvanceTransactionItem
+                    key={transaction.id}
+                    transaction={transaction}
+                    onReverse={reversing ? undefined : confirmReverse}
+                  />
+                ))}
+              </View>
             )}
           </>
         ) : null}
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { gap: spacing.lg, paddingBottom: spacing.xxl },
-  block: { height: 140, borderRadius: 12, backgroundColor: colors.disabled },
-  empty: { gap: spacing.xs },
+  block: { height: 140, borderRadius: 18, backgroundColor: colors.disabled },
+  empty: {
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: spacing.lg,
+  },
+  emptyIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#F3EEFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  note: {
+    backgroundColor: "#FFF4E8",
+    borderRadius: 14,
+    padding: spacing.md,
+  },
+  sectionTitle: {
+    marginLeft: spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  history: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    paddingHorizontal: spacing.md,
+  },
   filters: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   filter: {
     borderRadius: 999,

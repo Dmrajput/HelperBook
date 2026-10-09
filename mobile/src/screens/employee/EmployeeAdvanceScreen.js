@@ -3,7 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployeeAdvances, getEmployeeAdvanceTransactions } from "../../services/employeePortalService";
 import { colors, spacing } from "../../theme";
 import { formatAttendanceDate } from "../../utils/attendanceFormat";
@@ -40,9 +40,8 @@ export default function EmployeeAdvanceScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Advance / Khata" subtitle="Your outstanding balance" icon="book">
       <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={styles.content}>
-        <AppText variant="title">Advance / Khata</AppText>
         {error ? <ErrorView message={error} onRetry={load} /> : null}
         <AppText variant="subtitle">Outstanding {formatInr(summary?.outstanding || 0)}</AppText>
         <AppText variant="body">Advance Given {formatInr(summary?.totalAdvances || 0)}</AppText>
@@ -58,7 +57,7 @@ export default function EmployeeAdvanceScreen() {
           </View>
         ))}
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

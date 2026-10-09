@@ -6,7 +6,7 @@ import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import AttendanceDateSelector from "../../components/attendance/AttendanceDateSelector";
 import PaymentMethodSelector from "../../components/salary/PaymentMethodSelector";
 import { confirmSalaryPayment } from "../../components/salary/PaymentConfirmationModal";
@@ -100,17 +100,17 @@ export default function SalaryPaymentScreen({ navigation, route }) {
 
   if (loading && !salary) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Pay salary" subtitle="Record a payment" icon="cash">
         <View style={styles.block} accessibilityLabel="Loading salary" />
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
   if (!salary) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Pay salary" subtitle="Record a payment" icon="cash">
         <ErrorView message={error || "Unable to load salary."} onRetry={load} />
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
@@ -119,7 +119,7 @@ export default function SalaryPaymentScreen({ navigation, route }) {
 
   if (result?.payment) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Pay salary" subtitle="Record a payment" icon="cash">
         <ScrollView contentContainerStyle={styles.scroll}>
           <AppText variant="heading">{result.already ? "Salary already paid." : "Salary Paid Successfully"}</AppText>
           <SalaryPaymentSummary
@@ -138,14 +138,13 @@ export default function SalaryPaymentScreen({ navigation, route }) {
           />
           <AppButton label="Done" variant="secondary" onPress={() => navigation.navigate("SalaryDetail", { salaryId: salary.id })} />
         </ScrollView>
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Pay salary" subtitle="Record a payment" icon="cash">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Pay Salary</AppText>
         <View style={styles.card}>
           <AppText variant="body">Employee {salary.employee?.name}</AppText>
           <AppText variant="body">Salary Period {period}</AppText>
@@ -185,9 +184,8 @@ export default function SalaryPaymentScreen({ navigation, route }) {
             });
           }}
         />
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} disabled={submitting} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

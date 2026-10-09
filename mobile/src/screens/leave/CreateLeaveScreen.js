@@ -6,7 +6,7 @@ import AppTextInput from "../../components/AppTextInput";
 import FieldError from "../../components/FieldError";
 import LeaveDateRangePicker from "../../components/leave/LeaveDateRangePicker";
 import LeaveTypeSelector from "../../components/leave/LeaveTypeSelector";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployees } from "../../services/employeeService";
 import { createLeave, recordLeave } from "../../services/leaveService";
 import { getMyShop } from "../../services/shopService";
@@ -83,9 +83,8 @@ export default function CreateLeaveScreen({ navigation, route }) {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title={mode === "record" ? "Record leave" : "Leave request"} subtitle={presetName || "Choose dates and a reason"} icon="calendar">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">{mode === "record" ? "Record Leave" : "Leave Request"}</AppText>
         {presetName ? <AppText variant="subtitle">{presetName}</AppText> : null}
         {!presetId ? (
           <View style={styles.list}>
@@ -129,9 +128,8 @@ export default function CreateLeaveScreen({ navigation, route }) {
           loading={loading}
           disabled={loading}
         />
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} disabled={loading} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

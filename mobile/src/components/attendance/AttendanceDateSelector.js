@@ -1,6 +1,7 @@
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useState } from "react";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AppButton from "../AppButton";
 import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
@@ -27,7 +28,7 @@ export default function AttendanceDateSelector({ date, onChange }) {
           onPress={() => apply(shiftKey(date, -1))}
           style={styles.arrow}
         >
-          <AppText variant="label">←</AppText>
+          <Ionicons name="chevron-back" size={18} color={colors.primary} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -35,7 +36,10 @@ export default function AttendanceDateSelector({ date, onChange }) {
           onPress={() => setShowPicker(true)}
           style={styles.date}
         >
-          <AppText variant="label">{formatAttendanceDate(date)}</AppText>
+          <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+          <AppText variant="label" numberOfLines={1} style={styles.dateLabel}>
+            {formatAttendanceDate(date)}
+          </AppText>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -45,13 +49,15 @@ export default function AttendanceDateSelector({ date, onChange }) {
           onPress={() => apply(shiftKey(date, 1))}
           style={[styles.arrow, nextDisabled && styles.disabled]}
         >
-          <AppText variant="label" color={nextDisabled ? colors.disabledText : colors.text}>
-            →
-          </AppText>
+          <Ionicons name="chevron-forward" size={18} color={nextDisabled ? colors.disabledText : colors.primary} />
         </Pressable>
       </View>
       {date !== today ? (
-        <AppButton label="Today" variant="secondary" onPress={() => onChange(today)} />
+        <Pressable accessibilityRole="button" accessibilityLabel="Jump to today" onPress={() => onChange(today)} style={styles.today}>
+          <AppText variant="label" color={colors.primary}>
+            Today
+          </AppText>
+        </Pressable>
       ) : null}
       {showPicker ? (
         <DateTimePicker
@@ -85,27 +91,38 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.xs,
   },
   arrow: {
-    minWidth: 48,
-    minHeight: 48,
+    width: 40,
+    height: 40,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: "#E7F6EF",
     alignItems: "center",
     justifyContent: "center",
   },
   date: {
     flex: 1,
-    minHeight: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    minHeight: 40,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     paddingHorizontal: spacing.sm,
+  },
+  dateLabel: {
+    flexShrink: 1,
+  },
+  today: {
+    alignSelf: "center",
+    minHeight: 32,
+    paddingHorizontal: spacing.md,
+    borderRadius: 999,
+    backgroundColor: "#E7F6EF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   disabled: {
     opacity: 0.45,

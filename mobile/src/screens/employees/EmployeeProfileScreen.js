@@ -1,11 +1,12 @@
 import { useCallback, useState } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import StatusBadge from "../../components/StatusBadge";
 import { getEmployeeAdvances } from "../../services/advanceService";
 import { getEmployeeSalaryHistory } from "../../services/salaryService";
@@ -152,116 +153,104 @@ export default function EmployeeProfileScreen({ navigation, route }) {
 
   if (loading && !employee) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Employee" subtitle="Loading" icon="person">
         <AppText color={colors.textSecondary}>Loading employee...</AppText>
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
   if (!employee) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Employee" subtitle="Not found" icon="person">
         <ErrorView title="Employee not found." message={error} onRetry={loadEmployee} />
-        <View style={styles.footer}>
-          <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
-        </View>
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
+  const salaryLabel = latestSalary
+    ? latestSalary.status !== "finalized"
+      ? "Not finalized"
+      : latestSalary.paymentStatus === "paid"
+        ? "Paid"
+        : "Unpaid"
+    : "";
+  const attendanceTiles = [
+    { label: "Present", value: attendance?.present ?? 0, color: "#1C8A52", background: "#E8F8EF" },
+    { label: "Absent", value: attendance?.absent ?? 0, color: "#D4535E", background: "#FDECEC" },
+    { label: "Half Day", value: attendance?.halfDay ?? 0, color: "#C8881A", background: "#FFF6E4" },
+    { label: "Leave", value: attendance?.leave ?? 0, color: "#4C6FE0", background: "#EEF3FF" },
+  ];
+
   return (
-    <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading" accessibilityRole="header">
-          {employee.name}
-        </AppText>
-        <AppText variant="body" color={colors.textSecondary}>
-          {roleLabel(employee)}
-        </AppText>
-        <StatusBadge status={employee.status} />
-        <View style={styles.section}>
-          <AppText variant="subtitle">Basic information</AppText>
-          <Info label="Phone" value={employee.phone ? formatPhone(employee.phone) : "Not added"} />
-          <Info label="Joining date" value={formatJoiningDate(employee.joiningDate)} />
-          <Info label="Role" value={roleLabel(employee)} />
+    <AppScreen title={employee.name} subtitle={roleLabel(employee)} icon="person">
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.hero}>
+          <View style={styles.avatar}>
+            <AppText variant="label" color={colors.primary}>
+              {String(employee.name || "A").trim().charAt(0).toUpperCase()}
+            </AppText>
+          </View>
+          <View style={styles.heroCopy}>
+            <StatusBadge status={employee.status} />
+            <AppText variant="caption" color={colors.textSecondary}>
+              {employee.phone ? formatPhone(employee.phone) : "Phone not added"}
+            </AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              Joined {formatJoiningDate(employee.joiningDate)}
+            </AppText>
+          </View>
         </View>
-        <View style={styles.section}>
-          <AppText variant="subtitle">Attendance Summary</AppText>
-          <AppText variant="body">Present {attendance?.present ?? 0}</AppText>
-          <AppText variant="body">Absent {attendance?.absent ?? 0}</AppText>
-          <AppText variant="body">Half Day {attendance?.halfDay ?? 0}</AppText>
-          <AppText variant="body">Leave {attendance?.leave ?? 0}</AppText>
-          <AppButton
-            label="View Attendance History"
-            variant="secondary"
+
+        <Section title="This month">
+          <View style={styles.tiles}>
+            {attendanceTiles.map((tile) => (
+              <View key={tile.label} style={[styles.tile, { backgroundColor: tile.background }]}>
+                <AppText variant="subtitle" align="center" color={tile.color}>{String(tile.value)}</AppText>
+                <AppText variant="caption" align="center" color={colors.textSecondary} numberOfLines={1}>{tile.label}</AppText>
+              </View>
+            ))}
+          </View>
+          <LinkRow
+            label="Attendance history"
             onPress={() => navigation.navigate("EmployeeAttendance", { employeeId: employee.id })}
           />
-        </View>
-        <View style={styles.section}>
-          <AppText variant="subtitle">Salary</AppText>
-          <AppText variant="body">
-            Current Salary {formatInr(employee.salary?.amount)} / {employee.salary?.type === "daily" ? "day" : "month"}
-          </AppText>
+        </Section>
+
+        <Section title="Salary">
+          <Info label="Current pay" value={`${formatInr(employee.salary?.amount)} / ${employee.salary?.type === "daily" ? "day" : "month"}`} />
           {latestSalary ? (
             <>
-              <AppText variant="body">Latest Salary {formatInr(latestSalary.calculation?.netSalary)}</AppText>
-              <AppText variant="body">
-                Payment Status{" "}
-                {latestSalary.status !== "finalized"
-                  ? "Not finalized"
-                  : latestSalary.paymentStatus === "paid"
-                    ? "PAID"
-                    : "UNPAID"}
-              </AppText>
+              <Info label="Latest salary" value={`${formatInr(latestSalary.calculation?.netSalary)} · ${salaryLabel}`} />
               {latestSalary.paymentStatus === "paid" && latestSalary.payment?.paymentDate ? (
-                <AppText variant="body">
-                  Last Paid {formatAttendanceDate(latestSalary.payment.paymentDate)} · {methodLabel(latestSalary.payment.paymentMethod)}
-                </AppText>
-              ) : null}
-              {latestSalary.status === "finalized" && latestSalary.paymentStatus === "paid" ? (
-                <AppButton
-                  label="View Receipt"
-                  variant="secondary"
-                  onPress={() => navigation.navigate("SalaryReceipt", { salaryId: latestSalary.id })}
+                <Info
+                  label="Last paid"
+                  value={`${formatAttendanceDate(latestSalary.payment.paymentDate)} · ${methodLabel(latestSalary.payment.paymentMethod)}`}
                 />
               ) : null}
             </>
           ) : (
-            <AppText variant="body" color={colors.textSecondary}>
-              No salary records yet.
-            </AppText>
+            <AppText variant="caption" color={colors.textSecondary}>No salary records yet.</AppText>
           )}
-          <AppButton
-            label="View Salary History"
-            variant="secondary"
-            onPress={() => navigation.navigate("SalaryHistory", { employeeId: employee.id })}
-          />
-        </View>
-        <View style={styles.section}>
-          <AppText variant="subtitle">Leave</AppText>
+          <LinkRow label="Salary history" onPress={() => navigation.navigate("SalaryHistory", { employeeId: employee.id })} />
+          {latestSalary?.status === "finalized" && latestSalary?.paymentStatus === "paid" ? (
+            <LinkRow label="View receipt" onPress={() => navigation.navigate("SalaryReceipt", { salaryId: latestSalary.id })} />
+          ) : null}
+        </Section>
+
+        <Section title="Leave">
           {leaveLoading ? (
-            <AppText variant="body" color={colors.textSecondary}>
-              Loading leave...
-            </AppText>
+            <AppText variant="caption" color={colors.textSecondary}>Loading leave...</AppText>
           ) : leaveSummary ? (
-            <>
-              <AppText variant="body">Paid leave {leaveSummary.paidDays} days</AppText>
-              <AppText variant="body">Unpaid leave {leaveSummary.unpaidDays} days</AppText>
-              <AppText variant="body">Sick leave {leaveSummary.sickDays} days</AppText>
-              <AppText variant="body">Pending requests {leaveSummary.pending}</AppText>
-            </>
+            <AppText variant="body">
+              {`Paid ${leaveSummary.paidDays} · Unpaid ${leaveSummary.unpaidDays} · Sick ${leaveSummary.sickDays} · Pending ${leaveSummary.pending}`}
+            </AppText>
           ) : (
-            <AppText variant="body">Leave information is unavailable.</AppText>
+            <AppText variant="caption" color={colors.textSecondary}>Leave information is unavailable.</AppText>
           )}
-          <AppButton
-            label="View Leave History"
-            variant="secondary"
-            onPress={() => navigation.navigate("LeaveHistory", { employeeId: employee.id })}
-          />
+          <LinkRow label="Leave history" onPress={() => navigation.navigate("LeaveHistory", { employeeId: employee.id })} />
           {employee.status === "active" ? (
-            <AppButton
-              label="Leave Request"
-              variant="secondary"
+            <LinkRow
+              label="New leave request"
               onPress={() =>
                 navigation.navigate("CreateLeave", {
                   mode: "request",
@@ -271,47 +260,44 @@ export default function EmployeeProfileScreen({ navigation, route }) {
               }
             />
           ) : null}
-        </View>
-        <View style={styles.section}>
-          <AppText variant="subtitle">Advance / Khata</AppText>
+        </Section>
+
+        <Section title="Advance / Khata">
           {advanceLoading ? (
-            <AppText variant="body" color={colors.textSecondary}>
-              Loading advance...
-            </AppText>
+            <AppText variant="caption" color={colors.textSecondary}>Loading advance...</AppText>
           ) : (
-            <AppText variant="body">
-              Advance outstanding {advance ? formatInr(advance.outstanding) : "Unavailable"}
-            </AppText>
+            <Info label="Outstanding" value={advance ? formatInr(advance.outstanding) : "Unavailable"} />
           )}
-          <AppButton
-            label="View Khata"
-            variant="secondary"
-            onPress={() => navigation.navigate("EmployeeAdvance", { employeeId: employee.id })}
-          />
+          <LinkRow label="View khata" onPress={() => navigation.navigate("EmployeeAdvance", { employeeId: employee.id })} />
           {employee.status === "active" ? (
-            <AppButton
-              label="Give Advance"
-              variant="secondary"
+            <LinkRow
+              label="Give advance"
               onPress={() => navigation.navigate("GiveAdvance", { employeeId: employee.id, employeeName: employee.name })}
             />
           ) : (
-            <AppText variant="body" color={colors.textSecondary}>
-              Employee is inactive. New advances cannot be given.
+            <AppText variant="caption" color={colors.textSecondary}>
+              This employee is inactive. New advances cannot be given.
             </AppText>
           )}
-        </View>
-        <View style={styles.section}>
-          <AppText variant="subtitle">Employee Login</AppText>
-          <AppText variant="body">Phone {employee.phone ? formatPhone(employee.phone) : "Not added"}</AppText>
-          <AppText variant="body">Login {employee.loginEnabled ? "Enabled" : "Disabled"}</AppText>
-          <AppText variant="body">
-            Last Login {employee.lastLoginAt ? new Date(employee.lastLoginAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "Not yet"}
-          </AppText>
+        </Section>
+
+        <Section title="Login">
+          <Info label="Phone" value={employee.phone ? formatPhone(employee.phone) : "Not added"} />
+          <Info label="Login" value={employee.loginEnabled ? "Enabled" : "Disabled"} />
+          {employee.loginEnabled ? (
+            <AppText variant="caption" color={colors.textSecondary}>
+              They sign in from Employee Login. The first time, they use Forgot password to choose a password.
+            </AppText>
+          ) : null}
+          <Info
+            label="Last login"
+            value={employee.lastLoginAt ? new Date(employee.lastLoginAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "Not yet"}
+          />
           {!employee.phone ? (
-            <AppText variant="body" color={colors.textSecondary}>Add phone number to enable login</AppText>
+            <AppText variant="caption" color={colors.textSecondary}>Add a phone number to enable login.</AppText>
           ) : (
             <AppButton
-              label={employee.loginEnabled ? "Disable Login" : "Enable Login"}
+              label={employee.loginEnabled ? "Disable login" : "Enable login"}
               variant="secondary"
               disabled={Boolean(busy)}
               onPress={async () => {
@@ -327,12 +313,12 @@ export default function EmployeeProfileScreen({ navigation, route }) {
               }}
             />
           )}
-        </View>
+        </Section>
+
         {employee.notes ? (
-          <View style={styles.section}>
-            <AppText variant="subtitle">Notes</AppText>
+          <Section title="Notes">
             <AppText variant="body">{employee.notes}</AppText>
-          </View>
+          </Section>
         ) : null}
         <FieldError message={error} />
       </ScrollView>
@@ -359,26 +345,90 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           }
           disabled={Boolean(busy)}
         />
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} disabled={Boolean(busy)} />
       </View>
-    </ScreenContainer>
+    </AppScreen>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <View style={styles.section}>
+      <AppText variant="label" color={colors.textSecondary} style={styles.sectionTitle}>{title}</AppText>
+      <View style={styles.card}>{children}</View>
+    </View>
   );
 }
 
 function Info({ label, value }) {
   return (
     <View style={styles.info}>
-      <AppText variant="caption" color={colors.textSecondary}>
-        {label}
-      </AppText>
+      <AppText variant="caption" color={colors.textSecondary}>{label}</AppText>
       <AppText variant="body">{value}</AppText>
     </View>
   );
 }
 
+function LinkRow({ label, onPress }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.link}>
+      <AppText variant="label" color={colors.primary} style={styles.linkLabel}>{label}</AppText>
+      <Ionicons name="chevron-forward" size={16} color={colors.placeholder} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  scroll: { gap: spacing.lg, paddingBottom: spacing.lg },
+  scroll: { gap: spacing.md, paddingBottom: spacing.lg },
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: spacing.md,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#E7F6EF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroCopy: {
+    flex: 1,
+    gap: 2,
+  },
   section: { gap: spacing.sm },
-  info: { gap: spacing.xs },
-  footer: { gap: spacing.sm, paddingTop: spacing.md },
+  sectionTitle: {
+    marginLeft: spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  tiles: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  tile: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+    gap: 2,
+  },
+  info: { gap: 2 },
+  link: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 36,
+    gap: spacing.sm,
+  },
+  linkLabel: { flex: 1 },
+  footer: { gap: spacing.sm, paddingTop: spacing.sm },
 });

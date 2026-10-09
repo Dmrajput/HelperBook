@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployeeHome } from "../../services/employeePortalService";
 import { colors, spacing } from "../../theme";
 import { formatMonth } from "../../utils/attendanceFormat";
@@ -38,18 +38,20 @@ export default function EmployeeHomeScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   if (!home && error) {
-    return <ScreenContainer><ErrorView message={error} onRetry={load} /></ScreenContainer>;
+    return (
+      <AppScreen title="Home" subtitle="Your shop" icon="home" showBack={false}>
+        <ErrorView message={error} onRetry={load} />
+      </AppScreen>
+    );
   }
 
   const salary = home?.salary;
   return (
-    <ScreenContainer>
+    <AppScreen title={`${greeting()}${home?.employee?.name ? `, ${home.employee.name}` : ""}`} subtitle={home?.shop?.name || "Your shop"} icon="home" showBack={false}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
         contentContainerStyle={styles.content}
       >
-        <AppText variant="title">{greeting()}, {home?.employee?.name || ""}</AppText>
-        <AppText variant="subtitle" color={colors.textSecondary}>{home?.shop?.name || ""}</AppText>
         <View style={styles.card}>
           <AppText variant="label">Attendance</AppText>
           <AppText variant="body">{STATUS_LABELS[home?.attendanceToday] || "Not marked today"}</AppText>
@@ -79,11 +81,16 @@ export default function EmployeeHomeScreen({ navigation }) {
           <AppButton label="Request Leave" variant="secondary" onPress={() => navigation.navigate("EmployeeCreateLeave")} />
         </View>
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
   content: { gap: spacing.md, paddingBottom: spacing.xxl },
-  card: { gap: spacing.sm, paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
+  card: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+  },
 });

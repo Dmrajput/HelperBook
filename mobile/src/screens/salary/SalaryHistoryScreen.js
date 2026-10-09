@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import SalaryCard from "../../components/salary/SalaryCard";
 import { methodLabel } from "../../constants/salaryPayment";
 import { getEmployeeSalaryHistory } from "../../services/salaryService";
@@ -49,9 +49,8 @@ export default function SalaryHistoryScreen({ navigation, route }) {
   );
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Salary history" subtitle={data?.employee?.name || "Past salary records"} icon="wallet">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Salary history</AppText>
         {data?.employee?.name ? <AppText variant="subtitle">{data.employee.name}</AppText> : null}
         {loading && !data ? (
           <View style={styles.block} accessibilityLabel="Loading salary history" />
@@ -88,9 +87,8 @@ export default function SalaryHistoryScreen({ navigation, route }) {
             />
           );
         })}
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

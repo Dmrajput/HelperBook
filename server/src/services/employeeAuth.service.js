@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import Employee from "../models/Employee.js";
 import EmployeeOtpVerification from "../models/EmployeeOtpVerification.js";
 import EmployeeSession from "../models/EmployeeSession.js";
@@ -45,8 +46,11 @@ async function takeSlot(key, max, windowMs) {
   return false;
 }
 
-const GENERIC_OTP = "If this number is registered for an active employee account, an OTP has been sent.";
-const INVALID_OTP = "The OTP is incorrect or has expired.";
+const GENERIC_RESET = "If this number is registered for an active employee account, a code was sent.";
+const INVALID_OTP = "The code is incorrect or has expired.";
+const INVALID_LOGIN = "The mobile number or password is incorrect.";
+const PASSWORD_NOT_SET = "This number does not have a password yet. Use Forgot password to set one.";
+let dummyPasswordHash;
 const SESSION_EXPIRED = "Your session has expired. Please log in again.";
 
 async function assertSendLimits(e164, ip) {
@@ -85,35 +89,43 @@ async function eligibleEmployees(e164) {
   });
 }
 
-export async function requestEmployeeOtp(phone, clientIp) {
+async function compareWithDummy(password) {
+  if (!dummyPasswordHash) {
+    dummyPasswordHash = await bcrypt.hash("helperbook-employee-timing", 12);
+  }
+  await bcrypt.compare(String(password || ""), dummyPasswordHash);
+}
+
+export async function requestEmployeePasswordReset(phone, clientIp) {
   const config = getAuthConfig();
-  const existing = await EmployeeOtpVerification.findOne({ phoneNumber: phone.e164, purpose: "login" });
+  const existing = await EmployeeOtpVerification.findOne({ phoneNumber: phone.e164, purpose: "password_reset" });
   const matches = await eligibleEmployees(phone.e164);
   if (matches.length === 1 && existing?.lastSentAt) {
     const elapsedSeconds = (Date.now() - new Date(existing.lastSentAt).getTime()) / 1000;
     if (elapsedSeconds < config.otpResendCooldownSeconds) {
-      throw new AppError("Please wait before requesting another OTP.", 429);
+      throw new AppError("Please wait before requesting another code.", 429);
     }
   }
   await assertSendLimits(phone.e164, clientIp);
+  const quiet = { message: GENERIC_RESET, data: { resendAfter: config.otpResendCooldownSeconds } };
   if (matches.length !== 1) {
     if (matches.length > 1) {
-      console.warn("[employee-auth] ambiguous phone login was blocked");
+      console.warn("[employee-auth] ambiguous phone reset was blocked");
     }
-    return { message: GENERIC_OTP, data: { resendAfter: config.otpResendCooldownSeconds } };
+    return quiet;
   }
 
   const employee = matches[0];
   const otp = generateOtpCode();
   const now = new Date();
   await EmployeeOtpVerification.findOneAndUpdate(
-    { phoneNumber: phone.e164, purpose: "login" },
+    { phoneNumber: phone.e164, purpose: "password_reset" },
     {
       employeeId: employee._id,
       shopId: employee.shopId,
       phoneNumber: phone.e164,
       hashedOtp: createOtpHash(otp),
-      purpose: "login",
+      purpose: "password_reset",
       attempts: 0,
       maxAttempts: config.otpMaxAttempts,
       expiresAt: new Date(now.getTime() + config.otpExpiryMinutes * 60 * 1000),
@@ -125,10 +137,10 @@ export async function requestEmployeeOtp(phone, clientIp) {
   try {
     await getOtpProvider().sendOtp(phone.e164, otp);
   } catch {
-    await EmployeeOtpVerification.deleteOne({ phoneNumber: phone.e164, purpose: "login" });
-    throw new AppError("Unable to send OTP. Please try again.", 503);
+    await EmployeeOtpVerification.deleteOne({ phoneNumber: phone.e164, purpose: "password_reset" });
+    throw new AppError("Unable to send the code. Please try again.", 503);
   }
-  return { message: GENERIC_OTP, data: { resendAfter: config.otpResendCooldownSeconds } };
+  return quiet;
 }
 
 async function openSession(employee, device) {
@@ -171,14 +183,63 @@ function publicAuthEmployee(employee) {
   };
 }
 
-export async function verifyEmployeeOtp({ phone, otp, device }, clientIp) {
-  await assertVerifyLimit(`everify-ip:${clientIp || "unknown"}`);
-  const record = await EmployeeOtpVerification.findOne({ phoneNumber: phone.e164, purpose: "login" });
-  if (!record || record.verifiedAt || record.expiresAt.getTime() <= Date.now()) {
+function authResult(employee, tokens, message) {
+  return {
+    message,
+    data: {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: publicAuthEmployee(employee),
+    },
+  };
+}
+
+export async function loginEmployeeWithPassword({ phone, password, device }, clientIp) {
+  const ipAllowed = await takeSlot(`elogin-ip:${clientIp || "unknown"}`, 20, VERIFY_WINDOW_MS);
+  const phoneAllowed = await takeSlot(`elogin-phone:${phone.e164}`, 8, VERIFY_WINDOW_MS);
+  if (!ipAllowed || !phoneAllowed) {
+    throw new AppError("Too many attempts. Please try again later.", 429);
+  }
+
+  const matches = await Employee.find({
+    phone: phone.e164,
+    status: "active",
+    loginEnabled: true,
+  }).select("+passwordHash");
+
+  if (matches.length !== 1) {
+    await compareWithDummy(password);
+    if (matches.length > 1) {
+      console.warn("[employee-auth] ambiguous phone login was blocked");
+    }
+    throw new AppError(INVALID_LOGIN, 401);
+  }
+
+  const employee = matches[0];
+  if (!employee.passwordHash) {
+    throw new AppError(PASSWORD_NOT_SET, 400);
+  }
+
+  const matchesPassword = await bcrypt.compare(String(password || ""), employee.passwordHash);
+  if (!matchesPassword) {
+    throw new AppError(INVALID_LOGIN, 401);
+  }
+
+  employee.lastLoginAt = new Date();
+  if (!employee.employeeAuthCreatedAt) employee.employeeAuthCreatedAt = new Date();
+  await employee.save();
+  const tokens = await openSession(employee, device);
+  return authResult(employee, tokens, "Login successful.");
+}
+
+export async function resetEmployeePassword({ phone, otp, password, device }, clientIp) {
+  await assertVerifyLimit(clientIp);
+  const record = await EmployeeOtpVerification.findOne({ phoneNumber: phone.e164, purpose: "password_reset" });
+  if (!record || record.verifiedAt || record.expiresAt.getTime() <= Date.now() || record.purpose !== "password_reset") {
     throw new AppError(INVALID_OTP, 400);
   }
   if (record.attempts >= record.maxAttempts) {
-    throw new AppError("Too many attempts. Request a new OTP.", 429);
+    throw new AppError("Too many attempts. Request a new code.", 429);
   }
   if (!otpMatches(otp, record.hashedOtp)) {
     record.attempts += 1;
@@ -186,27 +247,23 @@ export async function verifyEmployeeOtp({ phone, otp, device }, clientIp) {
     throw new AppError(INVALID_OTP, 400);
   }
 
-  const employee = record.employeeId ? await Employee.findById(record.employeeId) : null;
+  const employee = record.employeeId
+    ? await Employee.findById(record.employeeId).select("+passwordHash")
+    : null;
   if (!employee || employee.phone !== phone.e164 || employee.status !== "active" || !employee.loginEnabled) {
     throw new AppError(INVALID_OTP, 400);
   }
 
   record.verifiedAt = new Date();
   await record.save();
+  employee.passwordHash = await bcrypt.hash(password, 12);
   employee.phoneVerified = true;
   employee.lastLoginAt = new Date();
   if (!employee.employeeAuthCreatedAt) employee.employeeAuthCreatedAt = new Date();
   await employee.save();
 
   const tokens = await openSession(employee, device);
-  return {
-    message: "Login successful.",
-    data: {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      user: publicAuthEmployee(employee),
-    },
-  };
+  return authResult(employee, tokens, "Password updated.");
 }
 
 export async function refreshEmployeeSession(refreshToken, clientIp) {

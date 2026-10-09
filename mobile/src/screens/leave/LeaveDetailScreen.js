@@ -8,7 +8,7 @@ import FieldError from "../../components/FieldError";
 import LeaveApprovalActions from "../../components/leave/LeaveApprovalActions";
 import LeaveStatusBadge from "../../components/leave/LeaveStatusBadge";
 import { leaveTypeLabel } from "../../components/leave/LeaveTypeBadge";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { approveLeave, cancelLeave, getLeave, rejectLeave } from "../../services/leaveService";
 import { colors, spacing } from "../../theme";
 import { formatAttendanceDate } from "../../utils/attendanceFormat";
@@ -88,9 +88,8 @@ export default function LeaveDetailScreen({ navigation, route }) {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Leave" subtitle={leave?.employeeName || "Request details"} icon="calendar">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Leave</AppText>
         {loading && !leave ? <View style={styles.block} accessibilityLabel="Loading leave" /> : null}
         {error && !leave ? <ErrorView message={error} onRetry={load} /> : null}
         {leave ? (
@@ -116,9 +115,8 @@ export default function LeaveDetailScreen({ navigation, route }) {
         ) : null}
         {notice ? <AppText variant="body">{notice}</AppText> : null}
         <FieldError message={leave ? error : ""} />
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

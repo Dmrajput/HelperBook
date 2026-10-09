@@ -6,7 +6,7 @@ import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import AttendanceDateSelector from "../../components/attendance/AttendanceDateSelector";
 import AttendanceStatusSelector from "../../components/attendance/AttendanceStatusSelector";
 import BulkEmployeeSelector from "../../components/attendance/BulkEmployeeSelector";
@@ -111,11 +111,8 @@ export default function BulkAttendanceScreen({ navigation, route }) {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Bulk attendance" subtitle="Mark several people at once" icon="checkmark-done">
       <ScrollView contentContainerStyle={styles.content}>
-        <AppText variant="heading" accessibilityRole="header">
-          Bulk Attendance
-        </AppText>
         <AttendanceDateSelector date={date} onChange={setDate} />
         <AppText variant="label">Status</AppText>
         <AttendanceStatusSelector value={status} onChange={setStatus} />
@@ -154,9 +151,8 @@ export default function BulkAttendanceScreen({ navigation, route }) {
           onPress={confirmSave}
           disabled={saving || selected.size === 0}
         />
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </View>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

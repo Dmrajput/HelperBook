@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getSubscriptionHistory } from "../../services/subscriptionService";
 import { colors, spacing } from "../../theme";
 import { formatAttendanceDate } from "../../utils/attendanceFormat";
@@ -48,12 +48,11 @@ export default function SubscriptionHistoryScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(false); }, [load]));
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Subscription history" subtitle="Plan changes" icon="ribbon">
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
       >
-        <AppText variant="heading" accessibilityRole="header">Subscription History</AppText>
         {loading ? <ActivityIndicator color={colors.primary} /> : null}
         {error ? <ErrorView title="Unable to load history." message={error} onRetry={() => load(false)} /> : null}
         {!loading && !error && rows.length === 0 ? (
@@ -68,9 +67,8 @@ export default function SubscriptionHistoryScreen({ navigation }) {
             <AppText variant="caption" color={colors.textSecondary}>{formatAttendanceDate(row.createdAt.slice(0, 10))}</AppText>
           </View>
         ))}
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import SalaryPaymentHistoryCard from "../../components/salary/SalaryPaymentHistoryCard";
 import { PAYMENT_METHODS } from "../../constants/salaryPayment";
 import { getEmployees } from "../../services/employeeService";
@@ -74,9 +74,8 @@ export default function SalaryPaymentHistoryScreen({ navigation }) {
   const hasMore = pagination && pagination.page < pagination.pages;
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Payment history" subtitle="Salary payments" icon="cash">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Payment history</AppText>
         <View style={styles.filters}>
           <Chip label="All Employees" selected={!employeeId} onPress={() => setEmployeeId("")} />
           {employees.map((employee) => (
@@ -145,9 +144,8 @@ export default function SalaryPaymentHistoryScreen({ navigation }) {
             }}
           />
         ) : null}
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

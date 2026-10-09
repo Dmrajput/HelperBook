@@ -1,21 +1,47 @@
-import { getCurrentUser, loginWithOtp, refreshSession, revokeAllSessions, revokeSession } from "../services/auth.service.js";
-import { requestOtp as sendOtp } from "../services/otp/otp.service.js";
+import {
+  getCurrentUser,
+  loginWithPassword,
+  refreshSession,
+  registerOwner,
+  resetPassword,
+  revokeAllSessions,
+  revokeSession,
+} from "../services/auth.service.js";
+import { requestPasswordReset } from "../services/otp/otp.service.js";
 import { sendSuccess } from "../utils/apiResponse.js";
-import { validateRefreshToken, validateRequestOtp, validateVerifyOtp } from "../validators/auth.validator.js";
+import {
+  validateForgotPassword,
+  validatePasswordLogin,
+  validateRefreshToken,
+  validateRegister,
+  validateResetPassword,
+} from "../validators/auth.validator.js";
 
 function clientIp(req) {
   return String(req.ip || req.socket?.remoteAddress || "unknown").replace("::ffff:", "");
 }
 
-export async function requestOtp(req, res) {
-  const { phone } = validateRequestOtp(req.body);
-  const data = await sendOtp({ phone, ip: clientIp(req) });
-  sendSuccess(res, "OTP sent successfully", data);
+export async function register(req, res) {
+  const input = validateRegister(req.body);
+  const result = await registerOwner({ ...input, ip: clientIp(req) });
+  sendSuccess(res, result.message, result.data, 201);
 }
 
-export async function verifyOtp(req, res) {
-  const input = validateVerifyOtp(req.body);
-  const result = await loginWithOtp({ ...input, ip: clientIp(req) });
+export async function login(req, res) {
+  const input = validatePasswordLogin(req.body);
+  const result = await loginWithPassword({ ...input, ip: clientIp(req) });
+  sendSuccess(res, result.message, result.data);
+}
+
+export async function forgotPassword(req, res) {
+  const { phone } = validateForgotPassword(req.body);
+  const data = await requestPasswordReset({ phone, ip: clientIp(req) });
+  sendSuccess(res, "If this number is registered, a code was sent.", data);
+}
+
+export async function resetOwnerPassword(req, res) {
+  const input = validateResetPassword(req.body);
+  const result = await resetPassword({ ...input, ip: clientIp(req) });
   sendSuccess(res, result.message, result.data);
 }
 

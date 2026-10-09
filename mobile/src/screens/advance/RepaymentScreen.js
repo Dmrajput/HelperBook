@@ -6,7 +6,7 @@ import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
 import RepaymentForm from "../../components/advance/RepaymentForm";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployeeAdvances, recordRepayment } from "../../services/advanceService";
 import { colors, spacing } from "../../theme";
 
@@ -53,9 +53,8 @@ export default function RepaymentScreen({ navigation, route }) {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Record repayment" subtitle={employeeName || "Money paid back"} icon="cash">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Record Repayment</AppText>
         {employeeName ? <AppText variant="subtitle">{employeeName}</AppText> : null}
         {loading && !data ? <View style={styles.block} accessibilityLabel="Loading repayment" /> : null}
         {error && !data ? <ErrorView message={error} onRetry={load} /> : null}
@@ -68,9 +67,8 @@ export default function RepaymentScreen({ navigation, route }) {
           />
         ) : null}
         <FieldError message={data ? error : ""} />
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} disabled={saving} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

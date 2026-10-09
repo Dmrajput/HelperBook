@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
-import AppButton from "../../components/AppButton";
+import { ScrollView, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AppText from "../../components/AppText";
 import FieldError from "../../components/FieldError";
 import AdvanceAmountForm from "../../components/advance/AdvanceAmountForm";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
+import { colors, spacing } from "../../theme";
 import { createAdvance } from "../../services/advanceService";
-import { spacing } from "../../theme";
 
 export default function GiveAdvanceScreen({ navigation, route }) {
   const { employeeId, employeeName } = route.params;
@@ -37,24 +37,49 @@ export default function GiveAdvanceScreen({ navigation, route }) {
   }
 
   return (
-    <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Give Advance</AppText>
-        <AdvanceAmountForm
-          employeeName={employeeName}
-          submitLabel="Give Advance"
-          showMonthly
-          loading={loading}
-          disabled={loading}
-          onSubmit={submit}
-        />
+    <AppScreen title="Give advance" subtitle={employeeName || "Record money given"} icon="cash">
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <View style={styles.note}>
+          <Ionicons name="information-circle-outline" size={18} color="#7A5AF8" />
+          <AppText variant="caption" color={colors.textSecondary} style={styles.noteText}>
+            This amount is added to the khata. You can deduct it from salary each month, or leave that blank and record repayments later.
+          </AppText>
+        </View>
+        <View style={styles.card}>
+          <AdvanceAmountForm
+            employeeName={employeeName}
+            submitLabel="Give Advance"
+            showMonthly
+            loading={loading}
+            disabled={loading}
+            onSubmit={submit}
+          />
+        </View>
         <FieldError message={error} />
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} disabled={loading} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { gap: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: {
+    gap: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
+  note: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    backgroundColor: "#F3EEFF",
+    borderRadius: 16,
+    padding: spacing.md,
+  },
+  noteText: {
+    flex: 1,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: spacing.md,
+  },
 });

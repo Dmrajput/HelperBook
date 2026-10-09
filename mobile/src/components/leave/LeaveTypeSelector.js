@@ -5,7 +5,7 @@ import { colors, spacing } from "../../theme";
 const OPTIONS = [
   { id: "paid", label: "Paid Leave", description: "No salary deduction" },
   { id: "unpaid", label: "Unpaid Leave", description: "Salary deduction applies" },
-  { id: "sick", label: "Sick Leave", description: "Treatment depends on shop settings" },
+  { id: "sick", label: "Sick Leave", description: "Uses your sick leave pay setting" },
 ];
 
 export default function LeaveTypeSelector({ value, onChange }) {

@@ -6,7 +6,7 @@ import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import SalaryPaymentSummary from "../../components/salary/SalaryPaymentSummary";
 import { getSalaryPaymentById, reverseSalaryPayment } from "../../services/salaryService";
 import { colors, spacing } from "../../theme";
@@ -81,19 +81,19 @@ export default function SalaryPaymentDetailScreen({ navigation, route }) {
 
   if (loading && !data) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Payment details" subtitle={data?.employee?.name || "Salary payment"} icon="cash">
         <AppText variant="body" color={colors.textSecondary}>
           Loading payment history...
         </AppText>
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
   if (!data?.payment) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Payment details" subtitle={data?.employee?.name || "Salary payment"} icon="cash">
         <ErrorView message={error || "Unable to load payment history."} onRetry={load} />
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
@@ -101,9 +101,8 @@ export default function SalaryPaymentDetailScreen({ navigation, route }) {
   const paid = payment.status === "paid";
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Payment details" subtitle={data?.employee?.name || "Salary payment"} icon="cash">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Payment details</AppText>
         <SalaryPaymentSummary
           employeeName={data.employee?.name}
           periodLabel={data.salary?.periodLabel}
@@ -145,7 +144,7 @@ export default function SalaryPaymentDetailScreen({ navigation, route }) {
         ) : null}
         <AppButton label="Done" variant="secondary" onPress={() => navigation.goBack()} disabled={busy} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

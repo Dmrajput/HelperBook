@@ -41,9 +41,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 18,
     padding: spacing.lg,
   },
   pressed: {

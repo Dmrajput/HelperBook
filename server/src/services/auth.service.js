@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import { getAuthConfig } from "../config/auth.js";
 import OtpRateLimit from "../models/OtpRateLimit.js";
@@ -15,7 +16,65 @@ import {
 import { verifyOtpCode } from "./otp/otp.service.js";
 
 const REFRESH_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const INACTIVE_MESSAGE = "Account is inactive. Please contact support.";
+const INVALID_LOGIN = "The mobile number or password is incorrect.";
+let dummyPasswordHash;
+
+async function compareWithDummy(password) {
+  if (!dummyPasswordHash) {
+    dummyPasswordHash = await bcrypt.hash("helperbook-owner-timing", 12);
+  }
+  await bcrypt.compare(String(password || ""), dummyPasswordHash);
+}
+
+async function takeAttemptSlot(key, max) {
+  const now = new Date();
+  const windowStart = now.getTime() - LOGIN_WINDOW_MS;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      let record = await OtpRateLimit.findOne({ key });
+      if (!record) {
+        record = new OtpRateLimit({
+          key,
+          hits: [],
+          expiresAt: new Date(now.getTime() + LOGIN_WINDOW_MS),
+        });
+      }
+
+      record.hits = (record.hits || []).filter((hit) => new Date(hit).getTime() >= windowStart);
+      record.markModified("hits");
+      if (record.hits.length >= max) {
+        throw new AppError("Too many attempts. Please try again later.", 429);
+      }
+
+      record.hits.push(now);
+      record.expiresAt = new Date(now.getTime() + LOGIN_WINDOW_MS);
+      await record.save();
+      return;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      if (error?.code === 11000 && attempt === 0) {
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+function sessionResult(user, tokens, message) {
+  return {
+    message,
+    data: {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: toPublicUser(user),
+    },
+  };
+}
 
 async function assertRefreshLimit(ip) {
   const config = getAuthConfig();
@@ -103,60 +162,91 @@ async function openSession(user, device) {
   };
 }
 
-export async function loginWithOtp({ phone, otp, ip, device }) {
-  await verifyOtpCode({ phone, otp, ip });
+function assertActive(user) {
+  if (!user || user.isActive) {
+    return;
+  }
+  throw new AppError(
+    user.suspensionReason ? "This account is suspended. Please contact support." : INACTIVE_MESSAGE,
+    403
+  );
+}
 
-  let user = await User.findOne({
+export async function registerOwner({ phone, fullName, password, ip, device }) {
+  await takeAttemptSlot(`owner-register-ip:${ip || "unknown"}`, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  try {
+    const user = await User.create({
+      phoneNumber: phone.nationalNumber,
+      countryCode: phone.countryCode,
+      fullName,
+      passwordHash,
+      role: "owner",
+      isVerified: true,
+      isActive: true,
+      lastLoginAt: new Date(),
+    });
+    const tokens = await openSession(user, device);
+    return sessionResult(user, tokens, "Account created");
+  } catch (error) {
+    if (error?.code === 11000) {
+      throw new AppError("An account already exists for this number. Log in or use Forgot password.", 409);
+    }
+    throw error;
+  }
+}
+
+export async function loginWithPassword({ phone, password, ip, device }) {
+  await takeAttemptSlot(`owner-login-ip:${ip || "unknown"}`, 20);
+  await takeAttemptSlot(`owner-login-phone:${phone.e164}`, 8);
+
+  const user = await User.findOne({
     countryCode: phone.countryCode,
     phoneNumber: phone.nationalNumber,
-  });
-  let isNewUser = false;
+  }).select("+passwordHash");
 
   if (!user) {
-    try {
-      user = await User.create({
-        phoneNumber: phone.nationalNumber,
-        countryCode: phone.countryCode,
-        fullName: "",
-        role: "owner",
-        isVerified: true,
-        isActive: true,
-        lastLoginAt: new Date(),
-      });
-      isNewUser = true;
-    } catch (error) {
-      if (error?.code !== 11000) {
-        throw error;
-      }
-      user = await User.findOne({
-        countryCode: phone.countryCode,
-        phoneNumber: phone.nationalNumber,
-      });
-    }
+    await compareWithDummy(password);
+    throw new AppError(INVALID_LOGIN, 401);
   }
 
-  if (!user || !user.isActive) {
-    throw new AppError(user?.suspensionReason ? "This account is suspended. Please contact support." : INACTIVE_MESSAGE, 403);
+  if (!user.passwordHash) {
+    throw new AppError("This number does not have a password yet. Use Forgot password to set one.", 400);
   }
 
-  if (!isNewUser) {
-    user.isVerified = true;
-    user.lastLoginAt = new Date();
-    await user.save();
+  const matches = await bcrypt.compare(String(password || ""), user.passwordHash);
+  if (!matches) {
+    throw new AppError(INVALID_LOGIN, 401);
   }
+
+  assertActive(user);
+  user.lastLoginAt = new Date();
+  await user.save();
+  const tokens = await openSession(user, device);
+  return sessionResult(user, tokens, "Login successful");
+}
+
+export async function resetPassword({ phone, otp, password, ip, device }) {
+  await verifyOtpCode({ phone, otp, ip });
+
+  const user = await User.findOne({
+    countryCode: phone.countryCode,
+    phoneNumber: phone.nationalNumber,
+  }).select("+passwordHash");
+
+  if (!user) {
+    throw new AppError("This OTP has expired. Please request a new one.", 400);
+  }
+
+  assertActive(user);
+  user.passwordHash = await bcrypt.hash(password, 12);
+  user.isVerified = true;
+  user.lastLoginAt = new Date();
+  await user.save();
 
   const tokens = await openSession(user, device);
-
-  return {
-    message: isNewUser ? "OTP verified" : "Login successful",
-    data: {
-      isNewUser,
-      requiresProfileSetup: isNewUser,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      user: toPublicUser(user),
-    },
-  };
+  return sessionResult(user, tokens, "Password updated");
 }
 
 export async function refreshSession({ refreshToken, ip }) {

@@ -6,7 +6,7 @@ import ErrorView from "../../components/ErrorView";
 import LeaveCard from "../../components/leave/LeaveCard";
 import LeaveEmptyState from "../../components/leave/LeaveEmptyState";
 import LeaveSummaryCard from "../../components/leave/LeaveSummaryCard";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import useLeave from "../../hooks/useLeave";
 import { approveLeave, rejectLeave } from "../../services/leaveService";
 import { colors, spacing } from "../../theme";
@@ -52,9 +52,8 @@ export default function LeaveScreen({ navigation }) {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Leave" subtitle="Review and record staff leave" icon="calendar">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Leave Management</AppText>
         {loading && !data ? <View style={styles.block} accessibilityLabel="Loading leave" /> : null}
         {error && !data ? (
           <ErrorView title="Unable to load leave requests." message={error} onRetry={reload} />
@@ -102,9 +101,8 @@ export default function LeaveScreen({ navigation }) {
             Leave history
           </AppText>
         </Pressable>
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

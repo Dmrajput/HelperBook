@@ -71,21 +71,22 @@ try {
   const readToken = await adminLogin(reader.email);
   check("bad password rejected", (await api("/admin/auth/login", { method: "POST", body: { email: superAdmin.email, password: "wrong-password" } })).status === 401);
 
-  const otpRequest = await api("/auth/request-otp", { method: "POST", body: { phoneNumber: ownerPhone, countryCode: "+91" } });
-  check("owner otp", otpRequest.status === 200, otpRequest.json.message);
-  const ownerVerify = await api("/auth/verify-otp", {
+  const ownerPassword = "OwnerPass1";
+  const ownerDevice = { deviceId: "admin-check", deviceName: "test", platform: "web" };
+  let ownerAuth = await api("/auth/register", {
     method: "POST",
-    body: {
-      phoneNumber: ownerPhone,
-      countryCode: "+91",
-      otp: getLastDevOtp(`+91${ownerPhone}`),
-      deviceId: "admin-check",
-      deviceName: "test",
-      platform: "web",
-    },
+    body: { phoneNumber: ownerPhone, countryCode: "+91", fullName: "Phase Owner", password: ownerPassword, ...ownerDevice },
   });
-  const ownerToken = ownerVerify.json?.data?.accessToken;
-  check("owner signed in", ownerVerify.status === 200, ownerVerify.json.message);
+  if (ownerAuth.status === 409) {
+    const resetRequest = await api("/auth/forgot-password", { method: "POST", body: { phoneNumber: ownerPhone, countryCode: "+91" } });
+    check("owner reset code", resetRequest.status === 200, resetRequest.json.message);
+    ownerAuth = await api("/auth/reset-password", {
+      method: "POST",
+      body: { phoneNumber: ownerPhone, countryCode: "+91", otp: getLastDevOtp(`+91${ownerPhone}`), password: ownerPassword, ...ownerDevice },
+    });
+  }
+  const ownerToken = ownerAuth.json?.data?.accessToken;
+  check("owner signed in", ownerAuth.status === 200 || ownerAuth.status === 201, ownerAuth.json.message);
   check("owner token cannot open admin", (await api("/admin/dashboard/summary", { token: ownerToken })).status === 401);
 
   const employeeToken = signEmployeeAccessToken({ _id: new mongoose.Types.ObjectId(), shopId: new mongoose.Types.ObjectId() });

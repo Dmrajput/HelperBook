@@ -4,7 +4,8 @@ import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import SalaryCard from "../../components/salary/SalaryCard";
 import SalarySummary from "../../components/salary/SalarySummary";
 import useSalary from "../../hooks/useSalary";
@@ -136,26 +137,31 @@ export default function SalaryScreen({ navigation, route }) {
   const noneCalculated = !loading && data && data.summary.totalEmployees > 0 && data.summary.calculated === 0;
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Salary" subtitle="Calculate and pay staff" icon="wallet">
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} />}
       >
-        <AppText variant="heading">Salary</AppText>
         <View style={styles.monthRow}>
-          <AppButton
-            label="Previous"
-            variant="secondary"
-            onPress={() => setPeriod((value) => shiftMonth(value.year, value.month, -1))}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
             disabled={Boolean(busy)}
-          />
-          <AppText variant="subtitle">{monthLabel(period.year, period.month)}</AppText>
-          <AppButton
-            label="Next"
-            variant="secondary"
-            onPress={() => setPeriod((value) => shiftMonth(value.year, value.month, 1))}
+            onPress={() => setPeriod((value) => shiftMonth(value.year, value.month, -1))}
+            style={styles.monthButton}
+          >
+            <Ionicons name="chevron-back" size={18} color={colors.primary} />
+          </Pressable>
+          <AppText variant="label">{monthLabel(period.year, period.month)}</AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Next month"
             disabled={futureBlocked || Boolean(busy)}
-          />
+            onPress={() => setPeriod((value) => shiftMonth(value.year, value.month, 1))}
+            style={[styles.monthButton, (futureBlocked || busy) && styles.monthDisabled]}
+          >
+            <Ionicons name="chevron-forward" size={18} color={futureBlocked || busy ? colors.disabledText : colors.primary} />
+          </Pressable>
         </View>
         {loading && !data ? (
           <View style={styles.skeleton} accessibilityLabel="Loading salaries">
@@ -242,7 +248,7 @@ export default function SalaryScreen({ navigation, route }) {
           </>
         ) : null}
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 
@@ -253,6 +259,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.xs,
+  },
+  monthButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#E7F6EF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  monthDisabled: {
+    opacity: 0.45,
   },
   filters: { flexDirection: "row", gap: spacing.sm },
   filter: {

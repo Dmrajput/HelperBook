@@ -27,15 +27,17 @@ npm start
 ## Authentication
 
 ```text
-POST /api/auth/request-otp
-POST /api/auth/verify-otp
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
 POST /api/auth/refresh
 POST /api/auth/logout
 POST /api/auth/logout-all
 GET  /api/auth/me
 ```
 
-`logout`, `logout-all`, and `me` require a bearer access token. OTP codes and refresh tokens are stored only as hashes. With `OTP_PROVIDER=mock` and `NODE_ENV=development`, the OTP is printed in the server console and is never returned by the API.
+Shop owners and employees sign in with a mobile number and password. A one-time code is used only to set a new password. Employees can sign in only after the shop enables login for them. `logout`, `logout-all`, and `me` require a bearer access token. OTP codes, passwords, and refresh tokens are stored only as hashes. With `OTP_PROVIDER=mock` and `NODE_ENV=development`, the reset code is printed in the server console and is never returned by the API.
 
 MongoDB is selected with `MONGODB_URI`. The database name must be `helperbook`. Do not put database credentials or JWT secrets in source files.
 

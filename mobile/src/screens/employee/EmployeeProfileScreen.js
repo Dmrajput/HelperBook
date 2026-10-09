@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { useAuth } from "../../context/AuthContext";
 import { getEmployeePortalProfile, getEmployeePreferences, saveEmployeePreferences } from "../../services/employeePortalService";
 import { colors, spacing } from "../../theme";
@@ -56,9 +56,8 @@ export default function EmployeeProfileScreen({ navigation }) {
   const role = employee?.role === "other" ? employee.customRole : ROLES[employee?.role] || employee?.role;
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Profile" subtitle={profile?.shop?.name || "Your account"} icon="person" showBack={false}>
       <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={styles.content}>
-        <AppText variant="title">My Profile</AppText>
         {error ? <ErrorView message={error} onRetry={load} /> : null}
         <AppText variant="subtitle">{employee?.name}</AppText>
         <AppText variant="body">{role}</AppText>
@@ -83,7 +82,7 @@ export default function EmployeeProfileScreen({ navigation }) {
         <AppButton label="Notifications" variant="secondary" onPress={() => navigation.navigate("EmployeeNotifications")} />
         <AppButton label="Logout" variant="secondary" onPress={confirmLogout} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

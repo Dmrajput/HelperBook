@@ -82,10 +82,22 @@ async function assertVerifyLimit(ip) {
   }
 }
 
-export async function requestOtp({ phone, ip }) {
+export async function requestPasswordReset({ phone, ip }) {
   const config = getAuthConfig();
-  const existing = await OtpVerification.findOne({ phoneNumber: phone.e164 });
+  const quiet = {
+    expiresIn: config.otpExpiryMinutes * 60,
+    resendAfter: config.otpResendCooldownSeconds,
+  };
+  const userExists = await User.exists({
+    countryCode: phone.countryCode,
+    phoneNumber: phone.nationalNumber,
+  });
 
+  if (!userExists) {
+    return quiet;
+  }
+
+  const existing = await OtpVerification.findOne({ phoneNumber: phone.e164 });
   if (existing?.lastSentAt) {
     const elapsedSeconds = (Date.now() - new Date(existing.lastSentAt).getTime()) / 1000;
     if (elapsedSeconds < config.otpResendCooldownSeconds) {
@@ -97,17 +109,13 @@ export async function requestOtp({ phone, ip }) {
 
   const otp = generateOtpCode();
   const expiresAt = new Date(Date.now() + config.otpExpiryMinutes * 60 * 1000);
-  const userExists = await User.exists({
-    countryCode: phone.countryCode,
-    phoneNumber: phone.nationalNumber,
-  });
 
   await OtpVerification.findOneAndUpdate(
     { phoneNumber: phone.e164 },
     {
       phoneNumber: phone.e164,
       otpHash: createOtpHash(otp),
-      purpose: userExists ? "login" : "registration",
+      purpose: "password_reset",
       attempts: 0,
       maxAttempts: config.otpMaxAttempts,
       expiresAt,
@@ -124,10 +132,7 @@ export async function requestOtp({ phone, ip }) {
     throw new AppError("Unable to send OTP. Please try again.", 503, true);
   }
 
-  return {
-    expiresIn: config.otpExpiryMinutes * 60,
-    resendAfter: config.otpResendCooldownSeconds,
-  };
+  return quiet;
 }
 
 export async function verifyOtpCode({ phone, otp, ip }) {
@@ -161,6 +166,10 @@ export async function verifyOtpCode({ phone, otp, ip }) {
     }
 
     throw new AppError("Incorrect OTP. Please try again.", 401);
+  }
+
+  if (record.purpose !== "password_reset") {
+    throw new AppError("This OTP has expired. Please request a new one.", 400);
   }
 
   record.verifiedAt = new Date();

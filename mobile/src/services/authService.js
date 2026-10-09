@@ -1,19 +1,30 @@
 import apiClient from "../api/apiClient";
 import { saveTokens } from "../utils/tokenStorage";
 
-export async function requestOtp(payload) {
-  const response = await apiClient.post("/auth/request-otp", payload, {
+function openPost(path, payload) {
+  return apiClient.post(path, payload, {
     skipAuth: true,
     skipAuthRefresh: true,
   });
+}
+
+export async function registerOwner(payload) {
+  const response = await openPost("/auth/register", payload);
   return response.data.data;
 }
 
-export async function verifyOtp(payload) {
-  const response = await apiClient.post("/auth/verify-otp", payload, {
-    skipAuth: true,
-    skipAuthRefresh: true,
-  });
+export async function loginWithPassword(payload) {
+  const response = await openPost("/auth/login", payload);
+  return response.data.data;
+}
+
+export async function requestPasswordReset(payload) {
+  const response = await openPost("/auth/forgot-password", payload);
+  return response.data.data;
+}
+
+export async function resetPassword(payload) {
+  const response = await openPost("/auth/reset-password", payload);
   return response.data.data;
 }
 

@@ -7,7 +7,7 @@ import ErrorView from "../../components/ErrorView";
 import LeaveCard from "../../components/leave/LeaveCard";
 import LeaveEmptyState from "../../components/leave/LeaveEmptyState";
 import LeaveSummaryCard from "../../components/leave/LeaveSummaryCard";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployeeLeaves, getLeaveHistory } from "../../services/leaveService";
 import { colors, spacing } from "../../theme";
 
@@ -50,9 +50,8 @@ export default function LeaveHistoryScreen({ navigation, route }) {
   const title = data?.employee?.name ? `${data.employee.name} leave` : "Leave history";
 
   return (
-    <ScreenContainer>
+    <AppScreen title={title} subtitle="Approved and past leave" icon="calendar">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">{title}</AppText>
         <View style={styles.filters}>
           {FILTERS.map((item) => {
             const selected = status === item.id;
@@ -83,9 +82,8 @@ export default function LeaveHistoryScreen({ navigation, route }) {
         {data?.leaves.map((leave) => (
           <LeaveCard key={leave.id} leave={leave} onPress={() => navigation.navigate("LeaveDetail", { leaveId: leave.id })} />
         ))}
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

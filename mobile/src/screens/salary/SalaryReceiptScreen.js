@@ -5,7 +5,7 @@ import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import SalaryReceiptPreview from "../../components/salary/SalaryReceiptPreview";
 import { getSalaryReceipt, getSalaryReceiptPdf } from "../../services/salaryReceiptService";
 import { colors, spacing } from "../../theme";
@@ -87,34 +87,32 @@ export default function SalaryReceiptScreen({ navigation, route }) {
 
   if (loading && !receipt) {
     return (
-      <ScreenContainer>
+      <AppScreen title="Salary receipt" subtitle="Share or download" icon="document-text">
         <AppText variant="body" color={colors.textSecondary}>
           Loading receipt...
         </AppText>
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
   if (!receipt) {
     const reversed = /reversed/i.test(error);
     return (
-      <ScreenContainer>
+      <AppScreen title="Salary receipt" subtitle="Share or download" icon="document-text">
         <AppText variant="heading">Receipt unavailable</AppText>
         <ErrorView
           message={error || (reversed ? "The salary payment has been reversed." : "This salary does not have a valid payment yet.")}
           onRetry={load}
         />
-        <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
-      </ScreenContainer>
+      </AppScreen>
     );
   }
 
   const hasPhone = Boolean(receipt.employee?.phone);
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Salary receipt" subtitle="Share or download" icon="document-text">
       <ScrollView contentContainerStyle={styles.scroll}>
-        <AppText variant="heading">Salary Receipt</AppText>
         <SalaryReceiptPreview receipt={receipt} />
         <View style={styles.card}>
           <AppText variant="subtitle">Share message</AppText>
@@ -136,9 +134,8 @@ export default function SalaryReceiptScreen({ navigation, route }) {
           <AppButton label="Share on WhatsApp" variant="secondary" disabled={Boolean(busy)} onPress={shareWhatsApp} />
         ) : null}
         <AppButton label="View Salary" variant="secondary" disabled={Boolean(busy)} onPress={() => navigation.navigate("SalaryDetail", { salaryId })} />
-        <AppButton label="Back" variant="secondary" disabled={Boolean(busy)} onPress={() => navigation.goBack()} />
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../components/AppText";
 import { useDashboard } from "../hooks/useDashboard";
@@ -12,10 +13,10 @@ import { colors, spacing } from "../theme";
 import { MainTabContext } from "./mainTabContext";
 
 const TABS = [
-  { key: "Home", label: "Home" },
-  { key: "Employees", label: "Employees" },
-  { key: "Attendance", label: "Attendance" },
-  { key: "More", label: "More" },
+  { key: "Home", label: "Home", icon: "home" },
+  { key: "Employees", label: "Employees", icon: "people" },
+  { key: "Attendance", label: "Attendance", icon: "calendar" },
+  { key: "More", label: "More", icon: "grid" },
 ];
 
 export default function MainTabs() {
@@ -45,6 +46,7 @@ export default function MainTabs() {
                 onPress={() => setTab(item.key)}
                 style={[styles.tab, selected && styles.tabSelected]}
               >
+                <Ionicons name={selected ? item.icon : `${item.icon}-outline`} size={18} color={selected ? colors.primary : colors.textSecondary} />
                 <AppText
                   variant="label"
                   color={selected ? colors.primary : colors.textSecondary}
@@ -77,20 +79,22 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
     paddingTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    gap: spacing.xs,
   },
   tab: {
     flex: 1,
     minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderTopWidth: 3,
-    borderTopColor: "transparent",
+    borderRadius: 16,
+    gap: 2,
   },
   tabSelected: {
-    borderTopColor: colors.primary,
+    backgroundColor: "#E7F6EF",
   },
   tabLabel: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

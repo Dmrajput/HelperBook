@@ -4,15 +4,17 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { useShop } from "../../context/ShopContext";
 import { colors, spacing } from "../../theme";
 import { pickShopLogo } from "../../utils/pickShopLogo";
@@ -26,6 +28,36 @@ import {
 import { buildShopPayload, formFromShop, validateShopStep } from "../../utils/shopForm";
 import BusinessTypeScreen from "./BusinessTypeScreen";
 import WorkingScheduleScreen from "./WorkingScheduleScreen";
+
+function Section({ title, children }) {
+  return (
+    <View style={styles.section}>
+      <AppText variant="label" color={colors.textSecondary} style={styles.sectionTitle}>
+        {title}
+      </AppText>
+      <View style={styles.card}>{children}</View>
+    </View>
+  );
+}
+
+function InfoRow({ icon, label, value }) {
+  if (!value) {
+    return null;
+  }
+  return (
+    <View style={styles.infoRow}>
+      <View style={styles.infoIcon}>
+        <Ionicons name={icon} size={16} color={colors.primary} />
+      </View>
+      <View style={styles.infoCopy}>
+        <AppText variant="caption" color={colors.textSecondary}>
+          {label}
+        </AppText>
+        <AppText variant="body">{value}</AppText>
+      </View>
+    </View>
+  );
+}
 
 export default function ShopProfileScreen({ navigation, route }) {
   const { shop, updateShop, uploadLogo, removeLogo } = useShop();
@@ -45,10 +77,17 @@ export default function ShopProfileScreen({ navigation, route }) {
 
   if (!shop) {
     return (
-      <ScreenContainer>
-        <AppText variant="heading">Shop profile</AppText>
-        <AppText variant="body">Create your shop to see its profile.</AppText>
-      </ScreenContainer>
+      <AppScreen title="Shop profile" subtitle="Set up your shop first" icon="storefront">
+        <View style={styles.empty}>
+          <View style={styles.emptyIcon}>
+            <Ionicons name="storefront-outline" size={28} color={colors.primary} />
+          </View>
+          <AppText variant="subtitle" align="center">No shop yet</AppText>
+          <AppText variant="body" color={colors.textSecondary} align="center">
+            Create your shop to see its profile.
+          </AppText>
+        </View>
+      </AppScreen>
     );
   }
 
@@ -123,187 +162,213 @@ export default function ShopProfileScreen({ navigation, route }) {
     ]);
   }
 
+  function cancelEdit() {
+    setErrors({});
+    setFormError("");
+    setForm(formFromShop(shop));
+    if (openedForEdit) {
+      navigation.goBack();
+      return;
+    }
+    setEditing(false);
+  }
+
   const hours = `${formatTime(shop.workingSchedule.startTime)} – ${formatTime(shop.workingSchedule.endTime)}`;
+  const initial = String(shop.name || "S").trim().charAt(0).toUpperCase() || "S";
+  const shopPhone = shop.contact?.shopPhone ? formatIndianPhone(shop.contact.shopPhone) : "";
 
   return (
-    <ScreenContainer>
+    <AppScreen title={editing ? "Edit shop" : "Shop profile"} subtitle={shop.name} icon="storefront">
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <AppText variant="heading" accessibilityRole="header">
-            {editing ? "Edit shop" : "Shop profile"}
-          </AppText>
-          <View style={styles.logoWrap}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={styles.hero}>
             {shop.logo?.url ? (
               <Image source={{ uri: shop.logo.url }} style={styles.logo} accessibilityLabel="Shop logo" />
             ) : (
-              <View style={styles.placeholder}>
-                <AppText variant="heading" color={colors.primary}>
-                  +
-                </AppText>
+              <View style={styles.placeholder} accessibilityLabel="Shop logo">
+                <AppText variant="heading" color={colors.primary}>{initial}</AppText>
               </View>
             )}
-          </View>
-          {editing ? (
-            <View style={styles.section}>
-              <AppButton
-                label={logoState === "uploading" ? "Uploading logo..." : "Upload from Gallery"}
-                onPress={() => changeLogo("gallery")}
-                disabled={Boolean(logoState)}
-              />
-              <AppButton
-                label={logoState === "uploading" ? "Uploading logo..." : "Take Photo"}
-                variant="secondary"
-                onPress={() => changeLogo("camera")}
-                disabled={Boolean(logoState)}
-              />
-              {shop.logo?.url ? (
-                <AppButton
-                  label={logoState === "removing" ? "Removing logo..." : "Remove logo"}
-                  variant="secondary"
-                  onPress={confirmRemoveLogo}
+            <AppText variant="subtitle" align="center">{shop.name}</AppText>
+            <AppText variant="caption" color={colors.textSecondary} align="center">
+              {businessLabel(shop)}
+            </AppText>
+            {editing ? (
+              <View style={styles.logoActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Upload logo from gallery"
                   disabled={Boolean(logoState)}
+                  onPress={() => changeLogo("gallery")}
+                  style={styles.logoAction}
+                >
+                  <Ionicons name="image-outline" size={16} color={colors.primary} />
+                  <AppText variant="caption" color={colors.primary}>Gallery</AppText>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Take shop photo"
+                  disabled={Boolean(logoState)}
+                  onPress={() => changeLogo("camera")}
+                  style={styles.logoAction}
+                >
+                  <Ionicons name="camera-outline" size={16} color={colors.primary} />
+                  <AppText variant="caption" color={colors.primary}>Camera</AppText>
+                </Pressable>
+                {shop.logo?.url ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Remove logo"
+                    disabled={Boolean(logoState)}
+                    onPress={confirmRemoveLogo}
+                    style={styles.logoAction}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={colors.error} />
+                    <AppText variant="caption" color={colors.error}>Remove</AppText>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+            {logoState ? (
+              <AppText variant="caption" color={colors.textSecondary}>
+                {logoState === "removing" ? "Removing logo..." : "Uploading logo..."}
+              </AppText>
+            ) : null}
+          </View>
+
+          {editing ? (
+            <>
+              <Section title="Shop">
+                <AppTextInput
+                  label="Shop name"
+                  value={form.name}
+                  onChangeText={(name) => updateForm({ name })}
+                  autoCapitalize="words"
+                  maxLength={100}
                 />
-              ) : null}
-              <AppTextInput
-                label="Shop name"
-                value={form.name}
-                onChangeText={(name) => updateForm({ name })}
-                autoCapitalize="words"
-                maxLength={100}
-              />
-              <FieldError message={errors.name} />
-              <AppText variant="label">Business type</AppText>
-              <BusinessTypeScreen selected={form.businessType} onSelect={(businessType) => updateForm({ businessType })} />
-              <FieldError message={errors.businessType} />
-              {form.businessType === "Other" ? (
-                <>
-                  <AppTextInput
-                    label="Your business type"
-                    value={form.customBusinessType}
-                    onChangeText={(customBusinessType) => updateForm({ customBusinessType })}
-                    autoCapitalize="words"
-                    maxLength={80}
-                  />
-                  <FieldError message={errors.customBusinessType} />
-                </>
-              ) : null}
-              <AppText variant="body">Login number</AppText>
-              <AppText color={colors.textSecondary}>{formatIndianPhone(shop.owner.phoneNumber)}</AppText>
-              <AppTextInput
-                label="Your name"
-                value={form.ownerName}
-                onChangeText={(ownerName) => updateForm({ ownerName })}
-                autoCapitalize="words"
-                maxLength={100}
-              />
-              <FieldError message={errors.ownerName} />
-              <AppTextInput
-                label="Email (optional)"
-                value={form.ownerEmail}
-                onChangeText={(ownerEmail) => updateForm({ ownerEmail })}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <FieldError message={errors.ownerEmail} />
-              <AppTextInput
-                label="Shop phone (optional)"
-                value={form.shopPhone}
-                onChangeText={(shopPhone) => updateForm({ shopPhone: shopPhone.replace(/\D/g, "").slice(0, 10) })}
-                keyboardType="number-pad"
-                maxLength={10}
-              />
-              <FieldError message={errors.shopPhone} />
-              <AppTextInput
-                label="Shop email (optional)"
-                value={form.shopEmail}
-                onChangeText={(shopEmail) => updateForm({ shopEmail })}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <FieldError message={errors.shopEmail} />
-              <AppTextInput
-                label="Address line 1"
-                value={form.addressLine1}
-                onChangeText={(addressLine1) => updateForm({ addressLine1 })}
-                autoCapitalize="words"
-              />
-              <FieldError message={errors.addressLine1} />
-              <AppTextInput
-                label="Address line 2"
-                value={form.addressLine2}
-                onChangeText={(addressLine2) => updateForm({ addressLine2 })}
-                placeholder="Optional"
-                autoCapitalize="words"
-              />
-              <AppTextInput label="City" value={form.city} onChangeText={(city) => updateForm({ city })} autoCapitalize="words" />
-              <FieldError message={errors.city} />
-              <AppTextInput label="State" value={form.state} onChangeText={(state) => updateForm({ state })} autoCapitalize="words" />
-              <FieldError message={errors.state} />
-              <AppTextInput
-                label="Pincode"
-                value={form.pincode}
-                onChangeText={(pincode) => updateForm({ pincode: pincode.replace(/\D/g, "").slice(0, 6) })}
-                keyboardType="number-pad"
-                maxLength={6}
-              />
-              <FieldError message={errors.pincode} />
-              <WorkingScheduleScreen form={form} onChange={updateForm} errors={errors} />
-              <AppText variant="body">Currency ₹</AppText>
-            </View>
+                <FieldError message={errors.name} />
+                <AppText variant="label">Business type</AppText>
+                <BusinessTypeScreen selected={form.businessType} onSelect={(businessType) => updateForm({ businessType })} />
+                <FieldError message={errors.businessType} />
+                {form.businessType === "Other" ? (
+                  <>
+                    <AppTextInput
+                      label="Your business type"
+                      value={form.customBusinessType}
+                      onChangeText={(customBusinessType) => updateForm({ customBusinessType })}
+                      autoCapitalize="words"
+                      maxLength={80}
+                    />
+                    <FieldError message={errors.customBusinessType} />
+                  </>
+                ) : null}
+              </Section>
+              <Section title="Owner">
+                <AppText variant="caption" color={colors.textSecondary}>
+                  Login number {formatIndianPhone(shop.owner.phoneNumber)}
+                </AppText>
+                <AppTextInput
+                  label="Your name"
+                  value={form.ownerName}
+                  onChangeText={(ownerName) => updateForm({ ownerName })}
+                  autoCapitalize="words"
+                  maxLength={100}
+                />
+                <FieldError message={errors.ownerName} />
+                <AppTextInput
+                  label="Email (optional)"
+                  value={form.ownerEmail}
+                  onChangeText={(ownerEmail) => updateForm({ ownerEmail })}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <FieldError message={errors.ownerEmail} />
+              </Section>
+              <Section title="Contact">
+                <AppTextInput
+                  label="Shop phone (optional)"
+                  value={form.shopPhone}
+                  onChangeText={(next) => updateForm({ shopPhone: next.replace(/\D/g, "").slice(0, 10) })}
+                  keyboardType="number-pad"
+                  maxLength={10}
+                />
+                <FieldError message={errors.shopPhone} />
+                <AppTextInput
+                  label="Shop email (optional)"
+                  value={form.shopEmail}
+                  onChangeText={(shopEmail) => updateForm({ shopEmail })}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <FieldError message={errors.shopEmail} />
+              </Section>
+              <Section title="Address">
+                <AppTextInput
+                  label="Address line 1"
+                  value={form.addressLine1}
+                  onChangeText={(addressLine1) => updateForm({ addressLine1 })}
+                  autoCapitalize="words"
+                />
+                <FieldError message={errors.addressLine1} />
+                <AppTextInput
+                  label="Address line 2"
+                  value={form.addressLine2}
+                  onChangeText={(addressLine2) => updateForm({ addressLine2 })}
+                  placeholder="Optional"
+                  autoCapitalize="words"
+                />
+                <AppTextInput label="City" value={form.city} onChangeText={(city) => updateForm({ city })} autoCapitalize="words" />
+                <FieldError message={errors.city} />
+                <AppTextInput label="State" value={form.state} onChangeText={(state) => updateForm({ state })} autoCapitalize="words" />
+                <FieldError message={errors.state} />
+                <AppTextInput
+                  label="Pincode"
+                  value={form.pincode}
+                  onChangeText={(pincode) => updateForm({ pincode: pincode.replace(/\D/g, "").slice(0, 6) })}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                />
+                <FieldError message={errors.pincode} />
+              </Section>
+              <Section title="Hours">
+                <WorkingScheduleScreen form={form} onChange={updateForm} errors={errors} />
+                <AppText variant="caption" color={colors.textSecondary}>Currency ₹ INR</AppText>
+              </Section>
+            </>
           ) : (
-            <View style={styles.section}>
-              <ProfileRow label="Shop name" value={shop.name} />
-              <ProfileRow label="Business type" value={businessLabel(shop)} />
-              <ProfileRow label="Owner" value={shop.owner.fullName} />
-              <ProfileRow label="Phone" value={formatIndianPhone(shop.owner.phoneNumber)} />
-              <ProfileRow label="Address" value={formatAddress(shop.address)} />
-              <ProfileRow label="Working days" value={formatWorkingDays(shop.workingSchedule.workingDays)} />
-              <ProfileRow label="Working hours" value={hours} />
-              <ProfileRow label="Currency" value="₹ INR" />
-            </View>
+            <>
+              <Section title="Shop">
+                <InfoRow icon="storefront-outline" label="Business type" value={businessLabel(shop)} />
+                <InfoRow icon="location-outline" label="Address" value={formatAddress(shop.address)} />
+                <InfoRow icon="call-outline" label="Shop phone" value={shopPhone} />
+                <InfoRow icon="mail-outline" label="Shop email" value={shop.contact?.email} />
+              </Section>
+              <Section title="Owner">
+                <InfoRow icon="person-outline" label="Name" value={shop.owner.fullName} />
+                <InfoRow icon="call-outline" label="Login number" value={formatIndianPhone(shop.owner.phoneNumber)} />
+                <InfoRow icon="mail-outline" label="Email" value={shop.owner.email} />
+              </Section>
+              <Section title="Hours">
+                <InfoRow icon="calendar-outline" label="Working days" value={formatWorkingDays(shop.workingSchedule.workingDays)} />
+                <InfoRow icon="time-outline" label="Working hours" value={hours} />
+                <InfoRow icon="cash-outline" label="Currency" value="₹ INR" />
+              </Section>
+            </>
           )}
           <FieldError message={formError} />
         </ScrollView>
         <View style={styles.footer}>
           {editing ? (
             <>
-              <AppButton
-                label={openedForEdit ? "Back" : "Cancel"}
-                variant="secondary"
-                onPress={() => {
-                  setErrors({});
-                  setFormError("");
-                  setForm(formFromShop(shop));
-                  if (openedForEdit) {
-                    navigation.goBack();
-                    return;
-                  }
-                  setEditing(false);
-                }}
-                disabled={saving}
-              />
+              <AppButton label={openedForEdit ? "Back" : "Cancel"} variant="secondary" onPress={cancelEdit} disabled={saving} />
               <AppButton label={saving ? "Saving..." : "Save"} onPress={saveShop} disabled={saving || Boolean(logoState)} />
             </>
           ) : (
-            <>
-              <AppButton label="Edit shop" onPress={() => setEditing(true)} />
-              <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
-            </>
+            <AppButton label="Edit shop" onPress={() => setEditing(true)} />
           )}
         </View>
       </KeyboardAvoidingView>
-    </ScreenContainer>
-  );
-}
-
-function ProfileRow({ label, value }) {
-  return (
-    <View style={styles.row}>
-      <AppText variant="caption" color={colors.textSecondary}>
-        {label}
-      </AppText>
-      <AppText variant="body">{value}</AppText>
-    </View>
+    </AppScreen>
   );
 }
 
@@ -312,35 +377,95 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scroll: {
-    gap: spacing.lg,
+    gap: spacing.md,
     paddingBottom: spacing.lg,
   },
-  section: {
-    gap: spacing.md,
-  },
-  logoWrap: {
+  empty: {
     alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.xl,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#E7F6EF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.xs,
+  },
+  hero: {
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: spacing.lg,
   },
   logo: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 84,
+    height: 84,
+    borderRadius: 24,
+    marginBottom: spacing.sm,
   },
   placeholder: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 1,
-    borderColor: colors.border,
+    width: 84,
+    height: 84,
+    borderRadius: 24,
+    backgroundColor: "#E7F6EF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  logoActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  logoAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    minHeight: 36,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 999,
+    backgroundColor: "#F4F7F5",
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    marginLeft: spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  card: {
     backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
+  infoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "#E7F6EF",
     alignItems: "center",
     justifyContent: "center",
   },
-  row: {
-    gap: spacing.xs,
+  infoCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
   },
   footer: {
     gap: spacing.sm,
-    paddingTop: spacing.md,
+    paddingTop: spacing.sm,
   },
 });

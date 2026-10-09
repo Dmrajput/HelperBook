@@ -1,27 +1,34 @@
 import {
   getEmployeeMe,
+  loginEmployeeWithPassword,
   logoutAllEmployee,
   logoutEmployee,
   refreshEmployeeSession,
-  requestEmployeeOtp,
-  verifyEmployeeOtp,
+  requestEmployeePasswordReset,
+  resetEmployeePassword,
 } from "../services/employeeAuth.service.js";
 import { sendSuccess } from "../utils/apiResponse.js";
-import { validateRefreshToken, validateRequestOtp, validateVerifyOtp } from "../validators/auth.validator.js";
+import { validateForgotPassword, validatePasswordLogin, validateRefreshToken, validateResetPassword } from "../validators/auth.validator.js";
 
 function clientIp(req) {
   return String(req.ip || req.socket?.remoteAddress || "unknown").replace("::ffff:", "");
 }
 
-export async function requestOtp(req, res) {
-  const { phone } = validateRequestOtp(req.body);
-  const result = await requestEmployeeOtp(phone, clientIp(req));
+export async function login(req, res) {
+  const input = validatePasswordLogin(req.body);
+  const result = await loginEmployeeWithPassword(input, clientIp(req));
   sendSuccess(res, result.message, result.data);
 }
 
-export async function verifyOtp(req, res) {
-  const input = validateVerifyOtp(req.body);
-  const result = await verifyEmployeeOtp(input, clientIp(req));
+export async function forgotPassword(req, res) {
+  const { phone } = validateForgotPassword(req.body);
+  const result = await requestEmployeePasswordReset(phone, clientIp(req));
+  sendSuccess(res, result.message, result.data);
+}
+
+export async function resetPassword(req, res) {
+  const input = validateResetPassword(req.body);
+  const result = await resetEmployeePassword(input, clientIp(req));
   sendSuccess(res, result.message, result.data);
 }
 

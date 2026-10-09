@@ -4,7 +4,7 @@ import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployeeById, updateEmployee } from "../../services/employeeService";
 import { colors, spacing } from "../../theme";
 import { buildEmployeePayload, formFromEmployee, validateEmployeeForm } from "../../utils/employeeForm";
@@ -79,15 +79,12 @@ export default function EditEmployeeScreen({ navigation, route }) {
   }
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Edit employee" subtitle="Update staff details" icon="create">
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {loading ? (
           <AppText color={colors.textSecondary}>Loading employee...</AppText>
         ) : form ? (
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-            <AppText variant="heading" accessibilityRole="header">
-              Edit Employee
-            </AppText>
             <EmployeeForm form={form} onChange={updateForm} errors={errors} />
             <FieldError message={formError} />
           </ScrollView>
@@ -102,10 +99,9 @@ export default function EditEmployeeScreen({ navigation, route }) {
               disabled={submitting || loading}
             />
           ) : null}
-          <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} disabled={submitting} />
         </View>
       </KeyboardAvoidingView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

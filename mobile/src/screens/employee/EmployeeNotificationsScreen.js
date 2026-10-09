@@ -3,7 +3,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet } from "react-native"
 import { useFocusEffect } from "@react-navigation/native";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import ScreenContainer from "../../components/ScreenContainer";
+import AppScreen from "../../components/AppScreen";
 import { getEmployeeNotifications } from "../../services/employeePortalService";
 import { colors, spacing } from "../../theme";
 import { navigateFromNotification } from "../../utils/notificationNavigation";
@@ -28,9 +28,8 @@ export default function EmployeeNotificationsScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <ScreenContainer>
+    <AppScreen title="Notifications" subtitle="Your alerts" icon="notifications">
       <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />} contentContainerStyle={styles.content}>
-        <AppText variant="title">Notifications</AppText>
         {error ? <ErrorView message={error} onRetry={load} /> : null}
         {!loading && !items.length ? <AppText variant="body">No notifications yet.</AppText> : null}
         {items.map((item) => (
@@ -40,7 +39,7 @@ export default function EmployeeNotificationsScreen({ navigation }) {
           </Pressable>
         ))}
       </ScrollView>
-    </ScreenContainer>
+    </AppScreen>
   );
 }
 

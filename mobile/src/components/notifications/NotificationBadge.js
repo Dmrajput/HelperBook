@@ -3,12 +3,12 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
 
-export default function NotificationBadge({ count = 0, onPress }) {
+export default function NotificationBadge({ count = 0, onPress, color = colors.text }) {
   const visible = Number(count) > 0;
   const label = visible ? `Notifications, ${count} unread` : "Notifications";
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.button}>
-      <Ionicons name="notifications-outline" size={24} color={colors.text} />
+      <Ionicons name="notifications-outline" size={22} color={color} />
       {visible ? (
         <View style={styles.badge}>
           <AppText variant="caption" color={colors.textInverse}>
