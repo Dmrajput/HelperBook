@@ -23,7 +23,11 @@ export function errorHandler(err, req, res, next) {
     err.statusCode >= 400 &&
     err.statusCode !== 500
   ) {
-    sendFailure(res, err.message, err.statusCode);
+    res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      data: err.details || null,
+    });
     return;
   }
 

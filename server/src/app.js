@@ -12,6 +12,7 @@ const app = express();
 
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use("/api/subscriptions/webhook", express.raw({ type: "*/*", limit: "256kb" }));
 app.use(express.json({ limit: "100kb" }));
 app.use(cors(corsOptions()));
 app.use("/uploads", (req, res, next) => {

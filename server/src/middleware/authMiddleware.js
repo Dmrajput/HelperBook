@@ -14,6 +14,9 @@ export async function requireAuth(req, res, next) {
     }
 
     const payload = verifyAccessToken(match[1]);
+    if (payload.role === "employee") {
+      throw new AppError("Your session has expired. Please login again.", 401);
+    }
     const user = await User.findById(payload.sub);
 
     if (!user) {

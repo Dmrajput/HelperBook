@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../components/AppText";
 import { useDashboard } from "../hooks/useDashboard";
+import usePushNotifications from "../hooks/usePushNotifications";
+import AttendanceScreen from "../screens/attendance/AttendanceScreen";
 import DashboardScreen from "../screens/dashboard/DashboardScreen";
 import EmployeeListScreen from "../screens/employees/EmployeeListScreen";
 import MoreScreen from "../screens/MoreScreen";
@@ -12,10 +14,12 @@ import { MainTabContext } from "./mainTabContext";
 const TABS = [
   { key: "Home", label: "Home" },
   { key: "Employees", label: "Employees" },
+  { key: "Attendance", label: "Attendance" },
   { key: "More", label: "More" },
 ];
 
 export default function MainTabs() {
+  usePushNotifications();
   const [tab, setTab] = useState("Home");
   const insets = useSafeAreaInsets();
   const dashboard = useDashboard(tab === "Home");
@@ -25,7 +29,8 @@ export default function MainTabs() {
       <View style={styles.shell}>
         <View style={styles.body}>
           {tab === "Home" ? <DashboardScreen {...dashboard} /> : null}
-          {tab === "Employees" ? <EmployeeListScreen /> : null}
+          {tab === "Employees" ? <EmployeeListScreen embedded /> : null}
+          {tab === "Attendance" ? <AttendanceScreen embedded /> : null}
           {tab === "More" ? <MoreScreen /> : null}
         </View>
         <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
@@ -40,7 +45,13 @@ export default function MainTabs() {
                 onPress={() => setTab(item.key)}
                 style={[styles.tab, selected && styles.tabSelected]}
               >
-                <AppText variant="label" color={selected ? colors.primary : colors.textSecondary}>
+                <AppText
+                  variant="label"
+                  color={selected ? colors.primary : colors.textSecondary}
+                  align="center"
+                  numberOfLines={1}
+                  style={styles.tabLabel}
+                >
                   {item.label}
                 </AppText>
               </Pressable>
@@ -77,5 +88,9 @@ const styles = StyleSheet.create({
   },
   tabSelected: {
     borderTopColor: colors.primary,
+  },
+  tabLabel: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

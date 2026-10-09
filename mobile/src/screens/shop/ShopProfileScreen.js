@@ -27,9 +27,10 @@ import { buildShopPayload, formFromShop, validateShopStep } from "../../utils/sh
 import BusinessTypeScreen from "./BusinessTypeScreen";
 import WorkingScheduleScreen from "./WorkingScheduleScreen";
 
-export default function ShopProfileScreen({ navigation }) {
+export default function ShopProfileScreen({ navigation, route }) {
   const { shop, updateShop, uploadLogo, removeLogo } = useShop();
-  const [editing, setEditing] = useState(false);
+  const openedForEdit = Boolean(route?.params?.edit);
+  const [editing, setEditing] = useState(openedForEdit);
   const [form, setForm] = useState(() => formFromShop(shop));
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
@@ -129,7 +130,7 @@ export default function ShopProfileScreen({ navigation }) {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <AppText variant="heading" accessibilityRole="header">
-            Shop profile
+            {editing ? "Edit shop" : "Shop profile"}
           </AppText>
           <View style={styles.logoWrap}>
             {shop.logo?.url ? (
@@ -267,13 +268,17 @@ export default function ShopProfileScreen({ navigation }) {
           {editing ? (
             <>
               <AppButton
-                label="Cancel"
+                label={openedForEdit ? "Back" : "Cancel"}
                 variant="secondary"
                 onPress={() => {
-                  setEditing(false);
                   setErrors({});
                   setFormError("");
                   setForm(formFromShop(shop));
+                  if (openedForEdit) {
+                    navigation.goBack();
+                    return;
+                  }
+                  setEditing(false);
                 }}
                 disabled={saving}
               />

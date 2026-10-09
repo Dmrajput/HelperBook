@@ -30,13 +30,28 @@ function isSafeServerMessage(message) {
   );
 }
 
+function serverMessage(data) {
+  if (data && typeof data === "object" && !(data instanceof ArrayBuffer) && typeof data.message === "string") {
+    return data.message;
+  }
+  if (data instanceof ArrayBuffer) {
+    try {
+      const parsed = JSON.parse(new TextDecoder().decode(data));
+      return typeof parsed?.message === "string" ? parsed.message : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 export function toApiError(error) {
   if (error?.isApiError) {
     return error;
   }
 
   const status = error?.response?.status ?? null;
-  const serverMessage = error?.response?.data?.message;
+  const serverMessageText = serverMessage(error?.response?.data);
   const isTimeout = error?.code === "ECONNABORTED";
   const isNetworkError = !error?.response || isTimeout;
 
@@ -46,16 +61,21 @@ export function toApiError(error) {
     message = TIMEOUT_MESSAGE;
   } else if (isNetworkError) {
     message = NETWORK_MESSAGE;
-  } else if (isSafeServerMessage(serverMessage)) {
-    message = serverMessage.trim();
+  } else if (isSafeServerMessage(serverMessageText)) {
+    message = serverMessageText.trim();
   } else if (STATUS_MESSAGES[status]) {
     message = STATUS_MESSAGES[status];
   }
+
+  const details = error?.response?.data?.data;
+  const safeDetails = details && typeof details === "object" && !Array.isArray(details) ? details : null;
 
   return {
     isApiError: true,
     isNetworkError,
     status,
     message,
+    code: safeDetails?.code || null,
+    details: safeDetails,
   };
 }

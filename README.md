@@ -103,7 +103,27 @@ Shop APIs require a bearer access token. The server uses the token to decide the
 
 ### Dashboard
 
-The home screen loads `GET /api/dashboard`. The server counts active and inactive employees for the signed-in owner's shop and returns the five most recently added people. Present, absent, pending salary, and outstanding advance stay at zero until those records exist. The app does not invent those numbers, and it does not keep a dashboard copy on the phone.
+The home screen loads `GET /api/dashboard`. The server counts active and inactive employees for the signed-in owner's shop and returns the five most recently added people. Present, absent, half day, leave, and not marked come from today's attendance records. Salary Pending is the total of finalized salaries that have not been paid. It is ₹0 with “All finalized salaries paid” when every finalized salary is paid, and “No finalized salary yet” when none exist. Outstanding advance stays at zero until advance records exist. Recent salary payments come from recorded payments. The app does not keep a dashboard copy on the phone.
+
+### Attendance
+
+From Attendance, mark each helper Present, Absent, Half Day, or Leave for a shop date, or mark several people at once. The monthly calendar and history use the same records. A weekly off is shown as closed and is not filled in automatically.
+
+### Salary
+
+Salary is calculated on the server for a calendar month. Monthly pay starts from the saved monthly amount and can deduct unpaid absence, half days, and unpaid leave. Daily pay is the daily rate times payable days. Bonus and other deductions can be added before the month is finalized. A finalized salary does not change when attendance changes until it is reopened.
+
+Paying a salary is separate from calculating it. Finalizing a salary leaves it unpaid. The owner then records cash, UPI, or bank transfer for the exact final amount. HelperBook does not send the money. A mistaken payment can be reversed, which keeps the payment in history and returns the salary to unpaid. A paid salary cannot be reopened until that payment is reversed. Payment does not change the advance balance or recalculate leave.
+
+A paid salary can be opened as a receipt. The receipt shows the shop, employee, period, attendance, breakdown, and payment already stored for that salary. The owner can generate a PDF and share it through the phone's share sheet, including WhatsApp when it is installed. Generating a receipt does not change the salary or the payment.
+
+### Leave
+
+The shop owner can request leave, record leave that is already approved, and approve, reject, or cancel it. Approved leave is what attendance shows when a day has not been marked, and it is what salary uses. Pending, rejected, and cancelled leave do not change pay. A finalized salary stays as it is until it is reopened.
+
+### Advance / Khata
+
+An employee advance is a ledger of money given, cash repaid, and amounts deducted from salary. The outstanding balance is calculated from those entries. A salary preview does not reduce the balance until the salary is finalized.
 
 ### Employees
 

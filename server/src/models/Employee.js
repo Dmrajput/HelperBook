@@ -24,7 +24,17 @@ const employeeSchema = new mongoose.Schema(
     joiningDate: { type: Date, required: true },
     salary: { type: salarySchema, required: true },
     status: { type: String, enum: EMPLOYEE_STATUSES, default: "active", required: true },
+    deactivatedAt: { type: Date, default: null },
     notes: { type: String, default: "", trim: true, maxlength: 500 },
+    loginEnabled: { type: Boolean, default: false },
+    phoneVerified: { type: Boolean, default: false },
+    lastLoginAt: { type: Date, default: null },
+    employeeAuthCreatedAt: { type: Date, default: null },
+    notificationSettings: {
+      pushEnabled: { type: Boolean, default: true },
+      leaveUpdatesEnabled: { type: Boolean, default: true },
+      salaryPaidEnabled: { type: Boolean, default: true },
+    },
   },
   { timestamps: true }
 );
@@ -33,6 +43,8 @@ employeeSchema.index({ shopId: 1, status: 1 });
 employeeSchema.index({ shopId: 1, name: 1 });
 employeeSchema.index({ shopId: 1, role: 1 });
 employeeSchema.index({ shopId: 1, phone: 1 });
+employeeSchema.index({ shopId: 1, loginEnabled: 1 });
+employeeSchema.index({ phone: 1, status: 1, loginEnabled: 1 });
 
 const Employee = mongoose.model("Employee", employeeSchema);
 

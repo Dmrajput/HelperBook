@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Image, StyleSheet, View } from "react-native";
+import NotificationBadge from "../notifications/NotificationBadge";
 import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
 
-export default function DashboardHeader({ greeting, shopName, dateLabel, logoUrl }) {
+export default function DashboardHeader({ greeting, shopName, dateLabel, logoUrl, unreadCount = 0, onNotifications }) {
   const [logoFailed, setLogoFailed] = useState(false);
   const initial = String(shopName || "S").trim().charAt(0).toUpperCase() || "S";
   const showLogo = Boolean(logoUrl) && !logoFailed;
@@ -33,6 +34,7 @@ export default function DashboardHeader({ greeting, shopName, dateLabel, logoUrl
           {dateLabel}
         </AppText>
       </View>
+      <NotificationBadge count={unreadCount} onPress={onNotifications} />
     </View>
   );
 }

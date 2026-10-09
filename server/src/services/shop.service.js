@@ -2,6 +2,7 @@ import Shop from "../models/Shop.js";
 import User from "../models/User.js";
 import { getImageStorage } from "./storage/storage.provider.js";
 import { AppError } from "../utils/appError.js";
+import { startTrialForNewShop } from "./subscription.service.js";
 import { assertLogoFile } from "../utils/imageFile.js";
 
 const SHOP_EXISTS = "A shop already exists for this account.";
@@ -58,6 +59,10 @@ export function toPublicShop(shop, user) {
       currency: shop.settings.currency,
       timezone: shop.settings.timezone,
       language: shop.settings.language,
+      attendanceDeductionMode: shop.settings.attendanceDeductionMode || "working_days",
+      leaveSettings: {
+        sickLeaveTreatment: shop.settings.leaveSettings?.sickLeaveTreatment === "paid" ? "paid" : "unpaid",
+      },
     },
     isActive: shop.isActive,
     createdAt: shop.createdAt,
@@ -88,6 +93,11 @@ export async function createShop(userId, payload) {
       ...payload,
     });
     await saveOwnerName(user, payload.owner.fullName);
+    try {
+      await startTrialForNewShop(user._id, shop);
+    } catch (trialError) {
+      console.error("Trial setup failed.", trialError?.message || "unknown");
+    }
     return toPublicShop(shop, user);
   } catch (error) {
     if (duplicateShopError(error)) {
@@ -120,9 +130,27 @@ export async function updateMyShop(userId, payload) {
   shop.contact = payload.contact;
   shop.address = payload.address;
   shop.workingSchedule = payload.workingSchedule;
-  shop.settings = payload.settings;
+  shop.settings = {
+    ...payload.settings,
+    attendanceDeductionMode: shop.settings?.attendanceDeductionMode || "working_days",
+    leaveSettings: {
+      sickLeaveTreatment: shop.settings?.leaveSettings?.sickLeaveTreatment === "paid" ? "paid" : "unpaid",
+    },
+  };
   await shop.save();
   await saveOwnerName(user, payload.owner.fullName);
+  return toPublicShop(shop, user);
+}
+
+export async function updateLeaveSettings(userId, sickLeaveTreatment) {
+  const user = await requireOwner(userId);
+  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
+  if (!shop) {
+    throw new AppError(SHOP_REQUIRED, 404);
+  }
+  shop.settings.leaveSettings = { sickLeaveTreatment };
+  shop.markModified("settings");
+  await shop.save();
   return toPublicShop(shop, user);
 }
 

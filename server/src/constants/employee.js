@@ -26,8 +26,11 @@ export const DEPENDENT_COLLECTIONS = [
   "attendances",
   "salaryrecords",
   "advances",
+  "employeeadvances",
+  "advancetransactions",
   "leaves",
   "salarypayments",
+  "salaryreceipts",
 ];
 
 export const DEFAULT_PAGE_LIMIT = 20;

@@ -7,7 +7,9 @@ import {
   verifyOtp as verifyOtpRequest,
 } from "../services/authService";
 import { getDeviceInfo } from "../utils/deviceInfo";
-import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from "../utils/tokenStorage";
+import { unregisterCurrentPushToken } from "../services/pushNotificationService";
+import { clearTokens, getAccessToken, getRefreshToken, getSessionRole, saveTokens } from "../utils/tokenStorage";
+import { getEmployeeProfile, logoutEmployee, saveEmployeeSession } from "../services/employeeAuthService";
 
 const AuthContext = createContext(null);
 
@@ -38,7 +40,8 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      const currentUser = await getCurrentUser();
+      const role = await getSessionRole();
+      const currentUser = role === "employee" ? await getEmployeeProfile() : await getCurrentUser();
       const token = await getAccessToken();
       setUser(currentUser);
       setAccessToken(token);
@@ -89,9 +92,22 @@ export function AuthProvider({ children }) {
     await saveTokens({
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
+      role: "owner",
     });
     setAccessToken(result.accessToken);
     setUser(result.user);
+    return result;
+  }, []);
+
+  const completeEmployeeLogin = useCallback(async (result) => {
+    await saveEmployeeSession(result);
+    setAccessToken(result.accessToken);
+    setUser({
+      id: result.user.employeeId,
+      role: "employee",
+      name: result.user.name,
+      phone: result.user.phone,
+    });
     return result;
   }, []);
 
@@ -102,8 +118,12 @@ export function AuthProvider({ children }) {
 
     setIsLoggingOut(true);
     try {
+      await unregisterCurrentPushToken();
       const refreshToken = await getRefreshToken();
-      if (refreshToken) {
+      const role = await getSessionRole();
+      if (refreshToken && role === "employee") {
+        await logoutEmployee(refreshToken);
+      } else if (refreshToken) {
         await requestLogout(refreshToken);
       }
     } catch {
@@ -128,6 +148,7 @@ export function AuthProvider({ children }) {
       isLoggingOut,
       requestOtp,
       verifyOtp,
+      completeEmployeeLogin,
       logout,
       patchUser,
       retrySession: restoreSession,
@@ -141,6 +162,7 @@ export function AuthProvider({ children }) {
       requestOtp,
       verifyOtp,
       logout,
+      completeEmployeeLogin,
       patchUser,
       restoreSession,
     ]

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { ENV } from "../config/env";
-import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from "../utils/tokenStorage";
+import { clearTokens, getAccessToken, getRefreshToken, getSessionRole, saveTokens } from "../utils/tokenStorage";
 import { attachAuthInterceptors } from "./authInterceptor";
 
 const apiClient = axios.create({
@@ -16,6 +16,7 @@ let sessionExpiredHandler = null;
 attachAuthInterceptors(apiClient, {
   getAccessToken,
   getRefreshToken,
+  getSessionRole,
   saveTokens,
   clearTokens,
   onSessionExpired() {

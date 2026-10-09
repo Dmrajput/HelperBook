@@ -38,6 +38,14 @@ function toMinutes(value) {
   return hours * 60 + minutes;
 }
 
+export function validateSickLeaveTreatment(body) {
+  const value = typeof body?.sickLeaveTreatment === "string" ? body.sickLeaveTreatment.trim() : "";
+  if (value !== "paid" && value !== "unpaid") {
+    throw new AppError("Sick leave must be paid or unpaid.", 400);
+  }
+  return value;
+}
+
 export function validateShopPayload(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     throw new AppError("Please check your information.", 400);

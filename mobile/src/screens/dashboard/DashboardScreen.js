@@ -1,4 +1,4 @@
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
@@ -9,12 +9,22 @@ import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import DashboardSkeleton from "../../components/dashboard/DashboardSkeleton";
 import FinancialSummary from "../../components/dashboard/FinancialSummary";
 import MetricCard from "../../components/dashboard/MetricCard";
-import QuickActionCard from "../../components/dashboard/QuickActionCard";
+import QuickActions from "../../components/dashboard/QuickActions";
 import RecentEmployees from "../../components/dashboard/RecentEmployees";
+import { methodLabel } from "../../constants/salaryPayment";
+import { useUnreadCount } from "../../hooks/useNotifications";
 import { useAuth } from "../../context/AuthContext";
 import { useMainTab } from "../../navigation/mainTabContext";
 import { colors, spacing } from "../../theme";
-import { greetingLine, todayLabel } from "../../utils/dashboardFormat";
+import { formatAttendanceDate, shiftKey, todayKey } from "../../utils/attendanceFormat";
+import { formatInr, greetingLine, todayLabel } from "../../utils/dashboardFormat";
+
+function paymentWhen(key) {
+  if (!key) return "";
+  if (key === todayKey()) return "Today";
+  if (key === shiftKey(todayKey(), -1)) return "Yesterday";
+  return formatAttendanceDate(key);
+}
 
 function isShopRequired(error) {
   return error?.status === 404 && /shop setup/i.test(error?.message || "");
@@ -31,6 +41,7 @@ export default function DashboardScreen({
   const navigation = useNavigation();
   const { setTab } = useMainTab();
   const { user } = useAuth();
+  const unreadCount = useUnreadCount();
   const timeZone = data?.shop?.timezone || "Asia/Kolkata";
 
   const openEmployees = () => setTab("Employees");
@@ -49,27 +60,6 @@ export default function DashboardScreen({
           </AppText>
           <AppButton label="Set Up Shop" onPress={loadDashboard} />
         </View>
-      </ScreenContainer>
-    );
-  }
-
-  if (isLoading && !data) {
-    return (
-      <ScreenContainer edges={["top", "left", "right"]}>
-        <DashboardSkeleton />
-      </ScreenContainer>
-    );
-  }
-
-  if (error && !data) {
-    const offline = Boolean(error.isNetworkError);
-    return (
-      <ScreenContainer edges={["top", "left", "right"]}>
-        <ErrorView
-          title={offline ? "No internet connection" : "Unable to load dashboard."}
-          message={offline ? "Please check your connection and try again." : ""}
-          onRetry={loadDashboard}
-        />
       </ScreenContainer>
     );
   }
@@ -98,12 +88,34 @@ export default function DashboardScreen({
             onRetry={loadDashboard}
           />
         ) : null}
+        {isLoading && !data ? <DashboardSkeleton /> : null}
+        {data ? (
+          <>
         <DashboardHeader
           greeting={greetingLine(user?.fullName, timeZone)}
           shopName={data?.shop?.name || ""}
           dateLabel={todayLabel(timeZone)}
           logoUrl={data?.shop?.logo?.url || ""}
+          unreadCount={unreadCount}
+          onNotifications={() => navigation.navigate("Notifications")}
         />
+        {data?.subscription ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate("Subscription")}
+            style={styles.planCard}
+          >
+            <AppText variant="label">
+              {data.subscription.isTrial ? `${data.subscription.planName} Trial` : data.subscription.planName}
+            </AppText>
+            <AppText variant="body" color={colors.textSecondary}>
+              {`${data.subscription.activeEmployeeCount} / ${data.subscription.employeeLimit} employees`}
+              {data.subscription.isTrial && data.subscription.trialDaysRemaining !== null
+                ? `\n${data.subscription.trialDaysRemaining} days left`
+                : ""}
+            </AppText>
+          </Pressable>
+        ) : null}
         <AttendanceSummary attendance={data?.attendance} timeZone={timeZone} />
         <View style={styles.section}>
           <AppText variant="subtitle">Your Team</AppText>
@@ -127,17 +139,57 @@ export default function DashboardScreen({
             </View>
           )}
         </View>
-        <FinancialSummary salary={data?.salary} advance={data?.advance} />
+        <FinancialSummary
+          salary={data?.salary}
+          advance={data?.advance}
+          onPressSalary={() => navigation.navigate("Salary", { paymentFilter: "unpaid" })}
+        />
         <View style={styles.section}>
-          <AppText variant="subtitle">Quick Actions</AppText>
-          <QuickActionCard title="+ Add Employee" onPress={openAddEmployee} />
+          <AppText variant="subtitle">Recent Salary Payments</AppText>
+          {(data?.recentPayments || []).length === 0 ? (
+            <AppText variant="body" color={colors.textSecondary}>
+              No salary payments yet.
+            </AppText>
+          ) : (
+            (data.recentPayments || []).map((payment) => (
+              <Pressable
+                key={payment.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${payment.employeeName}, ${formatInr(payment.amount)}`}
+                onPress={() =>
+                  navigation.navigate(payment.salaryId ? "SalaryReceipt" : "SalaryPaymentDetail", payment.salaryId
+                    ? { salaryId: payment.salaryId }
+                    : { paymentId: payment.id })
+                }
+                style={styles.payment}
+              >
+                <AppText variant="subtitle">{payment.employeeName}</AppText>
+                <AppText variant="body">{formatInr(payment.amount)}</AppText>
+                <AppText variant="caption" color={colors.textSecondary}>
+                  {methodLabel(payment.paymentMethod)} · {paymentWhen(payment.paymentDate)}
+                </AppText>
+              </Pressable>
+            ))
+          )}
+          <AppButton label="View All" variant="secondary" onPress={() => navigation.navigate("SalaryPaymentHistory")} />
         </View>
+        <MetricCard
+          title="Pending Leave"
+          value={String(data?.leave?.pendingRequests ?? 0)}
+          subtitle={data?.leave?.pendingRequests ? "Requests to review" : "No pending leave"}
+          onPress={() => navigation.navigate("Leave")}
+        />
+          </>
+        ) : null}
+        <QuickActions activeCount={data ? data.employees.active : undefined} />
+        {data ? (
         <RecentEmployees
           employees={data?.recentEmployees}
           timeZone={timeZone}
           onPressEmployee={openEmployee}
           onViewAll={openEmployees}
         />
+        ) : null}
       </ScrollView>
     </ScreenContainer>
   );
@@ -153,6 +205,22 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: spacing.md,
+  },
+  planCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.xs,
+  },
+  payment: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.xs,
   },
   empty: {
     backgroundColor: colors.surface,

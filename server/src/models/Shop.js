@@ -66,6 +66,14 @@ const settingsSchema = new mongoose.Schema(
       enum: ["Asia/Kolkata"],
     },
     language: { type: String, required: true, default: DEFAULT_SETTINGS.language, enum: ["en"] },
+    attendanceDeductionMode: {
+      type: String,
+      enum: ["working_days", "calendar_days"],
+      default: "working_days",
+    },
+    leaveSettings: {
+      sickLeaveTreatment: { type: String, enum: ["paid", "unpaid"], default: "unpaid" },
+    },
   },
   { _id: false }
 );

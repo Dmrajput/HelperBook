@@ -7,6 +7,7 @@ import ScreenContainer from "../../components/ScreenContainer";
 import { createEmployee } from "../../services/employeeService";
 import { spacing } from "../../theme";
 import { buildEmployeePayload, createEmptyEmployeeForm, validateEmployeeForm } from "../../utils/employeeForm";
+import { showEmployeeLimitAlert } from "../../utils/employeeLimit";
 import EmployeeForm from "./EmployeeForm";
 
 export default function AddEmployeeScreen({ navigation }) {
@@ -42,6 +43,10 @@ export default function AddEmployeeScreen({ navigation }) {
         },
       ]);
     } catch (error) {
+      if (error?.code === "EMPLOYEE_LIMIT_REACHED") {
+        showEmployeeLimitAlert(navigation, error);
+        return;
+      }
       setFormError(error?.message || "Please check the employee details.");
     } finally {
       setSubmitting(false);

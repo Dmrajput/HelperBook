@@ -4,7 +4,13 @@ import { spacing } from "../../theme";
 import { formatInr, peopleLabel } from "../../utils/dashboardFormat";
 import MetricCard from "./MetricCard";
 
-export default function FinancialSummary({ salary, advance }) {
+function salarySubtitle(salary) {
+  if (!salary?.hasFinalized) return "No finalized salary yet";
+  if (salary.allPaid) return "All finalized salaries paid";
+  return peopleLabel(salary.pendingEmployees, "All finalized salaries paid");
+}
+
+export default function FinancialSummary({ salary, advance, onPressSalary }) {
   return (
     <View style={styles.section}>
       <AppText variant="subtitle">Salary & Advances</AppText>
@@ -13,7 +19,8 @@ export default function FinancialSummary({ salary, advance }) {
           <MetricCard
             title="Salary Pending"
             value={formatInr(salary?.pendingAmount)}
-            subtitle={peopleLabel(salary?.pendingEmployees, "No pending salary")}
+            subtitle={salarySubtitle(salary)}
+            onPress={onPressSalary}
             compact
           />
         </View>

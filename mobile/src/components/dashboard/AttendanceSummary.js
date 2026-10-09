@@ -15,6 +15,11 @@ export default function AttendanceSummary({ attendance, timeZone }) {
           <AppText variant="caption" color={colors.textSecondary}>
             Shop is closed today.
           </AppText>
+          {attendance?.presentToday || attendance?.absentToday || attendance?.halfDayToday || attendance?.leaveToday ? (
+            <AppText variant="caption" color={colors.textSecondary}>
+              Present {attendance.presentToday} · Absent {attendance.absentToday} · Half Day {attendance.halfDayToday} · Leave {attendance.leaveToday}
+            </AppText>
+          ) : null}
         </View>
       </View>
     );
@@ -33,6 +38,9 @@ export default function AttendanceSummary({ attendance, timeZone }) {
       </View>
       <AppText variant="body" color={colors.textSecondary}>
         Not Marked: {attendance?.notMarkedToday ?? 0}
+      </AppText>
+      <AppText variant="caption" color={colors.textSecondary}>
+        Half Day: {attendance?.halfDayToday ?? 0} · Leave: {attendance?.leaveToday ?? 0}
       </AppText>
     </View>
   );

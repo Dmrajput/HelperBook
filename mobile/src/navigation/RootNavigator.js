@@ -9,6 +9,7 @@ import SplashScreen from "../screens/SplashScreen";
 import { colors } from "../theme";
 import AppNavigator from "./AppNavigator";
 import AuthNavigator from "./AuthNavigator";
+import EmployeeNavigator from "./EmployeeNavigator";
 
 const SetupStack = createNativeStackNavigator();
 
@@ -29,9 +30,10 @@ const navigationTheme = {
 };
 
 export default function RootNavigator() {
-  const { isLoading, isAuthenticated, startupError, retrySession } = useAuth();
+  const { isLoading, isAuthenticated, startupError, retrySession, user } = useAuth();
   const { hasShop, isLoading: isShopLoading, loadError, fetchShop } = useShop();
-  const waitingForShop = isAuthenticated && isShopLoading && !hasShop;
+  const isEmployee = user?.role === "employee";
+  const waitingForShop = isAuthenticated && !isEmployee && isShopLoading && !hasShop;
 
   if (isLoading || waitingForShop) {
     return <SplashScreen />;
@@ -45,7 +47,7 @@ export default function RootNavigator() {
     );
   }
 
-  if (isAuthenticated && loadError && !hasShop) {
+  if (isAuthenticated && !isEmployee && loadError && !hasShop) {
     return (
       <ScreenContainer>
         <ErrorView title="Unable to load your shop." message={loadError} onRetry={fetchShop} />
@@ -55,7 +57,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      {!isAuthenticated ? <AuthNavigator /> : hasShop ? <AppNavigator /> : <SetupNavigator />}
+      {!isAuthenticated ? <AuthNavigator /> : isEmployee ? <EmployeeNavigator /> : hasShop ? <AppNavigator /> : <SetupNavigator />}
     </NavigationContainer>
   );
 }

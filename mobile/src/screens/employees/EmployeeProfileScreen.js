@@ -7,9 +7,17 @@ import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
 import ScreenContainer from "../../components/ScreenContainer";
 import StatusBadge from "../../components/StatusBadge";
-import { deleteEmployee, getEmployeeById, updateEmployeeStatus } from "../../services/employeeService";
+import { getEmployeeAdvances } from "../../services/advanceService";
+import { getEmployeeSalaryHistory } from "../../services/salaryService";
+import { getEmployeeLeaves } from "../../services/leaveService";
+import { getEmployeeAttendance } from "../../services/attendanceService";
+import { deleteEmployee, getEmployeeById, setEmployeeLogin, updateEmployeeStatus } from "../../services/employeeService";
+import { formatAttendanceDate, monthStartKey, todayKey } from "../../utils/attendanceFormat";
+import { methodLabel } from "../../constants/salaryPayment";
 import { colors, spacing } from "../../theme";
-import { formatJoiningDate, formatPhone, formatSalary, roleLabel } from "../../utils/employeeFormat";
+import { formatInr } from "../../utils/dashboardFormat";
+import { formatJoiningDate, formatPhone, roleLabel } from "../../utils/employeeFormat";
+import { showEmployeeLimitAlert } from "../../utils/employeeLimit";
 
 export default function EmployeeProfileScreen({ navigation, route }) {
   const { employeeId } = route.params;
@@ -17,12 +25,50 @@ export default function EmployeeProfileScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
+  const [attendance, setAttendance] = useState(null);
+  const [advance, setAdvance] = useState(null);
+  const [advanceLoading, setAdvanceLoading] = useState(true);
+  const [leaveSummary, setLeaveSummary] = useState(null);
+  const [leaveLoading, setLeaveLoading] = useState(true);
+  const [latestSalary, setLatestSalary] = useState(null);
 
   const loadEmployee = useCallback(async () => {
     setError("");
     try {
       const nextEmployee = await getEmployeeById(employeeId);
       setEmployee(nextEmployee);
+      try {
+        const khata = await getEmployeeAdvances(employeeId, { limit: 1 });
+        setAdvance(khata.summary);
+      } catch {
+        setAdvance(null);
+      } finally {
+        setAdvanceLoading(false);
+      }
+      try {
+        const leave = await getEmployeeLeaves(employeeId, { limit: 1 });
+        setLeaveSummary(leave.summary);
+      } catch {
+        setLeaveSummary(null);
+      } finally {
+        setLeaveLoading(false);
+      }
+      try {
+        const salaries = await getEmployeeSalaryHistory(employeeId, { limit: 1 });
+        setLatestSalary(salaries.salaries?.[0] || null);
+      } catch {
+        setLatestSalary(null);
+      }
+      try {
+        const history = await getEmployeeAttendance(employeeId, {
+          startDate: monthStartKey(),
+          endDate: todayKey(),
+          limit: 1,
+        });
+        setAttendance(history.summary);
+      } catch {
+        setAttendance(null);
+      }
     } catch (loadError) {
       setEmployee(null);
       setError(loadError?.message || "Employee not found.");
@@ -49,6 +95,10 @@ export default function EmployeeProfileScreen({ navigation, route }) {
       setEmployee(updated);
       Alert.alert(status === "active" ? "Employee reactivated successfully." : "Employee deactivated successfully.");
     } catch (statusError) {
+      if (status === "active" && statusError?.code === "EMPLOYEE_LIMIT_REACHED") {
+        showEmployeeLimitAlert(navigation, statusError);
+        return;
+      }
       setError(statusError?.message || "Please check the employee details.");
     } finally {
       setBusy("");
@@ -136,8 +186,147 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           <Info label="Role" value={roleLabel(employee)} />
         </View>
         <View style={styles.section}>
+          <AppText variant="subtitle">Attendance Summary</AppText>
+          <AppText variant="body">Present {attendance?.present ?? 0}</AppText>
+          <AppText variant="body">Absent {attendance?.absent ?? 0}</AppText>
+          <AppText variant="body">Half Day {attendance?.halfDay ?? 0}</AppText>
+          <AppText variant="body">Leave {attendance?.leave ?? 0}</AppText>
+          <AppButton
+            label="View Attendance History"
+            variant="secondary"
+            onPress={() => navigation.navigate("EmployeeAttendance", { employeeId: employee.id })}
+          />
+        </View>
+        <View style={styles.section}>
           <AppText variant="subtitle">Salary</AppText>
-          <AppText variant="body">{formatSalary(employee.salary)}</AppText>
+          <AppText variant="body">
+            Current Salary {formatInr(employee.salary?.amount)} / {employee.salary?.type === "daily" ? "day" : "month"}
+          </AppText>
+          {latestSalary ? (
+            <>
+              <AppText variant="body">Latest Salary {formatInr(latestSalary.calculation?.netSalary)}</AppText>
+              <AppText variant="body">
+                Payment Status{" "}
+                {latestSalary.status !== "finalized"
+                  ? "Not finalized"
+                  : latestSalary.paymentStatus === "paid"
+                    ? "PAID"
+                    : "UNPAID"}
+              </AppText>
+              {latestSalary.paymentStatus === "paid" && latestSalary.payment?.paymentDate ? (
+                <AppText variant="body">
+                  Last Paid {formatAttendanceDate(latestSalary.payment.paymentDate)} · {methodLabel(latestSalary.payment.paymentMethod)}
+                </AppText>
+              ) : null}
+              {latestSalary.status === "finalized" && latestSalary.paymentStatus === "paid" ? (
+                <AppButton
+                  label="View Receipt"
+                  variant="secondary"
+                  onPress={() => navigation.navigate("SalaryReceipt", { salaryId: latestSalary.id })}
+                />
+              ) : null}
+            </>
+          ) : (
+            <AppText variant="body" color={colors.textSecondary}>
+              No salary records yet.
+            </AppText>
+          )}
+          <AppButton
+            label="View Salary History"
+            variant="secondary"
+            onPress={() => navigation.navigate("SalaryHistory", { employeeId: employee.id })}
+          />
+        </View>
+        <View style={styles.section}>
+          <AppText variant="subtitle">Leave</AppText>
+          {leaveLoading ? (
+            <AppText variant="body" color={colors.textSecondary}>
+              Loading leave...
+            </AppText>
+          ) : leaveSummary ? (
+            <>
+              <AppText variant="body">Paid leave {leaveSummary.paidDays} days</AppText>
+              <AppText variant="body">Unpaid leave {leaveSummary.unpaidDays} days</AppText>
+              <AppText variant="body">Sick leave {leaveSummary.sickDays} days</AppText>
+              <AppText variant="body">Pending requests {leaveSummary.pending}</AppText>
+            </>
+          ) : (
+            <AppText variant="body">Leave information is unavailable.</AppText>
+          )}
+          <AppButton
+            label="View Leave History"
+            variant="secondary"
+            onPress={() => navigation.navigate("LeaveHistory", { employeeId: employee.id })}
+          />
+          {employee.status === "active" ? (
+            <AppButton
+              label="Leave Request"
+              variant="secondary"
+              onPress={() =>
+                navigation.navigate("CreateLeave", {
+                  mode: "request",
+                  employeeId: employee.id,
+                  employeeName: employee.name,
+                })
+              }
+            />
+          ) : null}
+        </View>
+        <View style={styles.section}>
+          <AppText variant="subtitle">Advance / Khata</AppText>
+          {advanceLoading ? (
+            <AppText variant="body" color={colors.textSecondary}>
+              Loading advance...
+            </AppText>
+          ) : (
+            <AppText variant="body">
+              Advance outstanding {advance ? formatInr(advance.outstanding) : "Unavailable"}
+            </AppText>
+          )}
+          <AppButton
+            label="View Khata"
+            variant="secondary"
+            onPress={() => navigation.navigate("EmployeeAdvance", { employeeId: employee.id })}
+          />
+          {employee.status === "active" ? (
+            <AppButton
+              label="Give Advance"
+              variant="secondary"
+              onPress={() => navigation.navigate("GiveAdvance", { employeeId: employee.id, employeeName: employee.name })}
+            />
+          ) : (
+            <AppText variant="body" color={colors.textSecondary}>
+              Employee is inactive. New advances cannot be given.
+            </AppText>
+          )}
+        </View>
+        <View style={styles.section}>
+          <AppText variant="subtitle">Employee Login</AppText>
+          <AppText variant="body">Phone {employee.phone ? formatPhone(employee.phone) : "Not added"}</AppText>
+          <AppText variant="body">Login {employee.loginEnabled ? "Enabled" : "Disabled"}</AppText>
+          <AppText variant="body">
+            Last Login {employee.lastLoginAt ? new Date(employee.lastLoginAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "Not yet"}
+          </AppText>
+          {!employee.phone ? (
+            <AppText variant="body" color={colors.textSecondary}>Add phone number to enable login</AppText>
+          ) : (
+            <AppButton
+              label={employee.loginEnabled ? "Disable Login" : "Enable Login"}
+              variant="secondary"
+              disabled={Boolean(busy)}
+              onPress={async () => {
+                setBusy(employee.loginEnabled ? "Disabling login..." : "Enabling login...");
+                try {
+                  const result = await setEmployeeLogin(employee.id, !employee.loginEnabled);
+                  setEmployee((current) => (current ? { ...current, loginEnabled: result.loginEnabled } : current));
+                } catch (loginError) {
+                  Alert.alert("Employee Login", loginError?.message || "Unable to update employee login.");
+                } finally {
+                  setBusy("");
+                }
+              }}
+            />
+          )}
         </View>
         {employee.notes ? (
           <View style={styles.section}>

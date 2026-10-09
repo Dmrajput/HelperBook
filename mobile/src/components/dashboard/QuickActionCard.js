@@ -1,42 +1,59 @@
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
 
-export default function QuickActionCard({ title, onPress, disabled = false }) {
+export default function QuickActionCard({
+  title,
+  description,
+  icon,
+  onPress,
+  accessibilityLabel,
+}) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={title}
-      accessibilityState={{ disabled }}
-      disabled={disabled || !onPress}
+      accessibilityLabel={accessibilityLabel || title}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        pressed && !disabled && styles.pressed,
-        disabled && styles.disabled,
-      ]}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      <AppText variant="button" color={disabled ? colors.disabledText : colors.textInverse}>
+      <View style={styles.iconWrap}>
+        <Ionicons name={icon} size={26} color={colors.primary} />
+      </View>
+      <AppText variant="label" numberOfLines={2}>
         {title}
       </AppText>
+      {description ? (
+        <AppText variant="caption" color={colors.textSecondary} numberOfLines={2}>
+          {description}
+        </AppText>
+      ) : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 52,
+    flex: 1,
+    minHeight: 132,
+    backgroundColor: colors.surface,
     borderRadius: 12,
-    backgroundColor: colors.primary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  cardPressed: {
+    backgroundColor: colors.background,
+    borderColor: colors.primary,
+  },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.successBackground,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  pressed: {
-    backgroundColor: colors.primaryPressed,
-  },
-  disabled: {
-    backgroundColor: colors.disabled,
+    marginBottom: spacing.xs,
   },
 });

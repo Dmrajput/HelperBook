@@ -20,6 +20,8 @@ async function startServer() {
   await connectDatabase();
 
   const { default: app } = await import("./app.js");
+  const { startNotificationJobs } = await import("./jobs/notification.jobs.js");
+  startNotificationJobs();
   const mongoose = (await import("mongoose")).default;
   const port = Number(process.env.PORT);
   const server = app.listen(port, "0.0.0.0", () => {

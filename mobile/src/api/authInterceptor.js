@@ -1,7 +1,15 @@
 import { toApiError } from "../utils/apiError";
 import { createRefreshQueue } from "./refreshQueue";
 
-const OPEN_AUTH_PATHS = ["/auth/request-otp", "/auth/verify-otp", "/auth/refresh"];
+const OPEN_AUTH_PATHS = [
+  "/auth/request-otp",
+  "/auth/verify-otp",
+  "/auth/refresh",
+  "/employee-auth/request-otp",
+  "/employee-auth/verify-otp",
+  "/employee-auth/refresh",
+  "/employee-auth/logout",
+];
 
 function isOpenAuthRequest(config) {
   const url = config?.url || "";
@@ -17,8 +25,9 @@ export function attachAuthInterceptors(client, deps) {
       throw error;
     }
 
+    const role = await deps.getSessionRole();
     const response = await client.post(
-      "/auth/refresh",
+      role === "employee" ? "/employee-auth/refresh" : "/auth/refresh",
       { refreshToken },
       { skipAuth: true, skipAuthRefresh: true }
     );
@@ -30,7 +39,7 @@ export function attachAuthInterceptors(client, deps) {
       throw error;
     }
 
-    await deps.saveTokens(nextTokens);
+    await deps.saveTokens({ ...nextTokens, role: nextTokens.user?.role || role || "owner" });
     return nextTokens.accessToken;
   });
 

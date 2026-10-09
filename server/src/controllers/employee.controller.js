@@ -5,6 +5,7 @@ import {
   getEmployees as listEmployees,
   updateEmployee as updateEmployeeRecord,
   updateEmployeeStatus as updateStatusRecord,
+  setEmployeeLoginStatus,
 } from "../services/employee.service.js";
 import { sendSuccess } from "../utils/apiResponse.js";
 import {
@@ -42,6 +43,15 @@ export async function updateEmployeeStatus(req, res) {
   const message =
     status === "active" ? "Employee reactivated successfully." : "Employee deactivated successfully.";
   sendSuccess(res, message, { employee });
+}
+
+export async function updateEmployeeLoginStatus(req, res) {
+  if (!req.body || typeof req.body.loginEnabled !== "boolean") {
+    const { AppError } = await import("../utils/appError.js");
+    throw new AppError("Please choose whether login should be enabled.", 400);
+  }
+  const data = await setEmployeeLoginStatus(req.user.id, req.params.id, req.body.loginEnabled);
+  sendSuccess(res, data.loginEnabled ? "Employee login enabled." : "Employee login disabled.", data);
 }
 
 export async function deleteEmployee(req, res) {

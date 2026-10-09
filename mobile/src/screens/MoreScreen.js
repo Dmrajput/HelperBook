@@ -25,6 +25,8 @@ export default function MoreScreen() {
         ) : null}
       </View>
       <View style={styles.actions}>
+        <AppButton label="Reports" onPress={() => navigation.navigate("Reports")} />
+        <AppButton label="Subscription" onPress={() => navigation.navigate("Subscription")} />
         <AppButton label="Shop profile" onPress={() => navigation.navigate("ShopProfile")} />
         <AppButton
           label={isLoggingOut ? "Logging out..." : "Logout"}

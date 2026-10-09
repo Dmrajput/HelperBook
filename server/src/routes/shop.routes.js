@@ -3,6 +3,7 @@ import {
   createShop,
   deleteLogo,
   getMyShop,
+  patchLeaveSettings,
   updateMyShop,
   uploadLogo,
 } from "../controllers/shop.controller.js";
@@ -15,6 +16,7 @@ router.use(requireAuth);
 router.post("/", createShop);
 router.get("/me", getMyShop);
 router.put("/me", updateMyShop);
+router.patch("/me/leave-settings", patchLeaveSettings);
 router.post("/me/logo", logoUpload, uploadLogo);
 router.delete("/me/logo", deleteLogo);
 

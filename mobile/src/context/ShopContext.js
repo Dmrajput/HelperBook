@@ -12,7 +12,8 @@ const ShopContext = createContext(null);
 
 export function ShopProvider({ children }) {
   const { isAuthenticated, isLoading: authLoading, user, patchUser } = useAuth();
-  const activeUserId = !authLoading && isAuthenticated ? user?.id || "" : "";
+  const isEmployee = user?.role === "employee";
+  const activeUserId = !authLoading && isAuthenticated && !isEmployee ? user?.id || "" : "";
   const [shop, setShop] = useState(null);
   const [status, setStatus] = useState("idle");
   const [loadError, setLoadError] = useState("");

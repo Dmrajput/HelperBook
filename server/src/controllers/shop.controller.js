@@ -3,11 +3,12 @@ import {
   getMyShop as findMyShop,
   removeShopLogo,
   saveShopLogo,
+  updateLeaveSettings,
   updateMyShop as updateShopRecord,
 } from "../services/shop.service.js";
 import { sendSuccess } from "../utils/apiResponse.js";
 import { AppError } from "../utils/appError.js";
-import { validateShopPayload } from "../validators/shop.validator.js";
+import { validateShopPayload, validateSickLeaveTreatment } from "../validators/shop.validator.js";
 
 function requestOrigin(req) {
   const forwarded = req.get("x-forwarded-proto");
@@ -34,6 +35,11 @@ export async function updateMyShop(req, res) {
   const payload = validateShopPayload(req.body);
   const shop = await updateShopRecord(req.user.id, payload);
   sendSuccess(res, "Shop updated successfully", { shop });
+}
+
+export async function patchLeaveSettings(req, res) {
+  const shop = await updateLeaveSettings(req.user.id, validateSickLeaveTreatment(req.body));
+  sendSuccess(res, "Leave settings updated successfully", { shop });
 }
 
 export async function uploadLogo(req, res) {

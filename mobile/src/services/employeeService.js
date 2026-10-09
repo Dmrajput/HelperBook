@@ -45,6 +45,13 @@ export function updateEmployee(employeeId, payload) {
   });
 }
 
+export function setEmployeeLogin(employeeId, loginEnabled) {
+  return request(async () => {
+    const response = await apiClient.patch(`/employees/${employeeId}/login-status`, { loginEnabled });
+    return response.data.data;
+  });
+}
+
 export function updateEmployeeStatus(employeeId, status) {
   return request(async () => {
     const response = await apiClient.patch(`/employees/${employeeId}/status`, { status });

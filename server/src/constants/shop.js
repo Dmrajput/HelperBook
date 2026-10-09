@@ -27,6 +27,7 @@ export const DEFAULT_SETTINGS = {
   currency: "INR",
   timezone: "Asia/Kolkata",
   language: "en",
+  attendanceDeductionMode: "working_days",
 };
 
 export const MAX_LOGO_BYTES = 5 * 1024 * 1024;

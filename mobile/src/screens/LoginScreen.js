@@ -106,6 +106,12 @@ export default function LoginScreen({ navigation }) {
             onPress={onSendOtp}
             loading={loading}
           />
+          <AppButton
+            label="Employee Login"
+            variant="secondary"
+            onPress={() => navigation.navigate("EmployeeLogin")}
+            disabled={loading}
+          />
         </View>
 
         {__DEV__ ? (

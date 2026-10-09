@@ -115,7 +115,7 @@ export function verifyRefreshToken(token) {
       algorithms: ["HS256"],
     });
 
-    if (payload?.type !== "refresh" || !payload.sub || !payload.sid) {
+    if (payload?.type !== "refresh" || !payload.sub || !payload.sid || payload.role === "employee") {
       throw new AppError(SESSION_EXPIRED, 401);
     }
 
@@ -124,6 +124,52 @@ export function verifyRefreshToken(token) {
     if (error instanceof AppError) {
       throw error;
     }
+    throw new AppError(SESSION_EXPIRED, 401);
+  }
+}
+
+export function signEmployeeAccessToken(employee) {
+  return jwt.sign(
+    {
+      sub: String(employee._id),
+      role: "employee",
+      shopId: String(employee.shopId),
+      type: "access",
+    },
+    process.env.JWT_ACCESS_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || "15m",
+      algorithm: "HS256",
+    }
+  );
+}
+
+export function signEmployeeRefreshToken(employeeId, sessionId) {
+  return jwt.sign(
+    {
+      sub: String(employeeId),
+      sid: String(sessionId),
+      role: "employee",
+      type: "refresh",
+    },
+    process.env.JWT_REFRESH_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "30d",
+      algorithm: "HS256",
+      jwtid: randomBytes(16).toString("hex"),
+    }
+  );
+}
+
+export function verifyEmployeeRefreshToken(token) {
+  try {
+    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET, { algorithms: ["HS256"] });
+    if (payload?.type !== "refresh" || payload.role !== "employee" || !payload.sub || !payload.sid) {
+      throw new AppError(SESSION_EXPIRED, 401);
+    }
+    return payload;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError(SESSION_EXPIRED, 401);
   }
 }

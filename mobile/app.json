@@ -13,7 +13,8 @@
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
-        }
+        },
+        "LSApplicationQueriesSchemes": ["whatsapp"]
       }
     },
     "android": {
@@ -37,6 +38,13 @@
         {
           "photosPermission": "HelperBook uses your photos so you can add a shop logo.",
           "cameraPermission": "HelperBook uses the camera so you can take a shop logo photo."
+        }
+      ],
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "color": "#146C54"
         }
       ]
     ]

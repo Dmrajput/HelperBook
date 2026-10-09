@@ -3,7 +3,9 @@ import { DEPENDENT_COLLECTIONS } from "../constants/employee.js";
 import Employee from "../models/Employee.js";
 import Shop from "../models/Shop.js";
 import User from "../models/User.js";
+import { dateFromKey, todayKey } from "../utils/attendanceDate.js";
 import { AppError } from "../utils/appError.js";
+import { assertEmployeeCapacity } from "./subscription.service.js";
 
 const NOT_FOUND = "Employee not found.";
 const SHOP_REQUIRED = "Shop setup is required before managing employees.";
@@ -53,7 +55,11 @@ export function toPublicEmployee(employee) {
       currency: employee.salary.currency,
     },
     status: employee.status,
+    deactivatedAt: employee.deactivatedAt ? new Date(employee.deactivatedAt).toISOString() : null,
     notes: employee.notes || "",
+    loginEnabled: Boolean(employee.loginEnabled),
+    phoneVerified: Boolean(employee.phoneVerified),
+    lastLoginAt: employee.lastLoginAt ? new Date(employee.lastLoginAt).toISOString() : null,
     createdAt: new Date(employee.createdAt).toISOString(),
     updatedAt: new Date(employee.updatedAt).toISOString(),
   };
@@ -84,6 +90,7 @@ export async function hasDependentRecords(employeeId, shopId) {
 
 export async function createEmployee(userId, payload) {
   const shop = await requireShop(userId);
+  await assertEmployeeCapacity(shop, 1);
   const employee = await Employee.create({
     shopId: shop._id,
     name: payload.name,
@@ -116,7 +123,7 @@ export async function getEmployees(userId, query) {
   const skip = (query.page - 1) * query.limit;
   const [employees, total] = await Promise.all([
     Employee.find(filter)
-      .select("name phone role customRole joiningDate salary status notes createdAt updatedAt")
+      .select("name phone role customRole joiningDate salary status notes loginEnabled phoneVerified lastLoginAt createdAt updatedAt")
       .sort({ name: 1, _id: 1 })
       .collation({ locale: "en", strength: 2 })
       .skip(skip)
@@ -146,6 +153,7 @@ export async function getEmployeeById(userId, employeeId) {
 export async function updateEmployee(userId, employeeId, payload) {
   const shop = await requireShop(userId);
   const employee = await findOwnedEmployee(shop._id, employeeId);
+  const phoneChanged = (employee.phone || null) !== (payload.phone || null);
   employee.name = payload.name;
   employee.phone = payload.phone;
   employee.role = payload.role;
@@ -153,6 +161,12 @@ export async function updateEmployee(userId, employeeId, payload) {
   employee.joiningDate = payload.joiningDate;
   employee.salary = payload.salary;
   employee.notes = payload.notes;
+  if (phoneChanged) {
+    employee.phoneVerified = false;
+    employee.loginEnabled = false;
+    const { revokeEmployeeAccess } = await import("./employeeAuth.service.js");
+    await revokeEmployeeAccess(employee._id);
+  }
   await employee.save();
   return toPublicEmployee(employee);
 }
@@ -160,9 +174,50 @@ export async function updateEmployee(userId, employeeId, payload) {
 export async function updateEmployeeStatus(userId, employeeId, status) {
   const shop = await requireShop(userId);
   const employee = await findOwnedEmployee(shop._id, employeeId);
+  if (status === "active" && employee.status !== "active") {
+    await assertEmployeeCapacity(shop, 1);
+  }
   employee.status = status;
+  employee.deactivatedAt = status === "inactive" ? dateFromKey(todayKey()) : null;
+  if (status === "inactive") {
+    employee.loginEnabled = false;
+    const { revokeEmployeeAccess } = await import("./employeeAuth.service.js");
+    await revokeEmployeeAccess(employee._id);
+  }
   await employee.save();
   return toPublicEmployee(employee);
+}
+
+export async function setEmployeeLoginStatus(userId, employeeId, loginEnabled) {
+  const shop = await requireShop(userId);
+  const employee = await findOwnedEmployee(shop._id, employeeId);
+  if (loginEnabled) {
+    if (employee.status !== "active") {
+      throw new AppError("Activate this employee before enabling login.", 400, true, { code: "EMPLOYEE_INACTIVE" });
+    }
+    if (!employee.phone) {
+      throw new AppError("A phone number is required before this employee can log in.", 400, true, {
+        code: "EMPLOYEE_PHONE_REQUIRED",
+      });
+    }
+    const conflict = await Employee.findOne({
+      phone: employee.phone,
+      status: "active",
+      loginEnabled: true,
+      _id: { $ne: employee._id },
+    });
+    if (conflict) {
+      throw new AppError("Another employee already uses this phone number for login.", 409);
+    }
+    employee.loginEnabled = true;
+    if (!employee.employeeAuthCreatedAt) employee.employeeAuthCreatedAt = new Date();
+  } else {
+    employee.loginEnabled = false;
+    const { revokeEmployeeAccess } = await import("./employeeAuth.service.js");
+    await revokeEmployeeAccess(employee._id);
+  }
+  await employee.save();
+  return { employeeId: String(employee._id), loginEnabled: employee.loginEnabled };
 }
 
 export async function deleteEmployee(userId, employeeId) {

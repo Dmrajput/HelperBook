@@ -9,10 +9,13 @@ import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
 import ScreenContainer from "../../components/ScreenContainer";
 import { colors, spacing } from "../../theme";
+import useSubscription from "../../hooks/useSubscription";
 import { getEmployees } from "../../services/employeeService";
+import { showEmployeeLimitAlert } from "../../utils/employeeLimit";
 
-export default function EmployeeListScreen() {
+export default function EmployeeListScreen({ embedded = false }) {
   const navigation = useNavigation();
+  const { subscription, canAddEmployee } = useSubscription();
   const [status, setStatus] = useState("active");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -89,7 +92,7 @@ export default function EmployeeListScreen() {
     : "";
 
   return (
-    <ScreenContainer edges={["top", "left", "right"]}>
+    <ScreenContainer edges={embedded ? ["top", "left", "right"] : undefined}>
       <View style={styles.header}>
         <AppText variant="heading" accessibilityRole="header">
           Employees
@@ -170,7 +173,30 @@ export default function EmployeeListScreen() {
       )}
       {error && employees.length > 0 ? <FieldError message={error} /> : null}
       <View style={styles.footer}>
-        <AppButton label="+ Add Employee" onPress={() => navigation.navigate("AddEmployee")} />
+        {canAddEmployee === false ? (
+          <AppText variant="body" color={colors.textSecondary}>
+            {`You've reached your employee limit. ${subscription?.plan?.name || "Your plan"} allows ${subscription?.plan?.employeeLimit} active employees.`}
+          </AppText>
+        ) : null}
+        <AppButton
+          label="+ Add Employee"
+          onPress={() => {
+            if (canAddEmployee === false) {
+              showEmployeeLimitAlert(navigation, {
+                message: "Upgrade your plan to add more employees.",
+                details: {
+                  planName: subscription?.plan?.name,
+                  limit: subscription?.plan?.employeeLimit,
+                },
+              });
+              return;
+            }
+            navigation.navigate("AddEmployee");
+          }}
+        />
+        {embedded ? null : (
+          <AppButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
+        )}
       </View>
     </ScreenContainer>
   );
