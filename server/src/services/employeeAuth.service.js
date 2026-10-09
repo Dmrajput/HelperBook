@@ -157,7 +157,7 @@ async function openSession(employee, device) {
   session.refreshTokenHash = hashToken(refreshToken);
   session.expiresAt = tokenExpiryDate(refreshToken);
   await session.save();
-  return { session, refreshToken, accessToken: signEmployeeAccessToken(employee) };
+  return { session, refreshToken, accessToken: signEmployeeAccessToken(employee, session._id) };
 }
 
 function publicAuthEmployee(employee) {
@@ -238,7 +238,7 @@ export async function refreshEmployeeSession(refreshToken, clientIp) {
   return {
     message: "Session refreshed.",
     data: {
-      accessToken: signEmployeeAccessToken(employee),
+      accessToken: signEmployeeAccessToken(employee, session._id),
       refreshToken: nextRefresh,
       user: publicAuthEmployee(employee),
     },

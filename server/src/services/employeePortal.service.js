@@ -45,7 +45,7 @@ function parseMonth(value) {
 
 async function shopFor(employee) {
   const shop = await Shop.findOne({ _id: employee.shopId, isActive: true });
-  if (!shop) throw new AppError(DENIED, 403, true, { code: "EMPLOYEE_ACCESS_DENIED" });
+  if (!shop || shop.accessSuspended) throw new AppError(DENIED, 403, true, { code: "EMPLOYEE_ACCESS_DENIED" });
   return shop;
 }
 

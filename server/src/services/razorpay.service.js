@@ -56,6 +56,13 @@ export async function createRazorpayOrder({ amount, receipt, notes }) {
   });
 }
 
+export async function createRazorpayRefund(paymentId, amount) {
+  return razorpayRequest(`/payments/${encodeURIComponent(paymentId)}/refund`, {
+    method: "POST",
+    body: amount ? { amount } : {},
+  });
+}
+
 export async function fetchRazorpayPayment(paymentId) {
   return razorpayRequest(`/payments/${encodeURIComponent(paymentId)}`);
 }

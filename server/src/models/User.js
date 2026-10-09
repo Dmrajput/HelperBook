@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    suspensionReason: { type: String, default: "", trim: true, maxlength: 300 },
+    suspendedAt: { type: Date, default: null },
+    suspendedByAdminId: { type: mongoose.Schema.Types.ObjectId, ref: "AdminUser", default: null },
+    adminNotes: { type: String, default: "", trim: true, maxlength: 1000 },
   },
   { timestamps: true }
 );

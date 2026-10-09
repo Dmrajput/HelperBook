@@ -1,0 +1,42 @@
+name: Security checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  server-tests:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: server
+      - run: npm test
+        working-directory: server
+        env:
+          JWT_ACCESS_SECRET: ci-access-secret-must-be-32-characters-min
+          JWT_REFRESH_SECRET: ci-refresh-secret-must-be-32-characters-min
+          OTP_HASH_SECRET: ci-otp-hash-secret-must-be-32-characters-min
+          RAZORPAY_WEBHOOK_SECRET: ci-webhook-secret
+
+  admin-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: admin
+      - run: npm run build
+        working-directory: admin
+        env:
+          VITE_API_BASE_URL: https://api.example.com/api

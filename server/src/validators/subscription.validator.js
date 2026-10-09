@@ -29,7 +29,9 @@ export function validatePlanChange(body) {
 }
 
 export function validateCheckout(body) {
-  return planSelection(body);
+  const selected = planSelection(body);
+  const couponCode = typeof body?.couponCode === "string" ? body.couponCode.trim().slice(0, 40) : "";
+  return { ...selected, couponCode: couponCode || null };
 }
 
 export function validateVerifyPayment(body) {

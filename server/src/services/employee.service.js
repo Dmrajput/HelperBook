@@ -5,7 +5,7 @@ import Shop from "../models/Shop.js";
 import User from "../models/User.js";
 import { dateFromKey, todayKey } from "../utils/attendanceDate.js";
 import { AppError } from "../utils/appError.js";
-import { assertEmployeeCapacity } from "./subscription.service.js";
+import { claimEmployeeSlot, releaseEmployeeSlot } from "./subscription.service.js";
 
 const NOT_FOUND = "Employee not found.";
 const SHOP_REQUIRED = "Shop setup is required before managing employees.";
@@ -90,19 +90,24 @@ export async function hasDependentRecords(employeeId, shopId) {
 
 export async function createEmployee(userId, payload) {
   const shop = await requireShop(userId);
-  await assertEmployeeCapacity(shop, 1);
-  const employee = await Employee.create({
-    shopId: shop._id,
-    name: payload.name,
-    phone: payload.phone,
-    role: payload.role,
-    customRole: payload.customRole,
-    joiningDate: payload.joiningDate,
-    salary: payload.salary,
-    status: "active",
-    notes: payload.notes,
-  });
-  return toPublicEmployee(employee);
+  await claimEmployeeSlot(shop);
+  try {
+    const employee = await Employee.create({
+      shopId: shop._id,
+      name: payload.name,
+      phone: payload.phone,
+      role: payload.role,
+      customRole: payload.customRole,
+      joiningDate: payload.joiningDate,
+      salary: payload.salary,
+      status: "active",
+      notes: payload.notes,
+    });
+    return toPublicEmployee(employee);
+  } catch (error) {
+    await releaseEmployeeSlot(shop._id);
+    throw error;
+  }
 }
 
 export async function getEmployees(userId, query) {
@@ -174,8 +179,11 @@ export async function updateEmployee(userId, employeeId, payload) {
 export async function updateEmployeeStatus(userId, employeeId, status) {
   const shop = await requireShop(userId);
   const employee = await findOwnedEmployee(shop._id, employeeId);
-  if (status === "active" && employee.status !== "active") {
-    await assertEmployeeCapacity(shop, 1);
+  const wasActive = employee.status === "active";
+  let claimed = false;
+  if (status === "active" && !wasActive) {
+    await claimEmployeeSlot(shop);
+    claimed = true;
   }
   employee.status = status;
   employee.deactivatedAt = status === "inactive" ? dateFromKey(todayKey()) : null;
@@ -184,7 +192,13 @@ export async function updateEmployeeStatus(userId, employeeId, status) {
     const { revokeEmployeeAccess } = await import("./employeeAuth.service.js");
     await revokeEmployeeAccess(employee._id);
   }
-  await employee.save();
+  try {
+    await employee.save();
+  } catch (error) {
+    if (claimed) await releaseEmployeeSlot(shop._id);
+    throw error;
+  }
+  if (wasActive && status === "inactive") await releaseEmployeeSlot(shop._id);
   return toPublicEmployee(employee);
 }
 
@@ -226,5 +240,7 @@ export async function deleteEmployee(userId, employeeId) {
   if (await hasDependentRecords(employee._id, shop._id)) {
     throw new AppError(DELETE_BLOCKED, 409);
   }
+  const wasActive = employee.status === "active";
   await employee.deleteOne();
+  if (wasActive) await releaseEmployeeSlot(shop._id);
 }

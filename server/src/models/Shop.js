@@ -96,9 +96,16 @@ const shopSchema = new mongoose.Schema(
     workingSchedule: { type: workingScheduleSchema, required: true },
     settings: { type: settingsSchema, required: true },
     isActive: { type: Boolean, default: true },
+    activeEmployeeSlots: { type: Number, min: 0 },
+    accessSuspended: { type: Boolean, default: false },
+    accessSuspensionReason: { type: String, default: "", trim: true, maxlength: 300 },
+    adminNotes: { type: String, default: "", trim: true, maxlength: 1000 },
   },
   { timestamps: true }
 );
+
+shopSchema.index({ accessSuspended: 1, createdAt: -1 });
+shopSchema.index({ businessType: 1, createdAt: -1 });
 
 const Shop = mongoose.model("Shop", shopSchema);
 

@@ -27,26 +27,32 @@ export async function processRazorpayWebhook(rawBody, signature, eventHeader) {
     throw new AppError("Webhook payload is invalid.", 400, true, { code: "INVALID_WEBHOOK_SIGNATURE" });
   }
   const eventId = String(eventHeader || crypto.createHash("sha256").update(body).digest("hex"));
-  const existing = await WebhookEvent.findOne({ provider: "razorpay", eventId });
-  if (existing) return { duplicate: true };
   const eventType = event.event;
-  if (eventType === "payment.captured") {
-    await capturePayment(event);
-  } else if (eventType === "payment.failed") {
-    const entity = event?.payload?.payment?.entity || {};
-    if (entity.order_id) await markPaymentFailed(entity.order_id, entity.error_description || "Payment failed.");
-  }
+  let claimed;
   try {
-    await WebhookEvent.create({
+    claimed = await WebhookEvent.create({
       provider: "razorpay",
       eventId,
       eventType,
       payloadHash: crypto.createHash("sha256").update(body).digest("hex"),
-      status: eventType === "payment.captured" || eventType === "payment.failed" ? "processed" : "ignored",
-      processedAt: new Date(),
+      status: "processing",
     });
   } catch (error) {
     if (error?.code === 11000) return { duplicate: true };
+    throw error;
+  }
+  try {
+    if (eventType === "payment.captured") {
+      await capturePayment(event);
+    } else if (eventType === "payment.failed") {
+      const entity = event?.payload?.payment?.entity || {};
+      if (entity.order_id) await markPaymentFailed(entity.order_id, entity.error_description || "Payment failed.");
+    }
+    claimed.status = eventType === "payment.captured" || eventType === "payment.failed" ? "processed" : "ignored";
+    claimed.processedAt = new Date();
+    await claimed.save();
+  } catch (error) {
+    await WebhookEvent.deleteOne({ _id: claimed._id, status: "processing" });
     throw error;
   }
   return { duplicate: false };

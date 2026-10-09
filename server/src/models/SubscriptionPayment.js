@@ -17,6 +17,10 @@ const paymentSchema = new mongoose.Schema(
     paidAt: { type: Date, default: null },
     failureReason: { type: String, default: "", maxlength: 300 },
     metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+    refundStatus: { type: String, enum: ["none", "requested", "pending", "processed", "failed"], default: "none" },
+    refundReason: { type: String, default: "", maxlength: 300 },
+    refundRequestedBy: { type: mongoose.Schema.Types.ObjectId, ref: "AdminUser", default: null },
+    providerRefundId: { type: String, default: "", trim: true },
   },
   { timestamps: true }
 );

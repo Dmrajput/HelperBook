@@ -1,4 +1,6 @@
 import Employee from "../models/Employee.js";
+import EmployeeSession from "../models/EmployeeSession.js";
+import Shop from "../models/Shop.js";
 import { AppError } from "../utils/appError.js";
 import { verifyAccessToken } from "../utils/tokens.js";
 
@@ -26,6 +28,19 @@ export async function requireEmployee(req, res, next) {
     }
     if (!employee.loginEnabled) {
       throw new AppError("Employee login is currently disabled.", 403, true, { code: "EMPLOYEE_LOGIN_DISABLED" });
+    }
+    const session = await EmployeeSession.findById(payload.sid);
+    if (
+      !session
+      || session.revokedAt
+      || String(session.employeeId) !== String(employee._id)
+      || new Date(session.expiresAt).getTime() <= Date.now()
+    ) {
+      throw new AppError(EXPIRED, 401);
+    }
+    const shop = await Shop.findOne({ _id: employee.shopId, isActive: true }).select("accessSuspended");
+    if (!shop || shop.accessSuspended) {
+      throw new AppError("You don't have access to this information.", 403, true, { code: "EMPLOYEE_ACCESS_DENIED" });
     }
 
     req.employee = employee;

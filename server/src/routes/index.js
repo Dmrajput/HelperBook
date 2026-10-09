@@ -1,4 +1,5 @@
 import { Router } from "express";
+import adminRoutes from "./admin/index.js";
 import advanceRoutes from "./advance.routes.js";
 import attendanceRoutes from "./attendance.routes.js";
 import authRoutes from "./auth.routes.js";
@@ -12,6 +13,7 @@ import notificationRoutes from "./notification.routes.js";
 import reportRoutes from "./report.routes.js";
 import salaryRoutes from "./salary.routes.js";
 import shopRoutes from "./shop.routes.js";
+import supportRoutes from "./support.routes.js";
 import subscriptionRoutes from "./subscription.routes.js";
 
 const router = Router();
@@ -30,5 +32,7 @@ router.use("/salaries", salaryRoutes);
 router.use("/reports", reportRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/subscriptions", subscriptionRoutes);
+router.use("/admin", adminRoutes);
+router.use("/support", supportRoutes);
 
 export default router;

@@ -98,7 +98,7 @@ async function openSession(user, device) {
   });
 
   return {
-    accessToken: signAccessToken(user),
+    accessToken: signAccessToken(user, sessionId),
     refreshToken,
   };
 }
@@ -136,7 +136,7 @@ export async function loginWithOtp({ phone, otp, ip, device }) {
   }
 
   if (!user || !user.isActive) {
-    throw new AppError(INACTIVE_MESSAGE, 403);
+    throw new AppError(user?.suspensionReason ? "This account is suspended. Please contact support." : INACTIVE_MESSAGE, 403);
   }
 
   if (!isNewUser) {
@@ -183,7 +183,10 @@ export async function refreshSession({ refreshToken, ip }) {
   if (!user || !user.isActive) {
     session.revokedAt = new Date();
     await session.save();
-    throw new AppError(user ? INACTIVE_MESSAGE : "Your session has expired. Please login again.", user ? 403 : 401);
+    throw new AppError(
+      user?.suspensionReason ? "This account is suspended. Please contact support." : user ? INACTIVE_MESSAGE : "Your session has expired. Please login again.",
+      user ? 403 : 401
+    );
   }
 
   const nextRefreshToken = signRefreshToken(user._id, session._id);
@@ -207,7 +210,7 @@ export async function refreshSession({ refreshToken, ip }) {
   }
 
   return {
-    accessToken: signAccessToken(user),
+    accessToken: signAccessToken(user, session._id),
     refreshToken: nextRefreshToken,
   };
 }

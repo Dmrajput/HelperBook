@@ -254,6 +254,32 @@ export async function assertEmployeeCapacity(shop, adding = 1) {
   return snapshot;
 }
 
+export async function claimEmployeeSlot(shop) {
+  const user = await User.findById(shop.ownerId);
+  const subscription = await ensureSubscription(user, shop);
+  const snapshot = await buildSnapshot(user, shop, subscription);
+  const limit = snapshot.plan.employeeLimit;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await Shop.updateOne(
+      { _id: shop._id, activeEmployeeSlots: { $exists: false } },
+      { $set: { activeEmployeeSlots: snapshot.activeEmployeeCount } }
+    );
+    const claimed = await Shop.findOneAndUpdate(
+      { _id: shop._id, activeEmployeeSlots: { $lt: limit } },
+      { $inc: { activeEmployeeSlots: 1 } }
+    );
+    if (claimed) return snapshot;
+  }
+  throw limitError(snapshot);
+}
+
+export async function releaseEmployeeSlot(shopId) {
+  await Shop.updateOne(
+    { _id: shopId, activeEmployeeSlots: { $gt: 0 } },
+    { $inc: { activeEmployeeSlots: -1 } }
+  );
+}
+
 function ranked(planId) {
   return PLAN_RANK[planId] ?? 0;
 }
@@ -276,7 +302,7 @@ async function findReusablePayment(shopId, requestId) {
   return SubscriptionPayment.findOne({ shopId, requestId });
 }
 
-export async function createCheckout(userId, { planId, billingInterval, requestId }) {
+export async function createCheckout(userId, { planId, billingInterval, requestId, couponCode }) {
   const plan = validateTarget(planId, billingInterval);
   if (planId === "free") throw fail("INVALID_PLAN", "The Free plan does not require payment.", 400);
   const rupees = priceFor(planId, billingInterval);
@@ -291,7 +317,14 @@ export async function createCheckout(userId, { planId, billingInterval, requestI
   if (existing && (existing.status === "created" || existing.status === "pending")) {
     return checkoutPayload(existing, plan);
   }
-  const amount = rupeesToPaise(rupees);
+  const listAmount = rupeesToPaise(rupees);
+  let amount = listAmount;
+  let couponQuote = null;
+  if (couponCode) {
+    const { quoteCoupon } = await import("./admin/coupon.service.js");
+    couponQuote = await quoteCoupon({ code: couponCode, planId, billingInterval, userId: user._id, listPaise: listAmount });
+    amount = couponQuote.finalPaise;
+  }
   const pendingId = new crypto.randomBytes(8).toString("hex");
   const order = await createRazorpayOrder({
     amount,
@@ -316,7 +349,13 @@ export async function createCheckout(userId, { planId, billingInterval, requestI
     status: "created",
     requestId: requestId || null,
     razorpayOrderId: order.id,
-    metadata: { expectedPlanId: planId },
+    metadata: {
+      expectedPlanId: planId,
+      listAmountPaise: listAmount,
+      discountPaise: couponQuote?.discountPaise || 0,
+      couponId: couponQuote ? String(couponQuote.coupon._id) : null,
+      couponCode: couponQuote?.coupon.normalizedCode || null,
+    },
   });
   return checkoutPayload(payment, plan);
 }
@@ -331,6 +370,9 @@ function checkoutPayload(payment, plan) {
     billingInterval: payment.billingInterval,
     planName: plan.name,
     employeeLimit: plan.employeeLimit,
+    listAmount: payment.metadata?.listAmountPaise || payment.amount,
+    discount: payment.metadata?.discountPaise || 0,
+    couponCode: payment.metadata?.couponCode || null,
   };
 }
 
@@ -408,6 +450,8 @@ export async function settlePaidPayment(payment, { razorpayPaymentId, razorpaySi
     current.paidAt = current.paidAt || new Date();
     current.failureReason = "";
     await current.save(session ? { session } : undefined);
+    const { commitCouponRedemption } = await import("./admin/coupon.service.js");
+    await commitCouponRedemption(current);
     const subscription = await Subscription.findById(current.subscriptionId).session(session || null);
     await applyPaidPlan(subscription, current, session);
     await writeHistory(
@@ -440,7 +484,7 @@ export async function verifyPayment(userId, input) {
     remote?.order_id !== payment.razorpayOrderId ||
     remote?.currency !== "INR" ||
     Number(remote?.amount) !== payment.amount ||
-    !["captured", "authorized"].includes(remote?.status)
+    remote?.status !== "captured"
   ) {
     throw fail("PAYMENT_VERIFICATION_FAILED", "Payment could not be verified.", 400);
   }

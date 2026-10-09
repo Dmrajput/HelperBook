@@ -59,11 +59,15 @@ export function tokenHashMatches(token, storedHash) {
   return timingSafeEqual(left, right);
 }
 
-export function signAccessToken(user) {
+export function signAccessToken(user, sessionId) {
+  if (!sessionId) {
+    throw new AppError(SESSION_EXPIRED, 401);
+  }
   return jwt.sign(
     {
       sub: String(user._id),
       role: user.role,
+      sid: String(sessionId),
       type: "access",
     },
     process.env.JWT_ACCESS_SECRET,
@@ -96,7 +100,7 @@ export function verifyAccessToken(token) {
       algorithms: ["HS256"],
     });
 
-    if (payload?.type !== "access" || !payload.sub) {
+    if (payload?.type !== "access" || !payload.sub || !payload.sid) {
       throw new AppError(SESSION_EXPIRED, 401);
     }
 
@@ -128,12 +132,16 @@ export function verifyRefreshToken(token) {
   }
 }
 
-export function signEmployeeAccessToken(employee) {
+export function signEmployeeAccessToken(employee, sessionId) {
+  if (!sessionId) {
+    throw new AppError(SESSION_EXPIRED, 401);
+  }
   return jwt.sign(
     {
       sub: String(employee._id),
       role: "employee",
       shopId: String(employee.shopId),
+      sid: String(sessionId),
       type: "access",
     },
     process.env.JWT_ACCESS_SECRET,
@@ -171,6 +179,51 @@ export function verifyEmployeeRefreshToken(token) {
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(SESSION_EXPIRED, 401);
+  }
+}
+
+export function signAdminAccessToken(admin, sessionId) {
+  if (!sessionId) {
+    throw new AppError("Your session has expired. Please log in again.", 401);
+  }
+  return jwt.sign(
+    { sub: String(admin._id), role: "admin", adminRole: admin.role, sid: String(sessionId), type: "admin_access" },
+    process.env.JWT_ACCESS_SECRET,
+    { expiresIn: "15m", algorithm: "HS256" }
+  );
+}
+
+export function signAdminRefreshToken(adminId, sessionId) {
+  return jwt.sign(
+    { sub: String(adminId), sid: String(sessionId), role: "admin", type: "admin_refresh" },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: "7d", algorithm: "HS256", jwtid: randomBytes(16).toString("hex") }
+  );
+}
+
+export function verifyAdminAccessToken(token) {
+  try {
+    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET, { algorithms: ["HS256"] });
+    if (payload?.type !== "admin_access" || payload.role !== "admin" || !payload.sub || !payload.sid) {
+      throw new AppError("Your session has expired. Please log in again.", 401);
+    }
+    return payload;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("Your session has expired. Please log in again.", 401);
+  }
+}
+
+export function verifyAdminRefreshToken(token) {
+  try {
+    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET, { algorithms: ["HS256"] });
+    if (payload?.type !== "admin_refresh" || payload.role !== "admin" || !payload.sub || !payload.sid) {
+      throw new AppError("Your session has expired. Please log in again.", 401);
+    }
+    return payload;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("Your session has expired. Please log in again.", 401);
   }
 }
 
