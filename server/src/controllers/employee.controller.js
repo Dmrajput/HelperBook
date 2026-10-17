@@ -3,6 +3,7 @@ import {
   deleteEmployee as deleteEmployeeRecord,
   getEmployeeById as findEmployee,
   getEmployees as listEmployees,
+  issueEmployeeTemporaryPassword,
   updateEmployee as updateEmployeeRecord,
   updateEmployeeStatus as updateStatusRecord,
   setEmployeeLoginStatus,
@@ -12,12 +13,16 @@ import {
   validateEmployeePayload,
   validateEmployeeQuery,
   validateEmployeeStatus,
+  validateEmployeeUpdatePayload,
 } from "../validators/employee.validator.js";
 
 export async function createEmployee(req, res) {
-  const payload = validateEmployeePayload(req.body);
-  const employee = await createEmployeeRecord(req.user.id, payload);
-  sendSuccess(res, "Employee added successfully.", { employee }, 201);
+  const payload = validateEmployeePayload(req.body, { requirePhone: true, allowStatus: true });
+  const data = await createEmployeeRecord(req.user.id, payload);
+  const message = data.temporaryPassword
+    ? "Employee added. Share the temporary password securely."
+    : "Employee added successfully.";
+  sendSuccess(res, message, data, 201);
 }
 
 export async function getEmployees(req, res) {
@@ -32,7 +37,7 @@ export async function getEmployee(req, res) {
 }
 
 export async function updateEmployee(req, res) {
-  const payload = validateEmployeePayload(req.body);
+  const payload = validateEmployeeUpdatePayload(req.body);
   const employee = await updateEmployeeRecord(req.user.id, req.params.id, payload);
   sendSuccess(res, "Employee updated successfully.", { employee });
 }
@@ -51,7 +56,17 @@ export async function updateEmployeeLoginStatus(req, res) {
     throw new AppError("Please choose whether login should be enabled.", 400);
   }
   const data = await setEmployeeLoginStatus(req.user.id, req.params.id, req.body.loginEnabled);
-  sendSuccess(res, data.loginEnabled ? "Employee login enabled." : "Employee login disabled.", data);
+  const message = !data.loginEnabled
+    ? "Employee login disabled."
+    : data.temporaryPassword
+      ? "Employee login enabled. Share the temporary password securely."
+      : "Employee login enabled.";
+  sendSuccess(res, message, data);
+}
+
+export async function resetEmployeePassword(req, res) {
+  const data = await issueEmployeeTemporaryPassword(req.user.id, req.params.id);
+  sendSuccess(res, "Temporary password issued. Share it securely with the employee.", data);
 }
 
 export async function deleteEmployee(req, res) {

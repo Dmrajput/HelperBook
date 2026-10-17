@@ -4,6 +4,7 @@ import {
   deleteEmployee,
   getEmployee,
   getEmployees,
+  resetEmployeePassword,
   updateEmployee,
   updateEmployeeLoginStatus,
   updateEmployeeStatus,
@@ -19,6 +20,7 @@ router.get("/:id", getEmployee);
 router.put("/:id", updateEmployee);
 router.patch("/:id/status", updateEmployeeStatus);
 router.patch("/:id/login-status", updateEmployeeLoginStatus);
+router.post("/:id/reset-password", resetEmployeePassword);
 router.delete("/:id", deleteEmployee);
 
 export default router;

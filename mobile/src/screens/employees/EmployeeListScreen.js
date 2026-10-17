@@ -13,8 +13,8 @@ import useSubscription from "../../hooks/useSubscription";
 import { getEmployees } from "../../services/employeeService";
 import { showEmployeeLimitAlert } from "../../utils/employeeLimit";
 
-const PAGE_BG = "#F4F7F5";
-const HEADER = "#0F6B4F";
+const PAGE_BG = colors.background;
+const HEADER = colors.primary;
 
 function EmployeeListSkeleton() {
   return (
@@ -142,7 +142,7 @@ export default function EmployeeListScreen({ embedded = false }) {
             <AppText variant="heading" color={colors.textInverse} accessibilityRole="header" style={styles.title}>
               Employees
             </AppText>
-            <AppText variant="caption" color="#E7F6EF">
+            <AppText variant="caption" color={colors.primaryLight}>
               {subtitle}
             </AppText>
           </View>
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#E7F6EF",
+    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.xs,

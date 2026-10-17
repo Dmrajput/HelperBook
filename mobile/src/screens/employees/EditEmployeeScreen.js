@@ -57,7 +57,7 @@ export default function EditEmployeeScreen({ navigation, route }) {
       return;
     }
 
-    const nextErrors = validateEmployeeForm(form);
+    const nextErrors = validateEmployeeForm(form, { requirePhone: false });
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       setFormError("Please check the employee details.");
@@ -85,7 +85,7 @@ export default function EditEmployeeScreen({ navigation, route }) {
           <AppText color={colors.textSecondary}>Loading employee...</AppText>
         ) : form ? (
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-            <EmployeeForm form={form} onChange={updateForm} errors={errors} />
+            <EmployeeForm form={form} onChange={updateForm} errors={errors} mode="edit" />
             <FieldError message={formError} />
           </ScrollView>
         ) : (

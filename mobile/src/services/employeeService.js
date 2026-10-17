@@ -34,7 +34,7 @@ export function getEmployeeById(employeeId) {
 export function createEmployee(payload) {
   return request(async () => {
     const response = await apiClient.post("/employees", payload);
-    return response.data.data.employee;
+    return response.data.data;
   });
 }
 
@@ -48,6 +48,13 @@ export function updateEmployee(employeeId, payload) {
 export function setEmployeeLogin(employeeId, loginEnabled) {
   return request(async () => {
     const response = await apiClient.patch(`/employees/${employeeId}/login-status`, { loginEnabled });
+    return response.data.data;
+  });
+}
+
+export function resetEmployeePassword(employeeId) {
+  return request(async () => {
+    const response = await apiClient.post(`/employees/${employeeId}/reset-password`);
     return response.data.data;
   });
 }

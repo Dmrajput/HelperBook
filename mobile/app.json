@@ -19,9 +19,10 @@
     },
     "android": {
       "package": "com.helperbook.app",
+      "versionCode": 1,
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
-        "backgroundColor": "#F6F4EF",
+        "backgroundColor": "#EEF2FF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -44,7 +45,7 @@
       [
         "expo-notifications",
         {
-          "color": "#146C54"
+          "color": "#6366F1"
         }
       ]
     ]

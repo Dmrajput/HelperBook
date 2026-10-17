@@ -131,13 +131,19 @@ function parseSalary(salary) {
   return { type, amount, currency: "INR" };
 }
 
-function parsePhone(value) {
+function parsePhone(value, { required = false } = {}) {
   if (value === undefined || value === null || value === "") {
+    if (required) {
+      throw new AppError("Mobile number is required.", 400);
+    }
     return null;
   }
   const raw = typeof value === "number" ? String(value) : value;
   if (typeof raw !== "string" || !raw.trim()) {
     if (typeof raw === "string" && !raw.trim()) {
+      if (required) {
+        throw new AppError("Mobile number is required.", 400);
+      }
       return null;
     }
     throw new AppError("Enter a valid 10-digit mobile number.", 400);
@@ -145,7 +151,7 @@ function parsePhone(value) {
   return normalizeIndianPhone(raw, "+91").e164;
 }
 
-export function validateEmployeePayload(body) {
+export function validateEmployeePayload(body, { requirePhone = true, allowStatus = true } = {}) {
   const source = requireObject(body);
   const nameValue = text(source.name);
   if (!nameValue) {
@@ -177,15 +183,32 @@ export function validateEmployeePayload(body) {
     throw new AppError("Notes must be 500 characters or less.", 400);
   }
 
-  return {
+  const payload = {
     name: nameValue,
-    phone: parsePhone(source.phone),
+    phone: parsePhone(source.phone, { required: requirePhone }),
     role,
     customRole,
     joiningDate: parseCalendarDate(source.joiningDate),
     salary: parseSalary(source.salary),
     notes,
   };
+
+  if (allowStatus) {
+    let status = "active";
+    if (source.status !== undefined && source.status !== null && source.status !== "") {
+      status = text(source.status);
+      if (!EMPLOYEE_STATUSES.includes(status)) {
+        throw new AppError("Please choose a valid status.", 400);
+      }
+    }
+    payload.status = status;
+  }
+
+  return payload;
+}
+
+export function validateEmployeeUpdatePayload(body) {
+  return validateEmployeePayload(body, { requirePhone: false, allowStatus: false });
 }
 
 export function validateEmployeeStatus(body) {

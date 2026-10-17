@@ -35,8 +35,14 @@ async function startServer() {
 
   const shutdown = (signal) => {
     console.log(`${signal} received. Shutting down.`);
+    const forceExit = setTimeout(() => {
+      console.error("Shutdown timed out.");
+      process.exit(1);
+    }, 10000);
+    forceExit.unref();
     server.close(async () => {
       await mongoose.connection.close();
+      clearTimeout(forceExit);
       process.exit(0);
     });
   };

@@ -16,8 +16,8 @@ import { colors, spacing } from "../../theme";
 import { bulkMarkAttendance } from "../../services/attendanceService";
 import { formatAttendanceDate, statusLabel, todayKey } from "../../utils/attendanceFormat";
 
-const PAGE_BG = "#F4F7F5";
-const HEADER = "#0F6B4F";
+const PAGE_BG = colors.background;
+const HEADER = colors.primary;
 
 function weekdayLabel(key) {
   const [year, month, day] = key.split("-").map(Number);
@@ -205,7 +205,7 @@ export default function AttendanceScreen({ embedded = false }) {
             <AppText variant="heading" color={colors.textInverse} accessibilityRole="header" style={styles.title}>
               Attendance
             </AppText>
-            <AppText variant="caption" color="#E7F6EF" numberOfLines={1}>
+            <AppText variant="caption" color={colors.primaryLight} numberOfLines={1}>
               {isToday ? `Today · ${weekdayLabel(date)}` : weekdayLabel(date)}
             </AppText>
           </View>
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 8,
-    backgroundColor: "#E7F6EF",
+    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },

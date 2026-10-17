@@ -140,6 +140,7 @@ export function AuthProvider({ children }) {
       role: "employee",
       name: result.user.name,
       phone: result.user.phone,
+      mustChangePassword: Boolean(result.user.mustChangePassword),
     });
     return result;
   }, []);

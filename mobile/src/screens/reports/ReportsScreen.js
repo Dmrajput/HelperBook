@@ -7,7 +7,7 @@ import { colors, spacing } from "../../theme";
 
 const REPORTS = [
   { route: "AttendanceReport", title: "Attendance", description: "How staff attended", icon: "calendar", iconColor: "#3B6FE0", iconBackground: "#EEF3FF" },
-  { route: "SalaryReport", title: "Salary", description: "Calculated pay for the period", icon: "wallet", iconColor: "#1C8A52", iconBackground: "#E8F8EF" },
+  { route: "SalaryReport", title: "Salary", description: "Calculated pay for the period", icon: "wallet", iconColor: colors.success, iconBackground: colors.successBackground },
   { route: "AdvanceReport", title: "Advance / Khata", description: "Money given and repaid", icon: "book", iconColor: "#7A5AF8", iconBackground: "#F3EEFF" },
   { route: "LeaveReport", title: "Leave", description: "Approved and pending leave", icon: "sunny", iconColor: "#C8881A", iconBackground: "#FFF6E4" },
   { route: "PaymentReport", title: "Payments", description: "Salary already paid", icon: "cash", iconColor: "#D4535E", iconBackground: "#FDECEC" },

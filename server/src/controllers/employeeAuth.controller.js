@@ -1,4 +1,5 @@
 import {
+  changeEmployeePassword,
   getEmployeeMe,
   loginEmployeeWithPassword,
   logoutAllEmployee,
@@ -8,7 +9,13 @@ import {
   resetEmployeePassword,
 } from "../services/employeeAuth.service.js";
 import { sendSuccess } from "../utils/apiResponse.js";
-import { validateForgotPassword, validatePasswordLogin, validateRefreshToken, validateResetPassword } from "../validators/auth.validator.js";
+import {
+  validateChangePassword,
+  validateForgotPassword,
+  validatePasswordLogin,
+  validateRefreshToken,
+  validateResetPassword,
+} from "../validators/auth.validator.js";
 
 function clientIp(req) {
   return String(req.ip || req.socket?.remoteAddress || "unknown").replace("::ffff:", "");
@@ -52,4 +59,10 @@ export async function logoutAll(req, res) {
 export async function getMe(req, res) {
   const data = await getEmployeeMe(req.employee);
   sendSuccess(res, "Profile fetched successfully", data);
+}
+
+export async function changePassword(req, res) {
+  const input = validateChangePassword(req.body);
+  const result = await changeEmployeePassword(req.employee._id, input);
+  sendSuccess(res, result.message, result.data);
 }

@@ -32,6 +32,13 @@ export function resetEmployeePassword(payload) {
   return openPost("/employee-auth/reset-password", payload);
 }
 
+export function changeEmployeePassword(payload) {
+  return request(async () => {
+    const response = await apiClient.post("/employee-auth/change-password", payload);
+    return response.data.data;
+  });
+}
+
 export function logoutEmployee(refreshToken) {
   return request(async () => {
     await apiClient.post(
@@ -50,6 +57,7 @@ export async function getEmployeeProfile() {
     role: "employee",
     name: data.employee.name,
     phone: data.employee.phone,
+    mustChangePassword: Boolean(data.employee.mustChangePassword),
     employee: data.employee,
     shop: data.shop,
   };

@@ -10,6 +10,7 @@ export function createEmptyEmployeeForm() {
     joiningDate: new Date(),
     salaryType: "monthly",
     salaryAmount: "",
+    status: "active",
     notes: "",
   };
 }
@@ -24,12 +25,13 @@ export function formFromEmployee(employee) {
     joiningDate: dateFromApi(employee.joiningDate),
     salaryType: employee.salary?.type || "monthly",
     salaryAmount: employee.salary?.amount === undefined ? "" : String(employee.salary.amount),
+    status: employee.status || "active",
     notes: employee.notes || "",
   };
 }
 
-export function buildEmployeePayload(form) {
-  return {
+export function buildEmployeePayload(form, { includeStatus = false } = {}) {
+  const payload = {
     name: form.name.trim(),
     phone: form.phone.trim(),
     role: form.role,
@@ -41,9 +43,13 @@ export function buildEmployeePayload(form) {
     },
     notes: form.notes.trim(),
   };
+  if (includeStatus) {
+    payload.status = form.status === "inactive" ? "inactive" : "active";
+  }
+  return payload;
 }
 
-export function validateEmployeeForm(form) {
+export function validateEmployeeForm(form, { requirePhone = true } = {}) {
   const errors = {};
   const name = form.name.trim();
   if (!name) {
@@ -52,7 +58,11 @@ export function validateEmployeeForm(form) {
     errors.name = "Employee name must be between 2 and 100 characters.";
   }
 
-  if (form.phone && !/^[6-9]\d{9}$/.test(form.phone)) {
+  if (!form.phone) {
+    if (requirePhone) {
+      errors.phone = "Mobile number is required.";
+    }
+  } else if (!/^[6-9]\d{9}$/.test(form.phone)) {
     errors.phone = "Enter a valid 10-digit mobile number.";
   }
 

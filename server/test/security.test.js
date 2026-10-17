@@ -147,6 +147,7 @@ test("owner, employee, and admin identities stay isolated", async () => {
   const employeeA = await Employee.findOne({ name: { $in: ["Worker One", "Worker Two"] } });
   assert.equal(String(employeeA.shopId), shopA.json.data.shop.id);
   employeeA.loginEnabled = true;
+  employeeA.mustChangePassword = false;
   await employeeA.save();
 
   const employeeBResponse = await api("/employees", { method: "POST", token: ownerB.accessToken, body: employeeBody("Worker B", "9876501721") });
@@ -257,6 +258,27 @@ test("expired access tokens are rejected", async () => {
   );
   await new Promise((resolve) => setTimeout(resolve, 20));
   assert.equal((await api("/auth/me", { token: expired })).status, 401);
+});
+
+test("owner password login replaces OTP login and deletion is a request", async () => {
+  const phone = "9876501801";
+  const device = { deviceId: "security-test", deviceName: "test", platform: "web" };
+  const registered = await api("/auth/register", {
+    method: "POST",
+    body: { phoneNumber: phone, countryCode: "+91", fullName: "Release Owner", password: "Release1a", ...device },
+  });
+  assert.equal(registered.status, 201);
+  assert.equal((await api("/auth/verify-otp", { method: "POST", body: { phoneNumber: phone, countryCode: "+91", otp: "000000", ...device } })).status, 404);
+  assert.equal((await api("/auth/login", { method: "POST", body: { phoneNumber: phone, countryCode: "+91", password: "wrong-pass", ...device } })).status, 401);
+  const login = await api("/auth/login", { method: "POST", body: { phoneNumber: phone, countryCode: "+91", password: "Release1a", ...device } });
+  assert.equal(login.status, 200);
+  const first = await api("/account/deletion-request", { method: "POST", token: login.json.data.accessToken });
+  const second = await api("/account/deletion-request", { method: "POST", token: login.json.data.accessToken });
+  assert.equal(first.status, 201);
+  assert.equal(second.status, 200);
+  assert.equal(second.json.data.ticketNumber, first.json.data.ticketNumber);
+  assert.equal((await api("/health")).status, 200);
+  assert.equal((await api("/ready")).status, 200);
 });
 
 after(async () => {

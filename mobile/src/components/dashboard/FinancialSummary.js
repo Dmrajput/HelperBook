@@ -1,16 +1,17 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AppText from "../AppText";
+import SectionHeader from "./SectionHeader";
 import { colors, spacing } from "../../theme";
-import { formatInr, peopleLabel } from "../../utils/dashboardFormat";
+import { formatInr, payPeriodLabel, peopleLabel } from "../../utils/dashboardFormat";
 
-function salarySubtitle(salary) {
-  if (!salary?.hasFinalized) return "No finalized salary yet";
-  if (salary.allPaid) return "All finalized salaries paid";
-  return peopleLabel(salary.pendingEmployees, "All finalized salaries paid");
+function salarySubtitle(salary, period) {
+  if (!salary?.hasFinalized) return `No finalized salary yet · ${period}`;
+  if (salary.allPaid) return `All finalized salaries paid · ${period}`;
+  return `${peopleLabel(salary.pendingEmployees, "Ready to pay")} · ${period}`;
 }
 
-function MoneyCard({ title, value, subtitle, icon, background, iconColor, onPress }) {
+function MoneyCard({ title, value, subtitle, icon, background, iconColor, iconBackground, onPress }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -18,42 +19,54 @@ function MoneyCard({ title, value, subtitle, icon, background, iconColor, onPres
       onPress={onPress}
       style={({ pressed }) => [styles.card, { backgroundColor: background }, pressed && styles.pressed]}
     >
-      <View style={styles.icon}>
+      <View style={[styles.icon, { backgroundColor: iconBackground }]}>
         <Ionicons name={icon} size={18} color={iconColor} />
       </View>
-      <AppText variant="caption" color={colors.textSecondary}>{title}</AppText>
-      <AppText variant="heading" style={styles.value} numberOfLines={1}>{value}</AppText>
-      <AppText variant="caption" color={colors.textSecondary} numberOfLines={2}>{subtitle}</AppText>
+      <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+        {title}
+      </AppText>
+      <AppText variant="heading" style={styles.value} numberOfLines={1}>
+        {value}
+      </AppText>
+      <AppText variant="caption" color={colors.textSecondary} numberOfLines={2}>
+        {subtitle}
+      </AppText>
     </Pressable>
   );
 }
 
-export default function FinancialSummary({ salary, advance, onPressSalary, onPressAdvance, onViewDetails }) {
+export default function FinancialSummary({
+  salary,
+  advance,
+  timeZone,
+  onPressSalary,
+  onPressAdvance,
+  onViewDetails,
+}) {
+  const period = payPeriodLabel(timeZone);
+
   return (
     <View style={styles.section}>
-      <View style={styles.titleRow}>
-        <AppText variant="subtitle" style={styles.title}>Salary & Advances</AppText>
-        <Pressable accessibilityRole="button" accessibilityLabel="View salary details" onPress={onViewDetails}>
-          <AppText variant="label" color={colors.primary} style={styles.link}>View Details ›</AppText>
-        </Pressable>
-      </View>
+      <SectionHeader title="Salary & advances" actionLabel="View all ›" onAction={onViewDetails} />
       <View style={styles.row}>
         <MoneyCard
-          title="Salary Pending"
+          title="Salary to pay"
           value={formatInr(salary?.pendingAmount)}
-          subtitle={salarySubtitle(salary)}
-          icon="wallet"
-          background="#E8F8EF"
-          iconColor="#1C8A52"
+          subtitle={salarySubtitle(salary, period)}
+          icon="wallet-outline"
+          background={colors.primaryLight}
+          iconColor={colors.primary}
+          iconBackground={colors.surface}
           onPress={onPressSalary}
         />
         <MoneyCard
-          title="Advance Outstanding"
+          title="Advance balance"
           value={formatInr(advance?.outstandingAmount)}
           subtitle={peopleLabel(advance?.employeesWithOutstanding, "No outstanding advance")}
-          icon="cash"
-          background="#F3EEFF"
-          iconColor="#7A5AF8"
+          icon="swap-horizontal-outline"
+          background={colors.secondaryLight}
+          iconColor={colors.secondary}
+          iconBackground={colors.surface}
           onPress={onPressAdvance}
         />
       </View>
@@ -65,19 +78,6 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.sm,
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  title: {
-    fontWeight: "700",
-    flex: 1,
-  },
-  link: {
-    fontSize: 14,
-  },
   row: {
     flexDirection: "row",
     gap: spacing.sm,
@@ -85,25 +85,25 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: 0,
-    borderRadius: 18,
+    minHeight: 128,
+    borderRadius: 14,
     padding: spacing.md,
-    gap: 2,
-    minHeight: 132,
+    gap: 4,
   },
   icon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.7)",
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   value: {
     fontSize: 22,
     lineHeight: 28,
+    fontWeight: "700",
   },
   pressed: {
-    opacity: 0.88,
+    opacity: 0.9,
   },
 });

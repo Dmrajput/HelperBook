@@ -22,7 +22,7 @@ npm start
 
 ## Health
 
-`GET /api/health` does not require authentication.
+`GET /api/health` is a liveness check and does not require authentication. `GET /api/ready` checks the database and returns 503 when it is unavailable. `/privacy`, `/terms`, and `/delete-account` serve the drafts in `docs/legal` without a login.
 
 ## Authentication
 

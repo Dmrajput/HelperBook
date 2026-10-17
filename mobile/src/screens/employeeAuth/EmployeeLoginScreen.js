@@ -53,7 +53,7 @@ export default function EmployeeLoginScreen({ navigation }) {
         <AppText variant="title">HelperBook</AppText>
         <AppText variant="subtitle">Employee Login</AppText>
         <AppText variant="body" color={colors.textSecondary}>
-          Sign in with the mobile number your shop enabled.
+          Sign in with the mobile number and password shared by your shop.
         </AppText>
         <View style={styles.phoneRow}>
           <View style={styles.codeBox}>
@@ -110,7 +110,7 @@ export default function EmployeeLoginScreen({ navigation }) {
         {error ? <AppText variant="body" color={colors.error}>{error}</AppText> : null}
         <AppButton label={loading ? "Signing in..." : "Log in"} onPress={onLogin} loading={loading} />
         <AppText variant="caption" color={colors.textSecondary}>
-          The first time, use Forgot password to choose a password. Only employees with login access can sign in.
+          On first login you will be asked to change the temporary password. Accounts are created only by the shop owner.
         </AppText>
         <AppButton label="Owner Login" variant="secondary" onPress={() => navigation.navigate("Login")} disabled={loading} />
       </ScrollView>

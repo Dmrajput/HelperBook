@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   tabSelected: {
-    backgroundColor: "#E7F6EF",
+    backgroundColor: colors.primaryLight,
   },
   tabLabel: {
     fontSize: 12,

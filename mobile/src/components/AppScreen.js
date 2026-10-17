@@ -5,10 +5,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "./AppText";
 import { colors, spacing } from "../theme";
 
-const PAGE_BG = "#F4F7F5";
-const HEADER = "#0F6B4F";
+const PAGE_BG = colors.background;
+const HEADER = colors.primary;
 
-export default function AppScreen({ title, subtitle, icon, onBack, showBack = true, children }) {
+export default function AppScreen({ title, subtitle, icon, headerRight, onBack, showBack = true, children }) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const canBack = showBack && (typeof onBack === "function" || navigation.canGoBack());
@@ -37,12 +37,14 @@ export default function AppScreen({ title, subtitle, icon, onBack, showBack = tr
               {title}
             </AppText>
             {subtitle ? (
-              <AppText variant="caption" color="#E7F6EF" numberOfLines={2}>
+              <AppText variant="caption" color={colors.primaryLight} numberOfLines={2}>
                 {subtitle}
               </AppText>
             ) : null}
           </View>
-          {icon ? (
+          {headerRight ? (
+            headerRight
+          ) : icon ? (
             <View style={styles.mark} accessibilityElementsHidden>
               <Ionicons name={icon} size={22} color={colors.primary} />
             </View>
@@ -91,7 +93,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: "#F7F3EA",
+    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },

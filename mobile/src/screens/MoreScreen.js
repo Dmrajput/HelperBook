@@ -1,14 +1,15 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../components/AppText";
 import { useAuth } from "../context/AuthContext";
+import { requestOwnerAccountDeletion } from "../services/accountService";
 import { useShop } from "../context/ShopContext";
 import { colors, spacing } from "../theme";
 
-const PAGE_BG = "#F4F7F5";
-const HEADER = "#0F6B4F";
+const PAGE_BG = colors.background;
+const HEADER = colors.primary;
 
 function MenuRow({ icon, iconColor, iconBackground, title, subtitle, onPress, danger = false, loading = false, disabled = false }) {
   return (
@@ -68,45 +69,72 @@ export default function MoreScreen() {
   const shopName = shop?.name || "Your shop";
   const ownerName = user?.fullName || "";
 
+  const requestDeletion = () => {
+    Alert.alert(
+      "Delete account",
+      "This sends a deletion request for your shop owner account. Salary, advance, and payment records are kept until the retention review is finished. You can keep using the app until the request is completed.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Request deletion",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const result = await requestOwnerAccountDeletion();
+              Alert.alert(
+                "Request received",
+                result?.alreadyRequested
+                  ? `Request ${result.ticketNumber} is already open.`
+                  : `Request ${result.ticketNumber} was received.`
+              );
+            } catch (error) {
+              Alert.alert("Delete account", error?.message || "Unable to send the deletion request.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const work = [
     {
       title: "Salary",
       subtitle: "Calculate and pay staff",
       icon: "wallet",
-      iconColor: "#1C8A52",
-      iconBackground: "#E8F8EF",
+      iconColor: colors.success,
+      iconBackground: colors.successBackground,
       onPress: () => navigation.navigate("Salary"),
     },
     {
       title: "Leave",
       subtitle: "Review staff leave",
       icon: "calendar",
-      iconColor: "#C8881A",
-      iconBackground: "#FFF6E4",
+      iconColor: colors.warning,
+      iconBackground: colors.warningBackground,
       onPress: () => navigation.navigate("Leave"),
     },
     {
       title: "Advance / Khata",
       subtitle: "Track employee advances",
       icon: "book",
-      iconColor: "#7A5AF8",
-      iconBackground: "#F3EEFF",
+      iconColor: colors.secondary,
+      iconBackground: colors.secondaryLight,
       onPress: () => navigation.navigate("AdvanceOverview"),
     },
     {
       title: "Reports",
       subtitle: "Attendance, salary and more",
       icon: "bar-chart",
-      iconColor: "#D4535E",
-      iconBackground: "#FDECEC",
+      iconColor: colors.error,
+      iconBackground: colors.errorBackground,
       onPress: () => navigation.navigate("Reports"),
     },
     {
       title: "Sick leave",
       subtitle: "Paid or unpaid in salary",
       icon: "medkit",
-      iconColor: "#C8881A",
-      iconBackground: "#FFF6E4",
+      iconColor: colors.warning,
+      iconBackground: colors.warningBackground,
       onPress: () => navigation.navigate("ShopSettings"),
     },
   ];
@@ -116,16 +144,16 @@ export default function MoreScreen() {
       title: "Shop profile",
       subtitle: shop?.name || "View shop details",
       icon: "storefront",
-      iconColor: "#3B6FE0",
-      iconBackground: "#EEF3FF",
+      iconColor: colors.info,
+      iconBackground: colors.infoBackground,
       onPress: () => navigation.navigate("ShopProfile"),
     },
     {
       title: "Notifications",
       subtitle: "Recent alerts",
       icon: "notifications",
-      iconColor: "#0F8F86",
-      iconBackground: "#E6F7F6",
+      iconColor: colors.accent,
+      iconBackground: colors.accentLight,
       onPress: () => navigation.navigate("Notifications"),
     },
   ];
@@ -135,8 +163,8 @@ export default function MoreScreen() {
       title: "Subscription",
       subtitle: "Plan and billing",
       icon: "ribbon",
-      iconColor: "#C8881A",
-      iconBackground: "#FFF6E4",
+      iconColor: colors.secondary,
+      iconBackground: colors.secondaryLight,
       onPress: () => navigation.navigate("Subscription"),
     },
   ];
@@ -149,7 +177,7 @@ export default function MoreScreen() {
             <AppText variant="heading" color={colors.textInverse} accessibilityRole="header" style={styles.title}>
               More
             </AppText>
-            <AppText variant="caption" color="#E7F6EF" numberOfLines={1}>
+            <AppText variant="caption" color={colors.primaryLight} numberOfLines={1}>
               {ownerName ? `${ownerName} · ${shopName}` : shopName}
             </AppText>
           </View>
@@ -164,6 +192,16 @@ export default function MoreScreen() {
           <MenuCard title="Shop" items={shopItems} />
           <MenuCard title="Account" items={account} />
           <View style={styles.card}>
+            <MenuRow
+              title="Delete account"
+              subtitle="Request removal of this owner account"
+              icon="trash-outline"
+              iconColor={colors.error}
+              iconBackground={colors.errorBackground}
+              onPress={requestDeletion}
+              danger
+            />
+            <View style={styles.divider} />
             <MenuRow
               title={isLoggingOut ? "Logging out..." : "Log out"}
               subtitle="Sign out of this shop"
@@ -209,7 +247,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: "#F7F3EA",
+    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },

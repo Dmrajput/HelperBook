@@ -7,17 +7,31 @@ import { useShop } from "../context/ShopContext";
 import ShopSetupScreen from "../screens/shop/ShopSetupScreen";
 import SplashScreen from "../screens/SplashScreen";
 import { colors } from "../theme";
+import EmployeeChangePasswordScreen from "../screens/employeeAuth/EmployeeChangePasswordScreen";
 import AppNavigator from "./AppNavigator";
 import AuthNavigator from "./AuthNavigator";
 import EmployeeNavigator from "./EmployeeNavigator";
 
 const SetupStack = createNativeStackNavigator();
+const ForcedPasswordStack = createNativeStackNavigator();
 
 function SetupNavigator() {
   return (
     <SetupStack.Navigator screenOptions={{ headerShown: false }}>
       <SetupStack.Screen name="ShopSetup" component={ShopSetupScreen} />
     </SetupStack.Navigator>
+  );
+}
+
+function ForcedPasswordNavigator() {
+  return (
+    <ForcedPasswordStack.Navigator screenOptions={{ headerShown: false }}>
+      <ForcedPasswordStack.Screen
+        name="EmployeeChangePassword"
+        component={EmployeeChangePasswordScreen}
+        initialParams={{ forced: true }}
+      />
+    </ForcedPasswordStack.Navigator>
   );
 }
 
@@ -55,9 +69,21 @@ export default function RootNavigator() {
     );
   }
 
+  const mustChangePassword = isEmployee && Boolean(user?.mustChangePassword);
+
   return (
     <NavigationContainer theme={navigationTheme}>
-      {!isAuthenticated ? <AuthNavigator /> : isEmployee ? <EmployeeNavigator /> : hasShop ? <AppNavigator /> : <SetupNavigator />}
+      {!isAuthenticated ? (
+        <AuthNavigator />
+      ) : mustChangePassword ? (
+        <ForcedPasswordNavigator />
+      ) : isEmployee ? (
+        <EmployeeNavigator />
+      ) : hasShop ? (
+        <AppNavigator />
+      ) : (
+        <SetupNavigator />
+      )}
     </NavigationContainer>
   );
 }

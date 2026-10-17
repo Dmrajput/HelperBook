@@ -1,13 +1,13 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import AppText from "../AppText";
 import { ATTENDANCE_STATUSES } from "../../constants/attendance";
-import { spacing } from "../../theme";
+import { colors, spacing } from "../../theme";
 
 const TONES = {
-  present: { background: "#E8F8EF", selected: "#1C8A52" },
-  absent: { background: "#FDECEC", selected: "#D4535E" },
-  half_day: { background: "#FFF6E4", selected: "#C8881A" },
-  leave: { background: "#EEF3FF", selected: "#4C6FE0" },
+  present: { background: colors.successBackground, selected: colors.success },
+  absent: { background: colors.errorBackground, selected: colors.error },
+  half_day: { background: colors.warningBackground, selected: colors.warning },
+  leave: { background: colors.infoBackground, selected: colors.info },
 };
 
 export default function AttendanceStatusSelector({ value, onChange, disabled = false }) {

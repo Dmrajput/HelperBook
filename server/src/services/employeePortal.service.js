@@ -3,13 +3,14 @@ import AdvanceTransaction from "../models/AdvanceTransaction.js";
 import Attendance from "../models/Attendance.js";
 import EmployeeAdvance from "../models/EmployeeAdvance.js";
 import Leave from "../models/Leave.js";
+import Notification from "../models/Notification.js";
 import SalaryPayment from "../models/SalaryPayment.js";
 import SalaryRecord from "../models/SalaryRecord.js";
 import Shop from "../models/Shop.js";
 import { getAdvanceBalance } from "./advance.service.js";
-import { monthBounds, currentMonth, keyFromDate, todayKey } from "../utils/attendanceDate.js";
+import { dateFromKey, monthBounds, currentMonth, keyFromDate, todayKey } from "../utils/attendanceDate.js";
 import { AppError } from "../utils/appError.js";
-import { cancelEmployeeLeaveRequest, createEmployeeLeaveRequest } from "./leave.service.js";
+import { assertNoApprovedLeave, cancelEmployeeLeaveRequest, createEmployeeLeaveRequest } from "./leave.service.js";
 import { getEmployeeSalaryReceipt, getEmployeeSalaryReceiptPdf } from "./salaryReceipt.service.js";
 import {
   employeeNotificationPreferences,
@@ -96,6 +97,13 @@ export async function getProfile(employee) {
       joiningDate: employee.joiningDate,
       status: employee.status,
       lastLoginAt: employee.lastLoginAt,
+      salary: employee.salary
+        ? {
+            type: employee.salary.type,
+            amount: employee.salary.amount,
+            currency: employee.salary.currency || "INR",
+          }
+        : null,
     },
     shop: { id: String(shop._id), name: shop.name, logo: shop.logo || null },
   };
@@ -305,36 +313,120 @@ export async function cancelLeaveRequest(employee, leaveId) {
   return cancelEmployeeLeaveRequest(employee, shop, leaveId);
 }
 
+function latestSalaryView(record, payment) {
+  if (!record) return null;
+  const calculation = record.calculation || {};
+  const paid = record.paymentStatus === "paid" && payment?.status === "paid";
+  return {
+    id: String(record._id),
+    year: record.year,
+    month: record.month,
+    status: record.status,
+    paymentStatus: paid ? "paid" : record.paymentStatus || "unpaid",
+    finalSalary: calculation.netSalary || 0,
+    netSalary: calculation.netSalary || 0,
+  };
+}
+
 export async function getHome(employee) {
   const profile = await getProfile(employee);
   const today = todayKey();
-  const attendance = await Attendance.findOne({
-    shopId: employee.shopId,
-    employeeId: employee._id,
-    date: new Date(`${today}T00:00:00.000Z`),
-  }).select("status");
-  const latest = await SalaryRecord.findOne({
-    shopId: employee.shopId,
-    employeeId: employee._id,
-    status: "finalized",
-  }).sort({ year: -1, month: -1 });
-  const payment = latest?.paymentStatus === "paid" ? await latestPayment(employee, latest._id) : null;
-  const outstanding = await getAdvanceBalance(employee._id, employee.shopId);
-  const upcoming = await Leave.findOne({
-    shopId: employee.shopId,
-    employeeId: employee._id,
-    status: "approved",
-    endDate: { $gte: new Date(`${today}T00:00:00.000Z`) },
-  }).sort({ startDate: 1 });
+  const month = currentMonth();
+  const [attendance, monthAttendance, latestAny, outstanding, upcoming, unreadCount] = await Promise.all([
+    Attendance.findOne({
+      shopId: employee.shopId,
+      employeeId: employee._id,
+      date: dateFromKey(today),
+    }).select("status"),
+    getAttendanceSummary(employee, `${month.year}-${String(month.month).padStart(2, "0")}`),
+    SalaryRecord.findOne({
+      shopId: employee.shopId,
+      employeeId: employee._id,
+    }).sort({ year: -1, month: -1, createdAt: -1 }),
+    getAdvanceBalance(employee._id, employee.shopId),
+    Leave.findOne({
+      shopId: employee.shopId,
+      employeeId: employee._id,
+      status: { $in: ["approved", "pending"] },
+      endDate: { $gte: dateFromKey(today) },
+    }).sort({ startDate: 1 }),
+    Notification.countDocuments({ employeeId: employee._id, isRead: false }),
+  ]);
+
+  const payment =
+    latestAny?.paymentStatus === "paid" ? await latestPayment(employee, latestAny._id) : null;
+  const finalized =
+    latestAny?.status === "finalized"
+      ? latestAny
+      : await SalaryRecord.findOne({
+          shopId: employee.shopId,
+          employeeId: employee._id,
+          status: "finalized",
+        }).sort({ year: -1, month: -1 });
+  const finalizedPayment =
+    finalized && String(finalized._id) !== String(latestAny?._id) && finalized.paymentStatus === "paid"
+      ? await latestPayment(employee, finalized._id)
+      : finalized && String(finalized._id) === String(latestAny?._id)
+        ? payment
+        : null;
+
   return {
     ...profile,
     attendanceToday: attendance?.status || "not_marked",
-    salary: latest ? salaryView(latest, payment) : null,
+    canMarkToday: !attendance && employee.status === "active",
+    monthAttendance: monthAttendance.summary,
+    currentSalary: profile.employee.salary,
+    salary: finalized ? salaryView(finalized, finalizedPayment) : null,
+    latestSalary: latestSalaryView(latestAny, payment),
     advanceOutstanding: outstanding,
     upcomingLeave: upcoming
-      ? { id: String(upcoming._id), startDate: keyFromDate(upcoming.startDate), endDate: keyFromDate(upcoming.endDate), status: upcoming.status }
+      ? {
+          id: String(upcoming._id),
+          startDate: keyFromDate(upcoming.startDate),
+          endDate: keyFromDate(upcoming.endDate),
+          status: upcoming.status,
+          leaveType: upcoming.leaveType,
+        }
       : null,
+    unreadCount,
   };
+}
+
+export async function markTodayAttendance(employee) {
+  if (employee.status !== "active") {
+    throw new AppError("Your account is inactive. Attendance cannot be marked.", 403);
+  }
+  const shop = await shopFor(employee);
+  const today = todayKey(shop.settings?.timezone || "Asia/Kolkata");
+  const storedDate = dateFromKey(today);
+  await assertNoApprovedLeave(employee.shopId, employee._id, storedDate);
+
+  const existing = await Attendance.findOne({
+    shopId: employee.shopId,
+    employeeId: employee._id,
+    date: storedDate,
+  }).select("status");
+  if (existing) {
+    throw new AppError("Attendance is already marked for today.", 409, true, { code: "ATTENDANCE_EXISTS" });
+  }
+
+  try {
+    const record = await Attendance.create({
+      shopId: employee.shopId,
+      employeeId: employee._id,
+      date: storedDate,
+      status: "present",
+      notes: "Checked in by employee",
+      markedBy: null,
+      selfMarked: true,
+    });
+    return { status: record.status, date: today, selfMarked: true };
+  } catch (error) {
+    if (Number(error?.code) === 11000) {
+      throw new AppError("Attendance is already marked for today.", 409, true, { code: "ATTENDANCE_EXISTS" });
+    }
+    throw error;
+  }
 }
 
 export const getSalaryReceipt = getEmployeeSalaryReceipt;

@@ -72,6 +72,26 @@ export function assertEnv() {
     process.exit(1);
   }
 
+  if (process.env.NODE_ENV === "production") {
+    const mongoUri = process.env.MONGODB_URI;
+    const usesTls = mongoUri.startsWith("mongodb+srv://") || /[?&]tls=true(?:&|$)/.test(mongoUri) || /[?&]ssl=true(?:&|$)/.test(mongoUri);
+    if (!usesTls) {
+      console.error("Production MONGODB_URI must use TLS (mongodb+srv:// or tls=true).");
+      process.exit(1);
+    }
+
+    const origins = (process.env.CLIENT_URL || "").split(",").map((value) => value.trim()).filter(Boolean);
+    if (origins.length === 0 || origins.some((origin) => !origin.startsWith("https://"))) {
+      console.error("Production CLIENT_URL must list one or more https:// origins.");
+      process.exit(1);
+    }
+
+    if (String(process.env.RAZORPAY_KEY_ID || "").startsWith("rzp_test_")) {
+      console.error("Production cannot use a Razorpay test key.");
+      process.exit(1);
+    }
+  }
+
   if (process.env.IMAGE_PROVIDER === "cloudinary") {
     const cloudinaryMissing = ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"].filter(
       (name) => !process.env[name]

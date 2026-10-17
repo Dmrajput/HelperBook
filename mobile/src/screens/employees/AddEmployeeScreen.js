@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import AppButton from "../../components/AppButton";
-import AppText from "../../components/AppText";
 import FieldError from "../../components/FieldError";
 import AppScreen from "../../components/AppScreen";
 import { createEmployee } from "../../services/employeeService";
@@ -25,7 +24,7 @@ export default function AddEmployeeScreen({ navigation }) {
       return;
     }
 
-    const nextErrors = validateEmployeeForm(form);
+    const nextErrors = validateEmployeeForm(form, { requirePhone: true });
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       setFormError("Please check the employee details.");
@@ -35,13 +34,18 @@ export default function AddEmployeeScreen({ navigation }) {
     setSubmitting(true);
     setFormError("");
     try {
-      const employee = await createEmployee(buildEmployeePayload(form));
-      Alert.alert("Employee added successfully.", "", [
-        {
-          text: "OK",
-          onPress: () => navigation.replace("EmployeeProfile", { employeeId: employee.id }),
-        },
-      ]);
+      const data = await createEmployee(buildEmployeePayload(form, { includeStatus: true }));
+      const employee = data?.employee || data;
+      if (data?.temporaryPassword) {
+        navigation.replace("EmployeeCredentials", {
+          employeeId: employee.id,
+          name: employee.name,
+          phone: employee.phone,
+          temporaryPassword: data.temporaryPassword,
+        });
+        return;
+      }
+      navigation.replace("EmployeeProfile", { employeeId: employee.id });
     } catch (error) {
       if (error?.code === "EMPLOYEE_LIMIT_REACHED") {
         showEmployeeLimitAlert(navigation, error);
@@ -54,10 +58,10 @@ export default function AddEmployeeScreen({ navigation }) {
   }
 
   return (
-    <AppScreen title="Add employee" subtitle="Name, role and salary" icon="person-add">
+    <AppScreen title="Add Employee" subtitle="Create profile and login" icon="person-add">
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <EmployeeForm form={form} onChange={updateForm} errors={errors} />
+          <EmployeeForm form={form} onChange={updateForm} errors={errors} mode="create" />
           <FieldError message={formError} />
         </ScrollView>
         <View style={styles.footer}>
@@ -65,6 +69,7 @@ export default function AddEmployeeScreen({ navigation }) {
             label={submitting ? "Adding employee..." : "Add Employee"}
             onPress={submit}
             disabled={submitting}
+            loading={submitting}
           />
         </View>
       </KeyboardAvoidingView>

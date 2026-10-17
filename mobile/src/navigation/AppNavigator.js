@@ -7,6 +7,7 @@ import EmployeeAttendanceScreen from "../screens/attendance/EmployeeAttendanceSc
 import MonthlyAttendanceScreen from "../screens/attendance/MonthlyAttendanceScreen";
 import AddEmployeeScreen from "../screens/employees/AddEmployeeScreen";
 import EditEmployeeScreen from "../screens/employees/EditEmployeeScreen";
+import EmployeeCredentialsScreen from "../screens/employees/EmployeeCredentialsScreen";
 import EmployeeListScreen from "../screens/employees/EmployeeListScreen";
 import EmployeeProfileScreen from "../screens/employees/EmployeeProfileScreen";
 import AdvanceOverviewScreen from "../screens/advance/AdvanceOverviewScreen";
@@ -46,6 +47,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Home" component={MainTabs} />
       <Stack.Screen name="EmployeeList" component={EmployeeListScreen} />
       <Stack.Screen name="AddEmployee" component={AddEmployeeScreen} />
+      <Stack.Screen name="EmployeeCredentials" component={EmployeeCredentialsScreen} />
       <Stack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
       <Stack.Screen name="EditEmployee" component={EditEmployeeScreen} />
       <Stack.Screen name="ShopProfile" component={ShopProfileScreen} />

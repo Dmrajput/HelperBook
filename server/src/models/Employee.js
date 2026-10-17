@@ -28,6 +28,7 @@ const employeeSchema = new mongoose.Schema(
     notes: { type: String, default: "", trim: true, maxlength: 500 },
     loginEnabled: { type: Boolean, default: false },
     passwordHash: { type: String, default: "", select: false },
+    mustChangePassword: { type: Boolean, default: false },
     phoneVerified: { type: Boolean, default: false },
     lastLoginAt: { type: Date, default: null },
     employeeAuthCreatedAt: { type: Date, default: null },

@@ -21,6 +21,10 @@ if (parsedApiUrl.protocol !== "http:" && parsedApiUrl.protocol !== "https:") {
   throw new Error("EXPO_PUBLIC_API_URL must start with http:// or https://");
 }
 
+if (typeof __DEV__ !== "undefined" && !__DEV__ && parsedApiUrl.protocol !== "https:") {
+  throw new Error("The release build must use an https:// API address.");
+}
+
 if (
   typeof __DEV__ !== "undefined" &&
   __DEV__ &&

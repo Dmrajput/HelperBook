@@ -18,14 +18,7 @@ function shiftCalendarKey(key, days) {
   return shifted.toISOString().slice(0, 10);
 }
 
-export function greetingLine(fullName, timeZone = DEFAULT_TIME_ZONE) {
-  const name = String(fullName || "")
-    .trim()
-    .split(/\s+/)[0];
-  if (!name) {
-    return "Welcome back 👋";
-  }
-
+export function greetingPeriod(timeZone = DEFAULT_TIME_ZONE) {
   const hour = Number.parseInt(
     new Intl.DateTimeFormat("en-GB", {
       timeZone,
@@ -35,13 +28,19 @@ export function greetingLine(fullName, timeZone = DEFAULT_TIME_ZONE) {
     10
   );
 
-  let period = "evening";
-  if (hour < 12) {
-    period = "morning";
-  } else if (hour < 17) {
-    period = "afternoon";
-  }
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
+  return "evening";
+}
 
+export function greetingLine(fullName, timeZone = DEFAULT_TIME_ZONE) {
+  const name = String(fullName || "")
+    .trim()
+    .split(/\s+/)[0];
+  const period = greetingPeriod(timeZone);
+  if (!name) {
+    return `Good ${period} 👋`;
+  }
   return `Good ${period}, ${name} 👋`;
 }
 
@@ -51,6 +50,16 @@ export function todayLabel(timeZone = DEFAULT_TIME_ZONE) {
     weekday: "long",
     day: "numeric",
     month: "long",
+  })
+    .format(new Date())
+    .toUpperCase();
+}
+
+export function payPeriodLabel(timeZone = DEFAULT_TIME_ZONE) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    month: "long",
+    year: "numeric",
   }).format(new Date());
 }
 

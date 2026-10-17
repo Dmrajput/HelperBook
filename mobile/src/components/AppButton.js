@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.primary,
   },
   pressed: {
     opacity: 0.92,

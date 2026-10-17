@@ -1,5 +1,6 @@
 import { normalizeIndianPhone } from "../utils/phone.js";
 import { AppError } from "../utils/appError.js";
+import { assertPasswordPolicy } from "../utils/password.js";
 
 function cleanText(value, maxLength) {
   if (typeof value !== "string") {
@@ -41,18 +42,6 @@ export function validateVerifyOtp(body) {
   };
 }
 
-function assertOwnerPassword(password) {
-  if (
-    typeof password !== "string"
-    || password.length < 8
-    || password.length > 64
-    || !/[A-Za-z]/.test(password)
-    || !/\d/.test(password)
-  ) {
-    throw new AppError("Use 8 to 64 characters with at least one letter and one number.", 400);
-  }
-}
-
 export function validateRegister(body) {
   const fullName = cleanText(body?.fullName, 100);
   if (fullName.length < 2) {
@@ -60,7 +49,7 @@ export function validateRegister(body) {
   }
 
   const password = typeof body?.password === "string" ? body.password : "";
-  assertOwnerPassword(password);
+  assertPasswordPolicy(password);
 
   return {
     phone: normalizeIndianPhone(body?.phoneNumber, body?.countryCode),
@@ -91,7 +80,7 @@ export function validateResetPassword(body) {
   }
 
   const password = typeof body?.password === "string" ? body.password : "";
-  assertOwnerPassword(password);
+  assertPasswordPolicy(password);
 
   return {
     phone: normalizeIndianPhone(body?.phoneNumber, body?.countryCode),
@@ -99,6 +88,25 @@ export function validateResetPassword(body) {
     password,
     device: readDevice(body),
   };
+}
+
+export function validateChangePassword(body) {
+  const currentPassword = typeof body?.currentPassword === "string" ? body.currentPassword : "";
+  const newPassword = typeof body?.newPassword === "string" ? body.newPassword : "";
+  const confirmPassword = typeof body?.confirmPassword === "string" ? body.confirmPassword : "";
+
+  if (!currentPassword) {
+    throw new AppError("Enter your current password.", 400);
+  }
+  assertPasswordPolicy(newPassword);
+  if (newPassword !== confirmPassword) {
+    throw new AppError("New password and confirmation do not match.", 400);
+  }
+  if (newPassword === currentPassword) {
+    throw new AppError("Choose a new password that is different from your current password.", 400);
+  }
+
+  return { currentPassword, newPassword };
 }
 
 export function validateRefreshToken(body) {

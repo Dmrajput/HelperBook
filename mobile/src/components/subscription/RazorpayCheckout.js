@@ -43,7 +43,7 @@ function checkoutHtml(checkout) {
         window.ReactNativeWebView.postMessage(JSON.stringify({ status: "dismissed" }));
       }
     },
-    theme: { color: "#146C54" }
+    theme: { color: colors.primary }
   };
   var checkout = new Razorpay(options);
   checkout.on("payment.failed", function (response) {

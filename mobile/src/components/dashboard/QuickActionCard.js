@@ -8,24 +8,32 @@ export default function QuickActionCard({
   description,
   icon,
   iconColor = colors.primary,
-  iconBackground = "#E7F6EF",
+  iconBackground = colors.primaryLight,
   onPress,
   accessibilityLabel,
+  disabled = false,
+  compact = false,
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || title}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [
+        compact ? styles.compact : styles.card,
+        pressed && !disabled && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
       <View style={[styles.iconWrap, { backgroundColor: iconBackground }]}>
-        <Ionicons name={icon} size={22} color={iconColor} />
+        <Ionicons name={icon} size={compact ? 20 : 22} color={iconColor} />
       </View>
-      <AppText variant="label" numberOfLines={2} style={styles.title}>
+      <AppText variant="label" numberOfLines={compact ? 1 : 2} style={styles.title} align={compact ? "center" : "left"}>
         {title}
       </AppText>
-      {description ? (
+      {!compact && description ? (
         <AppText variant="caption" color={colors.textSecondary} numberOfLines={2}>
           {description}
         </AppText>
@@ -37,29 +45,36 @@ export default function QuickActionCard({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    minHeight: 132,
+    minHeight: 120,
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E6EEEA",
     padding: spacing.md,
     gap: spacing.xs,
-    shadowColor: "#12382C",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
   },
-  cardPressed: {
+  compact: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    minHeight: 88,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 4,
+  },
+  pressed: {
     opacity: 0.9,
+  },
+  disabled: {
+    opacity: 0.45,
   },
   iconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.xs,
   },
   title: {
-    fontSize: 15,
+    fontSize: 13,
   },
 });

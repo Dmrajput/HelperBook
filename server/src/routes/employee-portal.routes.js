@@ -11,6 +11,7 @@ import {
   home,
   leave,
   leaves,
+  markAttendanceToday,
   notifications,
   preferences,
   profile,
@@ -24,12 +25,15 @@ import {
   savePushToken,
 } from "../controllers/employeePortal.controller.js";
 import { requireEmployee } from "../middleware/requireEmployee.js";
+import { requireEmployeePortal } from "../middleware/requireEmployeePortal.js";
 
 const router = Router();
 
 router.use(requireEmployee);
+router.use(requireEmployeePortal);
 router.get("/profile", profile);
 router.get("/home", home);
+router.post("/attendance/today", markAttendanceToday);
 router.get("/attendance", attendance);
 router.get("/attendance/summary", attendanceSummary);
 router.get("/salary", salaries);

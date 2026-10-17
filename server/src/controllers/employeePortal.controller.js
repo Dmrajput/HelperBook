@@ -18,6 +18,7 @@ import {
   listEmployeeNotifications,
   markAllEmployeeNotificationsRead,
   markEmployeeNotificationRead,
+  markTodayAttendance,
   registerEmployeePushToken,
   removeEmployeePushToken,
   updateEmployeeNotificationPreferences,
@@ -32,6 +33,11 @@ export async function profile(req, res) {
 
 export async function home(req, res) {
   sendSuccess(res, "Dashboard fetched successfully", await getHome(req.employee));
+}
+
+export async function markAttendanceToday(req, res) {
+  const data = await markTodayAttendance(req.employee);
+  sendSuccess(res, "Attendance marked for today.", data);
 }
 
 export async function attendance(req, res) {

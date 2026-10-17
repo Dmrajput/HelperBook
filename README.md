@@ -91,7 +91,7 @@ GET /api/health
 
 ### Authentication
 
-Owners sign in with an Indian mobile number and a 6-digit OTP. In development, set `OTP_PROVIDER=mock` in `server/.env`. The API prints the code in the server console as `[DEV OTP]`. That mock provider does not run in production.
+Owners and employees sign in with an Indian mobile number and a password. A one-time code is used only to set or reset that password. In development, set `OTP_PROVIDER=mock` in `server/.env`. The API prints the reset code in the server console as `[DEV OTP]`. That mock provider does not run in production.
 
 Tokens are stored in the phone's secure storage. JWT secrets and OTP provider credentials stay on the server.
 

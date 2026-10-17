@@ -7,6 +7,7 @@ import { getAuthConfig } from "../config/auth.js";
 import OtpRateLimit from "../models/OtpRateLimit.js";
 import { getOtpProvider } from "./otp/otp.provider.js";
 import { AppError } from "../utils/appError.js";
+import { assertPasswordPolicy } from "../utils/password.js";
 import {
   createOtpHash,
   generateOtpCode,
@@ -49,9 +50,10 @@ async function takeSlot(key, max, windowMs) {
 const GENERIC_RESET = "If this number is registered for an active employee account, a code was sent.";
 const INVALID_OTP = "The code is incorrect or has expired.";
 const INVALID_LOGIN = "The mobile number or password is incorrect.";
-const PASSWORD_NOT_SET = "This number does not have a password yet. Use Forgot password to set one.";
+const PASSWORD_NOT_SET = "Ask your shop owner to enable login and share a temporary password.";
 let dummyPasswordHash;
 const SESSION_EXPIRED = "Your session has expired. Please log in again.";
+const MUST_CHANGE = "You must change your temporary password before continuing.";
 
 async function assertSendLimits(e164, ip) {
   const config = getAuthConfig();
@@ -180,6 +182,7 @@ function publicAuthEmployee(employee) {
     shopId: String(employee.shopId),
     name: employee.name,
     phone: employee.phone || null,
+    mustChangePassword: Boolean(employee.mustChangePassword),
   };
 }
 
@@ -257,13 +260,45 @@ export async function resetEmployeePassword({ phone, otp, password, device }, cl
   record.verifiedAt = new Date();
   await record.save();
   employee.passwordHash = await bcrypt.hash(password, 12);
+  employee.mustChangePassword = false;
   employee.phoneVerified = true;
   employee.lastLoginAt = new Date();
   if (!employee.employeeAuthCreatedAt) employee.employeeAuthCreatedAt = new Date();
   await employee.save();
 
+  await revokeEmployeeAccess(employee._id);
   const tokens = await openSession(employee, device);
   return authResult(employee, tokens, "Password updated.");
+}
+
+export async function changeEmployeePassword(employeeId, { currentPassword, newPassword }) {
+  assertPasswordPolicy(newPassword);
+  const employee = await Employee.findById(employeeId).select("+passwordHash");
+  if (!employee || employee.status !== "active" || !employee.loginEnabled) {
+    throw new AppError("You don't have access to this information.", 403);
+  }
+  if (!employee.passwordHash) {
+    throw new AppError(PASSWORD_NOT_SET, 400);
+  }
+
+  const matchesCurrent = await bcrypt.compare(String(currentPassword || ""), employee.passwordHash);
+  if (!matchesCurrent) {
+    throw new AppError("Current password is incorrect.", 400);
+  }
+  if (await bcrypt.compare(String(newPassword), employee.passwordHash)) {
+    throw new AppError("Choose a new password that is different from your current password.", 400);
+  }
+
+  employee.passwordHash = await bcrypt.hash(newPassword, 12);
+  employee.mustChangePassword = false;
+  employee.phoneVerified = true;
+  await employee.save();
+
+  await revokeEmployeeAccess(employee._id);
+  return {
+    message: "Password changed successfully. Please sign in again.",
+    data: { mustChangePassword: false },
+  };
 }
 
 export async function refreshEmployeeSession(refreshToken, clientIp) {
@@ -329,9 +364,16 @@ export async function getEmployeeMe(employee) {
       joiningDate: employee.joiningDate,
       status: employee.status,
       lastLoginAt: employee.lastLoginAt,
+      mustChangePassword: Boolean(employee.mustChangePassword),
     },
     shop: shop
       ? { id: String(shop._id), name: shop.name, logo: shop.logo || null }
       : null,
   };
+}
+
+export function assertEmployeePasswordReady(employee) {
+  if (employee?.mustChangePassword) {
+    throw new AppError(MUST_CHANGE, 403, true, { code: "MUST_CHANGE_PASSWORD" });
+  }
 }

@@ -13,6 +13,7 @@ const CATEGORIES = [
   "bug",
   "feature",
   "other",
+  "account_deletion",
 ];
 const STATUSES = ["open", "in_progress", "waiting_for_customer", "resolved", "closed"];
 const PRIORITIES = ["low", "normal", "high", "urgent"];

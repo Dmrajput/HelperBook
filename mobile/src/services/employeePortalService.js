@@ -13,6 +13,10 @@ export function getEmployeeHome() {
   return request(async () => (await apiClient.get("/employee-portal/home")).data.data);
 }
 
+export function markEmployeeAttendanceToday() {
+  return request(async () => (await apiClient.post("/employee-portal/attendance/today")).data.data);
+}
+
 export function getEmployeeAttendance(month) {
   return request(async () => (await apiClient.get("/employee-portal/attendance", { params: { month } })).data.data);
 }

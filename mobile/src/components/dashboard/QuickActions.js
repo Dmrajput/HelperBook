@@ -1,103 +1,95 @@
 import { StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AppText from "../AppText";
-import { useMainTab } from "../../navigation/mainTabContext";
-import { spacing } from "../../theme";
+import SectionHeader from "./SectionHeader";
 import QuickActionCard from "./QuickActionCard";
+import { useMainTab } from "../../navigation/mainTabContext";
+import { colors, spacing } from "../../theme";
 
-export default function QuickActions({ activeCount }) {
+export default function QuickActions({ activeCount = 0, notMarkedToday = 0, isWorkingDay = true }) {
   const navigation = useNavigation();
   const { setTab } = useMainTab();
-  const employeesDescription = Number.isInteger(activeCount)
-    ? `${activeCount} active staff`
-    : "View your team";
+  const hasEmployees = activeCount > 0;
+  const needsAttendance = hasEmployees && isWorkingDay && notMarkedToday > 0;
 
   const actions = [
     {
       id: "add-employee",
-      title: "Add Employee",
-      description: "Add a new staff member",
-      icon: "person-add",
-      iconColor: "#1C8A52",
-      iconBackground: "#E8F8EF",
-      accessibilityLabel: "Add Employee",
+      title: "Employee",
+      description: "Add staff",
+      icon: "person-add-outline",
+      iconColor: colors.primary,
+      iconBackground: colors.primaryLight,
       onPress: () => navigation.navigate("AddEmployee"),
+      priority: hasEmployees ? 3 : 0,
     },
     {
       id: "attendance",
       title: "Attendance",
-      description: "Mark today's attendance",
-      icon: "calendar",
-      iconColor: "#3B6FE0",
-      iconBackground: "#EEF3FF",
-      accessibilityLabel: "Attendance",
+      description: needsAttendance ? "Mark today" : "View today",
+      icon: "calendar-outline",
+      iconColor: colors.success,
+      iconBackground: colors.successBackground,
       onPress: () => setTab("Attendance"),
+      disabled: !hasEmployees,
+      priority: needsAttendance ? 0 : 2,
     },
     {
       id: "salary",
       title: "Salary",
-      description: "Calculate & pay staff salary",
-      icon: "wallet",
-      iconColor: "#1C8A52",
-      iconBackground: "#E8F8EF",
-      accessibilityLabel: "Salary",
+      description: "Process pay",
+      icon: "wallet-outline",
+      iconColor: colors.secondary,
+      iconBackground: colors.secondaryLight,
       onPress: () => navigation.navigate("Salary"),
+      disabled: !hasEmployees,
+      priority: 4,
     },
     {
       id: "advance",
-      title: "Advance / Khata",
-      description: "Track employee advances",
-      icon: "book",
-      iconColor: "#7A5AF8",
-      iconBackground: "#F3EEFF",
-      accessibilityLabel: "Advance / Khata",
+      title: "Advance",
+      description: "Give advance",
+      icon: "cash-outline",
+      iconColor: colors.warning,
+      iconBackground: colors.warningBackground,
       onPress: () => navigation.navigate("AdvanceOverview"),
+      disabled: !hasEmployees,
+      priority: 5,
+    },
+    {
+      id: "leave",
+      title: "Leave",
+      description: "Manage leave",
+      icon: "document-text-outline",
+      iconColor: colors.info,
+      iconBackground: colors.infoBackground,
+      onPress: () => navigation.navigate("Leave"),
+      disabled: !hasEmployees,
+      priority: 6,
     },
     {
       id: "reports",
       title: "Reports",
-      description: "View attendance, salary and more",
-      icon: "bar-chart",
-      iconColor: "#D4535E",
-      iconBackground: "#FDECEC",
-      accessibilityLabel: "Reports",
+      description: "View reports",
+      icon: "bar-chart-outline",
+      iconColor: colors.accent,
+      iconBackground: colors.accentLight,
       onPress: () => navigation.navigate("Reports"),
+      disabled: !hasEmployees,
+      priority: 7,
     },
-    {
-      id: "leave",
-      title: "Leave Management",
-      description: "Review staff leave",
-      icon: "calendar-outline",
-      iconColor: "#C8881A",
-      iconBackground: "#FFF6E4",
-      accessibilityLabel: "Leave Management",
-      onPress: () => navigation.navigate("Leave"),
-    },
-    {
-      id: "employees",
-      title: "Employees",
-      description: employeesDescription,
-      icon: "people",
-      iconColor: "#0F8F86",
-      iconBackground: "#E6F7F6",
-      accessibilityLabel: "View Employees",
-      onPress: () => setTab("Employees"),
-    },
-    {
-      id: "edit-shop",
-      title: "Edit Shop",
-      description: "Update shop information",
-      icon: "storefront",
-      iconColor: "#3B6FE0",
-      iconBackground: "#EEF3FF",
-      accessibilityLabel: "Edit Shop",
-      onPress: () => navigation.navigate("ShopProfile", { edit: true }),
-    },
-  ];
+  ]
+    .map((action) => ({
+      ...action,
+      accessibilityLabel: action.disabled
+        ? `${action.title}. Add an employee first.`
+        : `${action.title}. ${action.description}`,
+    }))
+    .sort((a, b) => a.priority - b.priority);
 
   return (
     <View style={styles.section}>
-      <AppText variant="subtitle" style={styles.title}>Quick Actions</AppText>
+      <SectionHeader title="Quick actions" sideLabel="Most used" />
       <View style={styles.grid}>
         {actions.map((action) => (
           <View key={action.id} style={styles.cell}>
@@ -109,10 +101,17 @@ export default function QuickActions({ activeCount }) {
               iconBackground={action.iconBackground}
               accessibilityLabel={action.accessibilityLabel}
               onPress={action.onPress}
+              disabled={action.disabled}
+              compact
             />
           </View>
         ))}
       </View>
+      {!hasEmployees ? (
+        <AppText variant="caption" color={colors.textSecondary}>
+          Add an employee to unlock attendance, salary, advance, leave, and reports.
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -121,16 +120,21 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.sm,
   },
-  title: {
-    fontWeight: "700",
-  },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.sm,
+    shadowColor: "#000000",
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
   },
   cell: {
-    width: "48%",
+    width: "33.33%",
   },
 });

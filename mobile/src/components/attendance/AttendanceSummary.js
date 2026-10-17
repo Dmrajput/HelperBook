@@ -3,10 +3,10 @@ import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
 
 const TILES = [
-  { key: "present", label: "Present", color: "#1C8A52", background: "#E8F8EF" },
-  { key: "absent", label: "Absent", color: "#D4535E", background: "#FDECEC" },
-  { key: "halfDay", label: "Half Day", color: "#C8881A", background: "#FFF6E4" },
-  { key: "leave", label: "Leave", color: "#4C6FE0", background: "#EEF3FF" },
+  { key: "present", label: "Present", color: colors.success, background: colors.successBackground },
+  { key: "absent", label: "Absent", color: colors.error, background: colors.errorBackground },
+  { key: "halfDay", label: "Half Day", color: colors.warning, background: colors.warningBackground },
+  { key: "leave", label: "Leave", color: colors.info, background: colors.infoBackground },
 ];
 
 export default function AttendanceSummary({ summary }) {
