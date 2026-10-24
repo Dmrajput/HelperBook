@@ -46,16 +46,15 @@ The shop owns the business records it enters. HelperBook processes them to provi
 
 ## 8. Intellectual property
 
-The HelperBook name, app, and code are owned by [OWNER LEGAL NAME]. Shop logos and records stay with the shop, subject to the rights needed to host and display them.
+The HelperBook name, app, and code are owned by Divyarajsinh Mavendrasinh Padhiyar. Shop logos and records stay with the shop, subject to the rights needed to host and display them.
 
 ## 9. Liability and disputes
 
-[LIMITATION OF LIABILITY — lawyer review]
-[GOVERNING LAW AND COURTS — owner decision, do not assume a city]
+HelperBook is provided as a bookkeeping aid. To the extent allowed by law, we are not liable for indirect or consequential losses arising from use of the app. These terms are governed by the laws of India, and disputes are subject to the courts of Ahmedabad, Gujarat.
 
 ## 10. Contact
 
-[SUPPORT EMAIL]
-[OWNER ADDRESS]
+- Email: helperbookofficial@gmail.com
+- Address: Ahmedabad, Gujarat, India
 
-Effective date: not set.
+Effective date: 24 October 2026.

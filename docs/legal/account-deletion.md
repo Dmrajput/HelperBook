@@ -1,6 +1,8 @@
 # Delete a HelperBook account
 
-This page explains how to ask for deletion. Sending the request does not immediately erase every record.
+This page explains how to ask HelperBook to delete your account and associated data. Sending the request does not immediately erase every record.
+
+**Support email:** helperbookofficial@gmail.com
 
 ## In the app
 
@@ -11,14 +13,20 @@ You must be signed in. The app shows a request number such as `HB-SUP-000001`. I
 
 ## What is deleted, and what is kept
 
-When the operator completes the request, that account's sessions should be revoked and its login disabled. Salary, advance, payment, subscription, and audit records can be retained for accounting, disputes, fraud prevention, and legal duties. The retention period is [RETENTION PERIOD — owner decision].
+When we complete the request, that account's sessions are revoked and its login is disabled. Salary, advance, payment, subscription, and audit records can be retained for accounting, disputes, fraud prevention, and legal duties for up to 7 years.
 
 A request for one shop does not delete another shop. An employee request does not delete the shop owner's account or other employees.
 
 ## If you cannot open the app
 
-Write to [SUPPORT EMAIL] from the mobile number on the account and include the request number if you have one. Email alone is not treated as completed deletion until the operator matches it to the account.
+Write to **helperbookofficial@gmail.com** from the mobile number on the account and include:
+
+- Your registered phone number
+- Your shop name (if you are a shop owner)
+- The request number if you already have one
+
+Email alone is not treated as completed deletion until we match it to the account and process the request.
 
 ## Status
 
-There is no public website for this page yet. The API can serve this text at `/delete-account` after the backend is deployed on HTTPS.
+This page is published at https://helperbook.onrender.com/delete-account
