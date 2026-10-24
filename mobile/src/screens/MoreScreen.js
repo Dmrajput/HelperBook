@@ -129,14 +129,6 @@ export default function MoreScreen() {
       iconBackground: colors.errorBackground,
       onPress: () => navigation.navigate("Reports"),
     },
-    {
-      title: "Sick leave",
-      subtitle: "Paid or unpaid in salary",
-      icon: "medkit",
-      iconColor: colors.warning,
-      iconBackground: colors.warningBackground,
-      onPress: () => navigation.navigate("ShopSettings"),
-    },
   ];
 
   const shopItems = [
@@ -147,6 +139,14 @@ export default function MoreScreen() {
       iconColor: colors.info,
       iconBackground: colors.infoBackground,
       onPress: () => navigation.navigate("ShopProfile"),
+    },
+    {
+      title: "Sick leave",
+      subtitle: "Paid or unpaid in salary",
+      icon: "medkit",
+      iconColor: colors.warning,
+      iconBackground: colors.warningBackground,
+      onPress: () => navigation.navigate("ShopSettings"),
     },
     {
       title: "Notifications",

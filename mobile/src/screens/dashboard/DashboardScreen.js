@@ -79,7 +79,7 @@ export default function DashboardScreen({
           dateLabel={todayLabel(timeZone)}
           unreadCount={unreadCount}
           onNotifications={() => navigation.navigate("Notifications")}
-          onSettings={() => navigation.navigate("ShopSettings")}
+          onSettings={() => navigation.navigate("ShopProfile")}
         />
         <View style={styles.body}>
           {error ? (
