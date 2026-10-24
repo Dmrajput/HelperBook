@@ -148,7 +148,7 @@ export default function EmployeeResetPasswordScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, gap: spacing.md, paddingTop: spacing.xxl, paddingBottom: spacing.xxl },
+  content: { flexGrow: 1, gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.lg },
   codeInput: {
     minHeight: 56,
     borderWidth: 1,

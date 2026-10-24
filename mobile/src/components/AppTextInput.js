@@ -38,21 +38,21 @@ export default function AppTextInput({
 const styles = StyleSheet.create({
   wrap: {
     width: "100%",
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   input: {
     minHeight: theme.controlHeight,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: theme.radius,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     backgroundColor: colors.surface,
     color: colors.text,
-    fontSize: 17,
+    fontSize: 16,
   },
   multiline: {
-    minHeight: 110,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
+    minHeight: 96,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
   },
 });

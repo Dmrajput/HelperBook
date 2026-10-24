@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   wrap: {
     backgroundColor: colors.surface,
     borderRadius: 18,
-    padding: spacing.xl,
+    padding: spacing.md,
     gap: spacing.sm,
     alignItems: "center",
   },

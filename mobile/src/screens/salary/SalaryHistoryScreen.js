@@ -74,10 +74,10 @@ export default function SalaryHistoryScreen({ navigation, route }) {
             <SalaryCard
               key={salary.id}
               name={`${MONTHS[salary.month - 1]} ${salary.year}`}
+              role={detail || "Salary period"}
               amount={salary.calculation.netSalary}
               status={salary.status}
               paymentStatus={paymentStatus}
-              detail={detail}
               actionLabel={salary.paymentStatus === "paid" ? "View Receipt" : "View"}
               onPress={() =>
                 navigation.navigate(salary.paymentStatus === "paid" ? "SalaryReceipt" : "SalaryDetail", {
@@ -93,6 +93,6 @@ export default function SalaryHistoryScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { gap: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { gap: spacing.lg, paddingBottom: spacing.lg },
   block: { height: 96, borderRadius: 12, backgroundColor: colors.disabled },
 });

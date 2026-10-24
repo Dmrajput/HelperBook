@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scroll: {
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.lg,
   },
   header: {
     backgroundColor: colors.primary,

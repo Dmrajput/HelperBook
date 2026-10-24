@@ -165,7 +165,7 @@ function Chip({ label, selected, onPress }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { gap: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { gap: spacing.lg, paddingBottom: spacing.lg },
   filters: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   chip: {
     borderRadius: 999,

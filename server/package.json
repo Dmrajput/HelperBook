@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test test/security.test.js"
+    "test": "node --test test/security.test.js test/salaryCalculation.test.js",
+    "test:salary": "node --test test/salaryCalculation.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

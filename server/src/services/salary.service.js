@@ -26,6 +26,7 @@ import {
 } from "../utils/attendanceDate.js";
 import { runInTransaction } from "../utils/mongoTransaction.js";
 import { roundMoney } from "../validators/salary.validator.js";
+import { calculateNetSalary, computePayrollAmounts, roundDays } from "./salaryCalculation.js";
 
 const SHOP_REQUIRED = "Shop setup is required before managing employees.";
 const NOT_FOUND = "Salary could not be found.";
@@ -33,9 +34,7 @@ const FINALIZED_MESSAGE = "Salary is finalized. Reopen it before recalculating."
 const FINALIZED_EDIT = "This salary is finalized. Reopen it before making changes.";
 const NOT_EMPLOYED = "This employee was not employed during this month.";
 
-function roundDays(value) {
-  return Math.round(Number(value) * 100) / 100;
-}
+export { computePayrollAmounts };
 
 function shiftKey(key, days) {
   const [year, month, day] = key.split("-").map(Number);
@@ -156,50 +155,6 @@ async function getAttendanceDays(shopId, employeeId, startKey, endKey) {
   return records.map((record) => ({ key: keyFromDate(record.date), status: record.status }));
 }
 
-function calculateDailyRate(salaryRate, divisor) {
-  if (!divisor) {
-    return 0;
-  }
-  return salaryRate / divisor;
-}
-
-function calculateBaseSalary({ salaryType, salaryRate, payableDays }) {
-  if (salaryType === "daily") {
-    return roundMoney(salaryRate * payableDays);
-  }
-  return roundMoney(salaryRate);
-}
-
-function calculateAttendanceDeduction({ salaryType, unpaidAttendanceDays, dailyRate }) {
-  if (salaryType === "daily") {
-    return 0;
-  }
-  return roundMoney(unpaidAttendanceDays * dailyRate);
-}
-
-function calculateLeaveDeduction({ salaryType, unpaidLeaveDays, dailyRate }) {
-  if (salaryType === "daily") {
-    return 0;
-  }
-  return roundMoney(unpaidLeaveDays * dailyRate);
-}
-
-function calculateNetSalary({
-  baseSalary,
-  attendanceDeduction,
-  leaveDeduction,
-  bonus,
-  deduction,
-  advanceDeduction,
-}) {
-  const raw = baseSalary - attendanceDeduction - leaveDeduction + bonus - deduction - advanceDeduction;
-  const rounded = roundMoney(raw);
-  if (rounded < 0) {
-    return { netSalary: 0, warning: DEDUCTIONS_EXCEED_SALARY };
-  }
-  return { netSalary: rounded, warning: "" };
-}
-
 function employmentWindow(employee, period, timeZone) {
   const joiningKey = keyFromDate(employee.joiningDate);
   if (joiningKey > period.endKey) {
@@ -266,7 +221,6 @@ async function buildSnapshot({ shop, employee, period, adjustments, timeZone }) 
   }
 
   const unpaidLeaveDays = roundDays(leaveDays - paidLeaveDays);
-  const payableDays = roundDays(counts.presentDays + counts.halfDays * 0.5 + paidLeaveDays);
   const beforeStart = joiningKey > period.startKey ? period.startKey : "";
   const beforeEnd = joiningKey > period.startKey ? shiftKey(joiningKey, -1) : "";
   const afterStart = deactivatedKey && deactivatedKey < period.endKey ? shiftKey(deactivatedKey, 1) : "";
@@ -274,18 +228,31 @@ async function buildSnapshot({ shop, employee, period, adjustments, timeZone }) 
   const afterExitDays = countModeDays(shop, afterStart, period.endKey, mode, timeZone);
   const workingDays = calculateWorkingDays(shop, period.startKey, period.endKey, timeZone);
   const divisor = mode === "calendar_days" ? period.calendarDays : workingDays;
-  const dailyRate = calculateDailyRate(employee.salary.amount, divisor);
-  const unpaidAttendanceDays = roundDays(counts.absentDays + counts.halfDays * 0.5 + beforeJoiningDays + afterExitDays);
+  // Employment window only — pre-joining / post-exit are excluded here (not billed as absences).
+  const employmentDays = countModeDays(shop, windowStart, windowEnd, mode, timeZone);
   const salaryType = employee.salary.type;
   const salaryRate = roundMoney(employee.salary.amount);
   const bonuses = adjustments.bonuses || [];
   const deductions = adjustments.deductions || [];
   const bonus = sumAmounts(bonuses);
   const deduction = sumAmounts(deductions);
-  const baseSalary = calculateBaseSalary({ salaryType, salaryRate, payableDays });
-  const attendanceDeduction = calculateAttendanceDeduction({ salaryType, unpaidAttendanceDays, dailyRate });
-  const leaveDeduction = calculateLeaveDeduction({ salaryType, unpaidLeaveDays, dailyRate });
-  const availableSalary = roundMoney(baseSalary - attendanceDeduction - leaveDeduction + bonus - deduction);
+  const payroll = computePayrollAmounts({
+    salaryType,
+    salaryRate,
+    divisor,
+    employmentDays,
+    presentDays: counts.presentDays,
+    halfDays: counts.halfDays,
+    absentDays: counts.absentDays,
+    paidLeaveDays,
+    unpaidLeaveDays,
+    bonus,
+    deduction,
+    advanceDeduction: 0,
+  });
+  const availableSalary = roundMoney(
+    payroll.baseSalary - payroll.attendanceDeduction - payroll.leaveDeduction + bonus - deduction
+  );
   const advance = await planSalaryDeduction({
     shopId: shop._id,
     employeeId: employee._id,
@@ -293,9 +260,9 @@ async function buildSnapshot({ shop, employee, period, adjustments, timeZone }) 
     availableSalary,
   });
   const net = calculateNetSalary({
-    baseSalary,
-    attendanceDeduction,
-    leaveDeduction,
+    baseSalary: payroll.baseSalary,
+    attendanceDeduction: payroll.attendanceDeduction,
+    leaveDeduction: payroll.leaveDeduction,
     bonus,
     deduction,
     advanceDeduction: advance.advanceDeduction,
@@ -330,22 +297,23 @@ async function buildSnapshot({ shop, employee, period, adjustments, timeZone }) 
       approvedPaidDays: approved.paidWorkingDays,
       approvedUnpaidDays: approved.unpaidWorkingDays,
       absentDays: counts.absentDays,
-      payableDays,
+      payableDays: payroll.payableDays,
       beforeJoiningDays,
       afterExitDays,
+      employmentDays,
     },
     bonuses,
     deductions,
     calculation: {
-      baseSalary,
-      attendanceDeduction,
-      leaveDeduction,
+      baseSalary: payroll.baseSalary,
+      attendanceDeduction: payroll.attendanceDeduction,
+      leaveDeduction: payroll.leaveDeduction,
       bonus,
       deduction,
       advanceDeduction: advance.advanceDeduction,
       advanceDeductionManual: Boolean(adjustments.advanceDeductionManual),
       netSalary: net.netSalary,
-      warning: warnings.join(" "),
+      warning: warnings.filter(Boolean).join(" "),
     },
     notes: adjustments.notes || "",
     calculatedAt: new Date(),

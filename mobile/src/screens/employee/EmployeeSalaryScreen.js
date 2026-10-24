@@ -56,7 +56,7 @@ export default function EmployeeSalaryScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xxl },
+  content: { gap: spacing.md, paddingBottom: spacing.lg },
   card: {
     gap: spacing.xs,
     padding: spacing.md,

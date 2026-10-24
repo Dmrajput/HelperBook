@@ -34,7 +34,7 @@ export default function MainTabs() {
           {tab === "Attendance" ? <AttendanceScreen embedded /> : null}
           {tab === "More" ? <MoreScreen /> : null}
         </View>
-        <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
+        <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
           {TABS.map((item) => {
             const selected = tab === item.key;
             return (
@@ -78,17 +78,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xs,
     paddingHorizontal: spacing.sm,
     gap: spacing.xs,
   },
   tab: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
-    gap: 2,
+    borderRadius: 14,
+    gap: 1,
+    paddingVertical: 4,
   },
   tabSelected: {
     backgroundColor: colors.primaryLight,

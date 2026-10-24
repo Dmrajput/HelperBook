@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     gap: spacing.lg,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.xxl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   otpWrap: {
     minHeight: theme.controlHeight + 8,

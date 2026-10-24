@@ -157,8 +157,8 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    paddingVertical: spacing.xxxl,
-    gap: spacing.xl,
+    paddingVertical: spacing.xl,
+    gap: spacing.lg,
   },
   header: {
     gap: spacing.md,

@@ -58,7 +58,7 @@ export default function EmployeeCreateLeaveScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xxl },
+  content: { gap: spacing.md, paddingBottom: spacing.lg },
   input: {
     minHeight: 48,
     borderWidth: 1,

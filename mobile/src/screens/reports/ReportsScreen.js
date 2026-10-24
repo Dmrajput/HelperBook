@@ -49,7 +49,7 @@ export default function ReportsScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.lg,
   },
   card: {
     backgroundColor: colors.surface,

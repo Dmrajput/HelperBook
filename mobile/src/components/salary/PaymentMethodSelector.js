@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    padding: spacing.lg,
+    padding: spacing.md,
   },
   selected: {
     backgroundColor: colors.primary,

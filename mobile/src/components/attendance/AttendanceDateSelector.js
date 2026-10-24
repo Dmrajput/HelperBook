@@ -5,7 +5,18 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import AppButton from "../AppButton";
 import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
-import { formatAttendanceDate, keyFromPickerDate, pickerDateFromKey, shiftKey, todayKey } from "../../utils/attendanceFormat";
+import { keyFromPickerDate, pickerDateFromKey, shiftKey, todayKey } from "../../utils/attendanceFormat";
+
+function shortDateLabel(key) {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
 
 export default function AttendanceDateSelector({ date, onChange }) {
   const [showPicker, setShowPicker] = useState(false);
@@ -26,20 +37,20 @@ export default function AttendanceDateSelector({ date, onChange }) {
           accessibilityRole="button"
           accessibilityLabel="Previous day"
           onPress={() => apply(shiftKey(date, -1))}
-          style={styles.arrow}
+          style={({ pressed }) => [styles.arrow, pressed && styles.pressed]}
         >
           <Ionicons name="chevron-back" size={18} color={colors.primary} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Attendance date, ${formatAttendanceDate(date)}`}
+          accessibilityLabel={`Attendance date, ${shortDateLabel(date)}`}
           onPress={() => setShowPicker(true)}
-          style={styles.date}
+          style={({ pressed }) => [styles.date, pressed && styles.pressed]}
         >
-          <Ionicons name="calendar-outline" size={16} color={colors.primary} />
           <AppText variant="label" numberOfLines={1} style={styles.dateLabel}>
-            {formatAttendanceDate(date)}
+            {shortDateLabel(date)}
           </AppText>
+          <Ionicons name="chevron-down" size={16} color={colors.primary} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -47,13 +58,18 @@ export default function AttendanceDateSelector({ date, onChange }) {
           accessibilityState={{ disabled: nextDisabled }}
           disabled={nextDisabled}
           onPress={() => apply(shiftKey(date, 1))}
-          style={[styles.arrow, nextDisabled && styles.disabled]}
+          style={({ pressed }) => [styles.arrow, nextDisabled && styles.disabled, pressed && !nextDisabled && styles.pressed]}
         >
           <Ionicons name="chevron-forward" size={18} color={nextDisabled ? colors.disabledText : colors.primary} />
         </Pressable>
       </View>
       {date !== today ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Jump to today" onPress={() => onChange(today)} style={styles.today}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Jump to today"
+          onPress={() => onChange(today)}
+          style={styles.today}
+        >
           <AppText variant="label" color={colors.primary}>
             Today
           </AppText>
@@ -92,8 +108,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: spacing.xs,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   arrow: {
     width: 40,
@@ -126,5 +147,8 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.45,
+  },
+  pressed: {
+    opacity: 0.88,
   },
 });

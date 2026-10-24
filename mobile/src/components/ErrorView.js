@@ -12,12 +12,12 @@ export default function ErrorView({
   return (
     <View style={styles.container}>
       {title ? (
-        <AppText variant="heading" color={colors.error}>
+        <AppText variant="label" color={colors.error}>
           {title}
         </AppText>
       ) : null}
       {message ? (
-        <AppText variant="body" color={colors.text}>
+        <AppText variant="caption" color={colors.text}>
           {message}
         </AppText>
       ) : null}
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: colors.errorBackground,
     borderRadius: 12,
-    padding: spacing.lg,
-    gap: spacing.md,
+    padding: spacing.md,
+    gap: spacing.sm,
   },
 });

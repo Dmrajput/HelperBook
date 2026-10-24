@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     gap: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.lg,
   },
   phoneRow: {
     flexDirection: "row",

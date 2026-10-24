@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     gap: spacing.md,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.lg,
   },
   shop: {
     gap: spacing.sm,

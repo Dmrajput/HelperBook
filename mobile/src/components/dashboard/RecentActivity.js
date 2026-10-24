@@ -76,8 +76,8 @@ export default function RecentActivity({
       />
       {items.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="calendar-outline" size={22} color={colors.placeholder} />
-          <AppText variant="body" color={colors.textSecondary} align="center">
+          <Ionicons name="calendar-outline" size={20} color={colors.placeholder} />
+          <AppText variant="caption" color={colors.textSecondary} align="center">
             Salary payments, leave requests and employee updates appear here when available.
           </AppText>
         </View>
@@ -92,17 +92,17 @@ export default function RecentActivity({
               style={({ pressed }) => [styles.row, index > 0 && styles.divider, pressed && styles.pressed]}
             >
               <View style={[styles.icon, { backgroundColor: item.background }]}>
-                <Ionicons name={item.icon} size={16} color={item.color} />
+                <Ionicons name={item.icon} size={15} color={item.color} />
               </View>
               <View style={styles.copy}>
-                <AppText variant="label" numberOfLines={1}>
+                <AppText variant="label" numberOfLines={1} style={styles.title}>
                   {item.title}
                 </AppText>
                 <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
                   {item.subtitle}
                 </AppText>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.placeholder} />
+              <Ionicons name="chevron-forward" size={14} color={colors.placeholder} />
             </Pressable>
           ))}
         </View>
@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E6EEEA",
-    padding: spacing.lg,
+    borderColor: colors.border,
+    padding: spacing.md,
     alignItems: "center",
     gap: spacing.sm,
   },
@@ -128,31 +128,34 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E6EEEA",
+    borderColor: colors.border,
     paddingHorizontal: spacing.md,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    minHeight: 56,
+    minHeight: 48,
     paddingVertical: spacing.sm,
   },
   divider: {
-    borderTopWidth: 1,
-    borderTopColor: "#EEF2F1",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
   icon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",
   },
   copy: {
     flex: 1,
     minWidth: 0,
-    gap: 2,
+    gap: 1,
+  },
+  title: {
+    fontSize: 14,
   },
   pressed: {
     opacity: 0.88,

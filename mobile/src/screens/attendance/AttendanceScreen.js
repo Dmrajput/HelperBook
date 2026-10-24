@@ -1,9 +1,17 @@
-import { useEffect, useState } from "react";
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
@@ -16,24 +24,38 @@ import { colors, spacing } from "../../theme";
 import { bulkMarkAttendance } from "../../services/attendanceService";
 import { formatAttendanceDate, statusLabel, todayKey } from "../../utils/attendanceFormat";
 
-const PAGE_BG = colors.background;
-const HEADER = colors.primary;
-
-function weekdayLabel(key) {
-  const [year, month, day] = key.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "UTC",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(Date.UTC(year, month - 1, day)));
+function draftSummary(employees, drafts) {
+  const counts = {
+    present: 0,
+    absent: 0,
+    halfDay: 0,
+    leave: 0,
+    total: employees.length,
+    notMarked: 0,
+  };
+  for (const employee of employees) {
+    const status = drafts[employee.employeeId]?.status;
+    if (!status) {
+      counts.notMarked += 1;
+    } else if (status === "present") {
+      counts.present += 1;
+    } else if (status === "absent") {
+      counts.absent += 1;
+    } else if (status === "half_day") {
+      counts.halfDay += 1;
+    } else if (status === "leave") {
+      counts.leave += 1;
+    } else {
+      counts.notMarked += 1;
+    }
+  }
+  return counts;
 }
 
 function AttendanceSkeleton() {
   return (
     <View style={styles.skeleton} accessibilityLabel="Loading attendance">
       <View style={styles.skeletonSummary} />
-      <View style={styles.skeletonRow} />
       <View style={styles.skeletonRow} />
       <View style={styles.skeletonRow} />
     </View>
@@ -50,6 +72,7 @@ export default function AttendanceScreen({ embedded = false }) {
   const [drafts, setDrafts] = useState({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (routeDate) {
@@ -123,7 +146,10 @@ export default function AttendanceScreen({ embedded = false }) {
         })),
       });
       if (result.failed > 0) {
-        setSaveError(result.errors.map((item) => item.message).filter(Boolean).join("\n") || "Attendance could not be saved. Please try again.");
+        setSaveError(
+          result.errors.map((item) => item.message).filter(Boolean).join("\n") ||
+            "Attendance could not be saved. Please try again."
+        );
         if (result.created || result.updated) {
           await load({ refresh: true });
         }
@@ -180,16 +206,47 @@ export default function AttendanceScreen({ embedded = false }) {
       : error.message || "Unable to load attendance."
     : "";
   const pending = changes();
-  const isToday = date === todayKey();
-  const links = [
-    { label: "Bulk", hint: "Mark several people", icon: "checkmark-done-outline", onPress: () => navigation.navigate("BulkAttendance", { date }) },
-    { label: "Month", hint: "Calendar view", icon: "calendar-outline", onPress: () => navigation.navigate("MonthlyAttendance") },
-    { label: "History", hint: "Past records", icon: "time-outline", onPress: () => navigation.navigate("AttendanceHistory") },
+  const employees = data?.employees || [];
+  const summary = useMemo(() => draftSummary(employees, drafts), [employees, drafts]);
+  const markedCount = summary.total - summary.notMarked;
+  const filteredEmployees = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) {
+      return employees;
+    }
+    return employees.filter((employee) => String(employee.name || "").toLowerCase().includes(needle));
+  }, [employees, query]);
+
+  const viewTabs = [
+    { id: "daily", label: "Daily", icon: "sunny", active: true, onPress: null },
+    {
+      id: "bulk",
+      label: "Bulk",
+      icon: "people-outline",
+      onPress: () => navigation.navigate("BulkAttendance", { date }),
+    },
+    {
+      id: "monthly",
+      label: "Monthly",
+      icon: "calendar-outline",
+      onPress: () => navigation.navigate("MonthlyAttendance"),
+    },
+    {
+      id: "history",
+      label: "History",
+      icon: "time-outline",
+      onPress: () => navigation.navigate("AttendanceHistory"),
+    },
   ];
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+      <LinearGradient
+        colors={["#818CF8", "#6366F1", "#4F46E5"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + spacing.sm }]}
+      >
         <View style={styles.headerRow}>
           {embedded ? null : (
             <Pressable
@@ -205,15 +262,20 @@ export default function AttendanceScreen({ embedded = false }) {
             <AppText variant="heading" color={colors.textInverse} accessibilityRole="header" style={styles.title}>
               Attendance
             </AppText>
-            <AppText variant="caption" color={colors.primaryLight} numberOfLines={1}>
-              {isToday ? `Today · ${weekdayLabel(date)}` : weekdayLabel(date)}
+            <AppText variant="caption" color="rgba(255,255,255,0.85)" numberOfLines={1}>
+              Mark your team's attendance.
             </AppText>
           </View>
-          <View style={styles.mark} accessibilityElementsHidden>
-            <Ionicons name="calendar" size={24} color={colors.primary} />
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Monthly calendar"
+            onPress={() => navigation.navigate("MonthlyAttendance")}
+            style={styles.headerAction}
+          >
+            <Ionicons name="calendar" size={20} color={colors.primary} />
+          </Pressable>
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -221,42 +283,112 @@ export default function AttendanceScreen({ embedded = false }) {
           <RefreshControl refreshing={isRefreshing} onRefresh={() => load({ refresh: true })} tintColor={colors.primary} />
         }
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.body}>
           <AttendanceDateSelector date={date} onChange={setDate} />
-          <View style={styles.links}>
-            {links.map((item) => (
+
+          <View style={styles.tabs}>
+            {viewTabs.map((tab) => (
               <Pressable
-                key={item.label}
+                key={tab.id}
                 accessibilityRole="button"
-                accessibilityLabel={item.hint}
-                onPress={item.onPress}
-                style={({ pressed }) => [styles.link, pressed && styles.pressed]}
+                accessibilityLabel={tab.label}
+                accessibilityState={{ selected: Boolean(tab.active) }}
+                disabled={Boolean(tab.active)}
+                onPress={tab.onPress || undefined}
+                style={({ pressed }) => [
+                  styles.tab,
+                  tab.active ? styles.tabActive : styles.tabIdle,
+                  pressed && !tab.active && styles.pressed,
+                ]}
               >
-                <View style={styles.linkIcon}>
-                  <Ionicons name={item.icon} size={16} color={colors.primary} />
-                </View>
-                <AppText variant="label" numberOfLines={1}>{item.label}</AppText>
+                <Ionicons
+                  name={tab.icon}
+                  size={16}
+                  color={tab.active ? colors.textInverse : colors.primary}
+                />
+                <AppText
+                  variant="caption"
+                  color={tab.active ? colors.textInverse : colors.primary}
+                  style={styles.tabLabel}
+                  numberOfLines={1}
+                >
+                  {tab.label}
+                </AppText>
               </Pressable>
             ))}
           </View>
+
           {isLoading && !data ? <AttendanceSkeleton /> : null}
           {loadError && !data ? (
             <ErrorView title="Unable to load attendance." message={loadError} onRetry={() => load()} />
           ) : null}
+
           {data?.shopClosed ? (
             <View style={styles.banner}>
               <Ionicons name="moon-outline" size={18} color="#9A5B12" />
               <View style={styles.bannerCopy}>
-                <AppText variant="label" color="#9A5B12">Weekly off</AppText>
+                <AppText variant="label" color="#9A5B12">
+                  Weekly off
+                </AppText>
                 <AppText variant="caption" color="#9A5B12">
                   The shop is normally closed today. You can still mark attendance.
                 </AppText>
               </View>
             </View>
           ) : null}
-          {data ? <AttendanceSummary summary={data.summary} /> : null}
-          {data && data.employees.length === 0 ? (
+
+          {data ? <AttendanceSummary summary={summary} /> : null}
+
+          {data && employees.length > 0 ? (
+            <View style={styles.searchRow}>
+              <View style={styles.searchField}>
+                <Ionicons name="search" size={18} color={colors.placeholder} />
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search employees"
+                  placeholderTextColor={colors.placeholder}
+                  style={styles.searchInput}
+                  accessibilityLabel="Search employees"
+                />
+                {query ? (
+                  <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery("")}>
+                    <Ionicons name="close-circle" size={18} color={colors.placeholder} />
+                  </Pressable>
+                ) : null}
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Filter"
+                onPress={() => navigation.navigate("BulkAttendance", { date })}
+                style={styles.filterButton}
+              >
+                <Ionicons name="options-outline" size={18} color={colors.primary} />
+              </Pressable>
+            </View>
+          ) : null}
+
+          {data && employees.length > 0 ? (
+            <View style={styles.listHeader}>
+              <AppText variant="label">{`Employees (${filteredEmployees.length})`}</AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Mark all present"
+                disabled={saving}
+                onPress={markAllPresent}
+                style={styles.markAll}
+              >
+                <Ionicons name="checkmark-done" size={16} color={colors.primary} />
+                <AppText variant="caption" color={colors.primary} style={styles.markAllText}>
+                  Mark all present
+                </AppText>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {data && employees.length === 0 ? (
             <AttendanceEmptyState
               title="No active employees"
               message="Add employees before marking attendance."
@@ -264,7 +396,16 @@ export default function AttendanceScreen({ embedded = false }) {
               onAction={() => navigation.navigate("AddEmployee")}
             />
           ) : null}
-          {data?.employees.map((employee) => (
+
+          {data && employees.length > 0 && filteredEmployees.length === 0 ? (
+            <View style={styles.emptySearch}>
+              <AppText variant="body" color={colors.textSecondary} align="center">
+                No employees match “{query.trim()}”.
+              </AppText>
+            </View>
+          ) : null}
+
+          {filteredEmployees.map((employee) => (
             <AttendanceEmployeeCard
               key={employee.employeeId}
               employee={employee}
@@ -275,33 +416,63 @@ export default function AttendanceScreen({ embedded = false }) {
               onChange={(next) => updateDraft(employee.employeeId, next)}
             />
           ))}
+
           <FieldError message={saveError} />
         </View>
       </ScrollView>
 
       {data?.employees?.length ? (
-        <View style={[styles.footer, { paddingBottom: embedded ? spacing.md : Math.max(insets.bottom, spacing.md) }]}>
-          <AppText variant="caption" color={colors.textSecondary} align="center">
-            {pending.length
-              ? `${pending.length} change${pending.length === 1 ? "" : "s"} to save`
-              : "Attendance is up to date"}
-          </AppText>
+        <View
+          style={[
+            styles.footer,
+            { paddingBottom: embedded ? spacing.md : Math.max(insets.bottom, spacing.md) },
+          ]}
+        >
+          <View style={styles.footerMeta}>
+            <AppText variant="label" color={colors.text}>
+              {`${markedCount} of ${summary.total} marked`}
+            </AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {pending.length
+                ? `${pending.length} change${pending.length === 1 ? "" : "s"} to save`
+                : "Attendance is up to date"}
+            </AppText>
+          </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Mark all present"
-            disabled={saving}
-            onPress={markAllPresent}
-            style={styles.markAll}
-          >
-            <AppText variant="label" color={colors.primary} align="center">
-              Mark all present
-            </AppText>
-          </Pressable>
-          <AppButton
-            label={saving ? "Saving..." : "Save Attendance"}
-            onPress={confirmSave}
+            accessibilityLabel="Save attendance"
+            accessibilityState={{ disabled: saving || pending.length === 0 }}
             disabled={saving || pending.length === 0}
-          />
+            onPress={confirmSave}
+            style={({ pressed }) => [
+              styles.savePressable,
+              (saving || pending.length === 0) && styles.saveDisabled,
+              pressed && pending.length > 0 && !saving && styles.pressed,
+            ]}
+          >
+            <LinearGradient
+              colors={
+                saving || pending.length === 0
+                  ? [colors.disabled, colors.disabled]
+                  : ["#818CF8", "#6366F1", "#4F46E5"]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.saveButton}
+            >
+              <Ionicons
+                name="save-outline"
+                size={18}
+                color={saving || pending.length === 0 ? colors.disabledText : colors.textInverse}
+              />
+              <AppText
+                variant="button"
+                color={saving || pending.length === 0 ? colors.disabledText : colors.textInverse}
+              >
+                {saving ? "Saving..." : "Save Attendance"}
+              </AppText>
+            </LinearGradient>
+          </Pressable>
         </View>
       ) : null}
     </View>
@@ -311,12 +482,13 @@ export default function AttendanceScreen({ embedded = false }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: PAGE_BG,
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: HEADER,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
   },
   headerRow: {
     flexDirection: "row",
@@ -335,14 +507,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 28,
+    lineHeight: 34,
   },
-  mark: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: "#F7F3EA",
+  headerAction: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -354,28 +526,84 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
-  links: {
+  tabs: {
     flexDirection: "row",
     gap: spacing.sm,
   },
-  link: {
+  tab: {
     flex: 1,
     minHeight: 44,
     borderRadius: 14,
-    backgroundColor: colors.surface,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    paddingHorizontal: spacing.sm,
+    gap: 4,
+    paddingHorizontal: 4,
   },
-  linkIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    backgroundColor: colors.primaryLight,
+  tabActive: {
+    backgroundColor: colors.primary,
+  },
+  tabIdle: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tabLabel: {
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  searchField: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 48,
+    color: colors.text,
+    fontSize: 15,
+  },
+  filterButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
+  },
+  listHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  markAll: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    minHeight: 32,
+  },
+  markAllText: {
+    fontWeight: "700",
+  },
+  emptySearch: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.md,
   },
   pressed: {
     opacity: 0.88,
@@ -396,24 +624,44 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   skeletonSummary: {
-    height: 64,
-    borderRadius: 14,
+    height: 88,
+    borderRadius: 16,
     backgroundColor: colors.disabled,
   },
   skeletonRow: {
-    height: 108,
-    borderRadius: 18,
+    height: 148,
+    borderRadius: 20,
     backgroundColor: colors.disabled,
   },
   footer: {
-    gap: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    backgroundColor: PAGE_BG,
+    paddingTop: spacing.md,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  markAll: {
-    minHeight: 36,
+  footerMeta: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  savePressable: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  saveButton: {
+    minHeight: 52,
+    borderRadius: 16,
+    paddingHorizontal: spacing.lg,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: spacing.sm,
+  },
+  saveDisabled: {
+    opacity: 1,
   },
 });

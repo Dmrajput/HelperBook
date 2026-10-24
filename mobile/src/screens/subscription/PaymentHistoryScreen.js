@@ -62,7 +62,7 @@ export default function PaymentHistoryScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xxl, paddingTop: spacing.lg },
+  content: { gap: spacing.md, paddingBottom: spacing.lg, paddingTop: spacing.lg },
   card: {
     backgroundColor: colors.surface,
     borderColor: colors.border,

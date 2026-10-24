@@ -56,6 +56,6 @@ export default function EmployeeLeaveScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xxl },
+  content: { gap: spacing.md, paddingBottom: spacing.lg },
   filters: { gap: spacing.sm },
 });

@@ -64,7 +64,7 @@ export default function GiveAdvanceScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   scroll: {
     gap: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.lg,
   },
   note: {
     flexDirection: "row",

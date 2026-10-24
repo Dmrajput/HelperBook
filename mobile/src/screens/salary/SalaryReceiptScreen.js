@@ -140,7 +140,7 @@ export default function SalaryReceiptScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { gap: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { gap: spacing.lg, paddingBottom: spacing.lg },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 12,

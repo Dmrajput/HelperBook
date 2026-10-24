@@ -35,9 +35,9 @@ export default function NotificationCard({ type, title, message, time, unread, o
 const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: spacing.sm,
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 16,
     padding: spacing.md,
   },
   unread: {

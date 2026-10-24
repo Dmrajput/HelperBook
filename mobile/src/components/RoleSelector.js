@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: spacing.xl,
+    padding: spacing.md,
     gap: spacing.lg,
   },
   list: {

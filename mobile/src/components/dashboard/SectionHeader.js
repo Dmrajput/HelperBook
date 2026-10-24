@@ -5,7 +5,7 @@ import { colors, spacing } from "../../theme";
 export default function SectionHeader({ title, actionLabel, onAction, accessibilityLabel, sideLabel }) {
   return (
     <View style={styles.row}>
-      <AppText variant="subtitle" style={styles.title} numberOfLines={1}>
+      <AppText variant="label" style={styles.title} numberOfLines={1}>
         {title}
       </AppText>
       {actionLabel && onAction ? (
@@ -16,7 +16,7 @@ export default function SectionHeader({ title, actionLabel, onAction, accessibil
           hitSlop={8}
           style={styles.action}
         >
-          <AppText variant="label" color={colors.primary} style={styles.link}>
+          <AppText variant="caption" color={colors.primary} style={styles.link}>
             {actionLabel}
           </AppText>
         </Pressable>
@@ -35,18 +35,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.sm,
-    minHeight: 28,
+    minHeight: 24,
   },
   title: {
     fontWeight: "700",
     flex: 1,
+    fontSize: 15,
   },
   action: {
-    minHeight: 44,
+    minHeight: 32,
     justifyContent: "center",
     paddingHorizontal: 2,
   },
   link: {
-    fontSize: 14,
+    fontWeight: "700",
   },
 });

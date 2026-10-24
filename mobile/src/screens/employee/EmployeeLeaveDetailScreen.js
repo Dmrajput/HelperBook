@@ -70,5 +70,5 @@ export default function EmployeeLeaveDetailScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xxl },
+  content: { gap: spacing.md, paddingBottom: spacing.lg },
 });

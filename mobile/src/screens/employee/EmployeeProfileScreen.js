@@ -180,7 +180,7 @@ export default function EmployeeProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xxl },
+  content: { gap: spacing.md, paddingBottom: spacing.lg },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 16,

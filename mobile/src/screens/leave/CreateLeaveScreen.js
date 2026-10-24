@@ -134,7 +134,7 @@ export default function CreateLeaveScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { gap: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { gap: spacing.lg, paddingBottom: spacing.lg },
   list: { gap: spacing.sm },
   choice: {
     borderRadius: 12,

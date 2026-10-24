@@ -79,6 +79,7 @@ export default function DashboardScreen({
           dateLabel={todayLabel(timeZone)}
           unreadCount={unreadCount}
           onNotifications={() => navigation.navigate("Notifications")}
+          onSettings={() => navigation.navigate("ShopSettings")}
         />
         <View style={styles.body}>
           {error ? (
@@ -152,12 +153,12 @@ const styles = StyleSheet.create({
     backgroundColor: PAGE_BG,
   },
   content: {
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.lg,
   },
   body: {
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   centered: {
     flex: 1,
@@ -165,3 +166,4 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
 });
+

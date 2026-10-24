@@ -32,8 +32,8 @@ export default function AdvanceCard({ advance, onPress }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: spacing.lg,
+    borderRadius: 16,
+    padding: spacing.md,
     gap: spacing.xs,
   },
   pressed: { opacity: 0.85 },

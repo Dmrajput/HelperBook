@@ -34,8 +34,8 @@ export default function LeaveCard({ leave, onPress }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: spacing.lg,
+    borderRadius: 16,
+    padding: spacing.md,
     gap: spacing.xs,
   },
   top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },

@@ -3,10 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "./AppText";
-import { colors, spacing } from "../theme";
-
-const PAGE_BG = colors.background;
-const HEADER = colors.primary;
+import theme, { colors, spacing } from "../theme";
 
 export default function AppScreen({ title, subtitle, icon, headerRight, onBack, showBack = true, children }) {
   const navigation = useNavigation();
@@ -31,9 +28,17 @@ export default function AppScreen({ title, subtitle, icon, headerRight, onBack, 
             <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={goBack} style={styles.back}>
               <Ionicons name="chevron-back" size={22} color={colors.textInverse} />
             </Pressable>
-          ) : <View style={styles.backSpacer} />}
+          ) : (
+            <View style={styles.backSpacer} />
+          )}
           <View style={styles.copy}>
-            <AppText variant="heading" color={colors.textInverse} accessibilityRole="header" numberOfLines={1} style={styles.title}>
+            <AppText
+              variant="heading"
+              color={colors.textInverse}
+              accessibilityRole="header"
+              numberOfLines={1}
+              style={styles.title}
+            >
               {title}
             </AppText>
             {subtitle ? (
@@ -46,7 +51,7 @@ export default function AppScreen({ title, subtitle, icon, headerRight, onBack, 
             headerRight
           ) : icon ? (
             <View style={styles.mark} accessibilityElementsHidden>
-              <Ionicons name={icon} size={22} color={colors.primary} />
+              <Ionicons name={icon} size={20} color={colors.primary} />
             </View>
           ) : null}
         </View>
@@ -59,12 +64,12 @@ export default function AppScreen({ title, subtitle, icon, headerRight, onBack, 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: PAGE_BG,
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: HEADER,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
+    backgroundColor: colors.primary,
+    paddingHorizontal: theme.screenPadding,
+    paddingBottom: spacing.md,
   },
   row: {
     flexDirection: "row",
@@ -90,16 +95,16 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   mark: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: theme.radiusLg,
     backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
   body: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: theme.screenPadding,
     paddingTop: spacing.md,
   },
 });

@@ -161,7 +161,7 @@ export default function EmployeeAdvanceScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { gap: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { gap: spacing.lg, paddingBottom: spacing.lg },
   block: { height: 140, borderRadius: 18, backgroundColor: colors.disabled },
   empty: {
     alignItems: "center",

@@ -1,14 +1,13 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import AppButton from "../AppButton";
 import AppText from "../AppText";
 import SectionHeader from "./SectionHeader";
 import { colors, spacing } from "../../theme";
 import { weekdayLabel } from "../../utils/dashboardFormat";
 
 const TILES = [
-  { key: "presentToday", label: "Present", icon: "checkmark-circle", background: colors.successBackground, iconColor: colors.success },
-  { key: "absentToday", label: "Absent", icon: "close-circle", background: colors.errorBackground, iconColor: colors.error },
+  { key: "presentToday", label: "Present", icon: "person", background: colors.successBackground, iconColor: colors.success },
+  { key: "absentToday", label: "Absent", icon: "person-remove", background: colors.errorBackground, iconColor: colors.error },
   { key: "notMarkedToday", label: "Not marked", icon: "time", background: colors.warningBackground, iconColor: colors.warning },
 ];
 
@@ -37,11 +36,11 @@ export default function AttendanceSummary({ attendance, timeZone, onPress }) {
             onPress={onPress}
             style={({ pressed }) => [styles.tile, { backgroundColor: tile.background }, pressed && styles.pressed]}
           >
-            <Ionicons name={tile.icon} size={18} color={tile.iconColor} />
-            <AppText variant="heading" style={styles.value}>
+            <Ionicons name={tile.icon} size={16} color={tile.iconColor} />
+            <AppText style={[styles.value, { color: tile.iconColor }]}>
               {String(attendance?.[tile.key] ?? 0)}
             </AppText>
-            <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+            <AppText variant="caption" color={tile.iconColor} numberOfLines={1} style={styles.tileLabel}>
               {tile.label}
             </AppText>
           </Pressable>
@@ -58,28 +57,37 @@ export default function AttendanceSummary({ attendance, timeZone, onPress }) {
         </AppText>
       ) : null}
       {needsMarking ? (
-        <View style={styles.alert}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Mark attendance"
+          onPress={onPress}
+          style={({ pressed }) => [styles.alert, pressed && styles.pressed]}
+        >
           <View style={styles.alertIcon}>
-            <Ionicons name="calendar" size={18} color={colors.primary} />
+            <Ionicons name="calendar" size={16} color={colors.primary} />
           </View>
           <View style={styles.alertCopy}>
-            <AppText variant="label">Attendance needs attention</AppText>
-            <AppText variant="caption" color={colors.textSecondary}>
-              {`${notMarked} employee${notMarked === 1 ? "" : "s"} still not marked for today's shift`}
+            <AppText variant="caption" style={styles.alertTitle}>
+              Attendance needs attention
+            </AppText>
+            <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+              {`${notMarked} not marked today`}
             </AppText>
           </View>
-          <AppButton label="Mark attendance →" onPress={onPress} />
-        </View>
+          <AppText variant="caption" color={colors.primary} style={styles.alertAction}>
+            Mark ›
+          </AppText>
+        </Pressable>
       ) : null}
       {complete ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Attendance complete for today"
           onPress={onPress}
-          style={styles.done}
+          style={({ pressed }) => [styles.done, pressed && styles.pressed]}
         >
-          <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-          <AppText variant="label" color={colors.success} style={styles.doneText}>
+          <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+          <AppText variant="caption" color={colors.success} style={styles.doneText}>
             Today's attendance is complete
           </AppText>
         </Pressable>
@@ -99,46 +107,66 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
     minWidth: 0,
-    minHeight: 96,
     borderRadius: 14,
-    padding: spacing.md,
-    gap: 4,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    alignItems: "center",
+    gap: 2,
   },
   value: {
-    fontSize: 22,
-    lineHeight: 28,
+    fontSize: 20,
+    lineHeight: 24,
     fontWeight: "700",
+  },
+  tileLabel: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   pressed: {
     opacity: 0.88,
   },
   alert: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 14,
-    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 12,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    minHeight: 44,
   },
   alertIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
   alertCopy: {
-    gap: 2,
+    flex: 1,
+    minWidth: 0,
+    gap: 1,
+  },
+  alertTitle: {
+    fontWeight: "700",
+    color: colors.text,
+  },
+  alertAction: {
+    fontWeight: "700",
   },
   done: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    minHeight: 48,
+    gap: 6,
+    minHeight: 36,
     backgroundColor: colors.successBackground,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   doneText: {
     flex: 1,
+    fontWeight: "700",
   },
 });

@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: HEADER,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
   },
   headerRow: {
     flexDirection: "row",
@@ -244,18 +244,18 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   mark: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
   content: {
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.lg,
   },
   body: {
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
@@ -269,14 +269,14 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 16,
     paddingHorizontal: spacing.md,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    minHeight: 64,
+    minHeight: 52,
     paddingVertical: spacing.sm,
   },
   pressed: {

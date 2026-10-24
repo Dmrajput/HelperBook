@@ -62,6 +62,6 @@ export default function EmployeeAdvanceScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.sm, paddingBottom: spacing.xxl },
+  content: { gap: spacing.sm, paddingBottom: spacing.lg },
   row: { gap: spacing.xs, paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
 });

@@ -70,7 +70,7 @@ export default function EmployeeForgotPasswordScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1, gap: spacing.lg, paddingTop: spacing.xxl },
+  content: { flex: 1, gap: spacing.lg, paddingTop: spacing.lg },
   phoneRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   codeBox: {
     minHeight: theme.controlHeight,

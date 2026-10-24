@@ -195,7 +195,7 @@ export default function SubscriptionScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xxl, paddingTop: spacing.lg },
+  content: { gap: spacing.md, paddingBottom: spacing.lg, paddingTop: spacing.lg },
   notice: { gap: spacing.xs },
   row: { flexDirection: "row", gap: spacing.sm },
 });

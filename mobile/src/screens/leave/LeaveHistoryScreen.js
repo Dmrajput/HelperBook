@@ -88,7 +88,7 @@ export default function LeaveHistoryScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { gap: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { gap: spacing.lg, paddingBottom: spacing.lg },
   filters: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   filter: {
     borderRadius: 999,

@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    minHeight: 96,
+    minHeight: 72,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,

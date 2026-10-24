@@ -367,8 +367,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     marginTop: spacing.md,
-    padding: spacing.xl,
-    borderRadius: 18,
+    padding: spacing.md,
+    borderRadius: 16,
     backgroundColor: colors.surface,
   },
   emptyIcon: {

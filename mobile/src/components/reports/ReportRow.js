@@ -27,7 +27,7 @@ export default function ReportRow({ title, meta, value, onPress, accessibilityLa
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 16,
     padding: spacing.md,
     flexDirection: "row",
     justifyContent: "space-between",

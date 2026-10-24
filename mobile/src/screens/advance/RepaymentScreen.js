@@ -73,6 +73,6 @@ export default function RepaymentScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { gap: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { gap: spacing.lg, paddingBottom: spacing.lg },
   block: { height: 120, borderRadius: 12, backgroundColor: colors.disabled },
 });

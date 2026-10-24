@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors, spacing } from "../theme";
+import theme, { colors, spacing } from "../theme";
 
 export default function ScreenContainer({ children, style, centered = false, edges }) {
   return (
@@ -17,8 +17,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xl,
+    paddingHorizontal: theme.screenPadding,
+    paddingVertical: spacing.md,
   },
   centered: {
     alignItems: "center",
