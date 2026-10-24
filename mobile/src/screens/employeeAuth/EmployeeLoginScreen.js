@@ -14,13 +14,8 @@ import BrandLogo from "../../components/BrandLogo";
 import { useAuth } from "../../context/AuthContext";
 import { loginEmployee } from "../../services/employeeAuthService";
 import { colors, spacing } from "../../theme";
+import { validateMobile, validatePasswordRequired } from "../../utils/authValidation";
 import { getDeviceInfo } from "../../utils/deviceInfo";
-
-function validateMobile(value) {
-  if (!value) return "Enter your mobile number.";
-  if (!/^[6-9]\d{9}$/.test(value)) return "Enter a valid 10-digit mobile number.";
-  return "";
-}
 
 function HeroIllustration() {
   return (
@@ -59,7 +54,7 @@ export default function EmployeeLoginScreen({ navigation }) {
 
   const onLogin = async () => {
     const validationMessage =
-      validateMobile(mobileNumber) || (!password ? "Enter your password." : "");
+      validateMobile(mobileNumber) || validatePasswordRequired(password);
     if (validationMessage) {
       setError(validationMessage);
       return;

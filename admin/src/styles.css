@@ -21,6 +21,8 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e4eeea; vertical-align: top; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 input, select, textarea { border: 1px solid #c9d8d2; border-radius: 10px; padding: 10px 12px; background: #fff; }
+label { display: grid; gap: 6px; }
+s { color: #6b7f77; }
 button { background: #146c54; color: #fff; border: 0; border-radius: 10px; padding: 10px 14px; cursor: pointer; }
 button.secondary { background: #e7f4ef; color: #0f3d32; }
 button:disabled { opacity: 0.6; }

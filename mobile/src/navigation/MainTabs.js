@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,20 +19,55 @@ const TABS = [
   { key: "More", label: "More", icon: "grid" },
 ];
 
+function TabPanel({ active, children }) {
+  return (
+    <View
+      style={[styles.panel, active ? styles.panelActive : styles.panelHidden]}
+      pointerEvents={active ? "auto" : "none"}
+      accessibilityElementsHidden={!active}
+      importantForAccessibility={active ? "auto" : "no-hide-descendants"}
+      collapsable={false}
+    >
+      {children}
+    </View>
+  );
+}
+
 export default function MainTabs() {
   usePushNotifications();
   const [tab, setTab] = useState("Home");
+  const [mounted, setMounted] = useState({ Home: true });
   const insets = useSafeAreaInsets();
   const dashboard = useDashboard(tab === "Home");
+
+  useEffect(() => {
+    setMounted((current) => (current[tab] ? current : { ...current, [tab]: true }));
+  }, [tab]);
 
   return (
     <MainTabContext.Provider value={{ tab, setTab }}>
       <View style={styles.shell}>
         <View style={styles.body}>
-          {tab === "Home" ? <DashboardScreen {...dashboard} /> : null}
-          {tab === "Employees" ? <EmployeeListScreen embedded /> : null}
-          {tab === "Attendance" ? <AttendanceScreen embedded /> : null}
-          {tab === "More" ? <MoreScreen /> : null}
+          {mounted.Home ? (
+            <TabPanel active={tab === "Home"}>
+              <DashboardScreen {...dashboard} />
+            </TabPanel>
+          ) : null}
+          {mounted.Employees ? (
+            <TabPanel active={tab === "Employees"}>
+              <EmployeeListScreen embedded />
+            </TabPanel>
+          ) : null}
+          {mounted.Attendance ? (
+            <TabPanel active={tab === "Attendance"}>
+              <AttendanceScreen embedded />
+            </TabPanel>
+          ) : null}
+          {mounted.More ? (
+            <TabPanel active={tab === "More"}>
+              <MoreScreen />
+            </TabPanel>
+          ) : null}
         </View>
         <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
           {TABS.map((item) => {
@@ -72,6 +107,15 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+  },
+  panel: {
+    flex: 1,
+  },
+  panelActive: {
+    display: "flex",
+  },
+  panelHidden: {
+    display: "none",
   },
   bar: {
     flexDirection: "row",

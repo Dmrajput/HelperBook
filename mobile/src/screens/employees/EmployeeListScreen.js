@@ -29,7 +29,7 @@ function EmployeeListSkeleton() {
 export default function EmployeeListScreen({ embedded = false }) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { subscription, canAddEmployee } = useSubscription();
+  const { subscription, canAddEmployee } = useSubscription({ includePlans: false });
   const [status, setStatus] = useState("active");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");

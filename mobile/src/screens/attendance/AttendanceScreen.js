@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -80,8 +80,13 @@ export default function AttendanceScreen({ embedded = false }) {
     }
   }, [routeDate]);
 
+  const employeeIdsKey = useMemo(
+    () => (data?.employees || []).map((employee) => employee.employeeId).join(","),
+    [data?.employees]
+  );
+
   useEffect(() => {
-    if (!data?.employees) {
+    if (!data?.employees || data.date !== date) {
       return;
     }
     setDrafts(
@@ -92,12 +97,14 @@ export default function AttendanceScreen({ embedded = false }) {
         ])
       )
     );
-  }, [data]);
+    // Depend on date + employee id set only — avoid wiping in-progress edits on refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally ignore data object identity
+  }, [date, employeeIdsKey, data?.date]);
 
-  function updateDraft(employeeId, next) {
+  const updateDraft = useCallback((employeeId, next) => {
     setDrafts((current) => ({ ...current, [employeeId]: next }));
     setSaveError("");
-  }
+  }, []);
 
   function markAllPresent() {
     if (!data?.employees) {
@@ -239,6 +246,139 @@ export default function AttendanceScreen({ embedded = false }) {
     },
   ];
 
+  const renderEmployee = useCallback(
+    ({ item: employee }) => (
+      <AttendanceEmployeeCard
+        employee={employee}
+        date={date}
+        value={drafts[employee.employeeId]?.status || null}
+        notes={drafts[employee.employeeId]?.notes || ""}
+        disabled={saving}
+        onChange={(next) => updateDraft(employee.employeeId, next)}
+      />
+    ),
+    [date, drafts, saving, updateDraft]
+  );
+
+  const listHeader = (
+    <View style={styles.body}>
+      <AttendanceDateSelector date={date} onChange={setDate} />
+
+      <View style={styles.tabs}>
+        {viewTabs.map((tab) => (
+          <Pressable
+            key={tab.id}
+            accessibilityRole="button"
+            accessibilityLabel={tab.label}
+            accessibilityState={{ selected: Boolean(tab.active) }}
+            disabled={Boolean(tab.active)}
+            onPress={tab.onPress || undefined}
+            style={({ pressed }) => [
+              styles.tab,
+              tab.active ? styles.tabActive : styles.tabIdle,
+              pressed && !tab.active && styles.pressed,
+            ]}
+          >
+            <Ionicons name={tab.icon} size={16} color={tab.active ? colors.textInverse : colors.primary} />
+            <AppText
+              variant="caption"
+              color={tab.active ? colors.textInverse : colors.primary}
+              style={styles.tabLabel}
+              numberOfLines={1}
+            >
+              {tab.label}
+            </AppText>
+          </Pressable>
+        ))}
+      </View>
+
+      {isLoading && !data ? <AttendanceSkeleton /> : null}
+      {loadError && !data ? (
+        <ErrorView title="Unable to load attendance." message={loadError} onRetry={() => load()} />
+      ) : null}
+
+      {data?.shopClosed ? (
+        <View style={styles.banner}>
+          <Ionicons name="moon-outline" size={18} color="#9A5B12" />
+          <View style={styles.bannerCopy}>
+            <AppText variant="label" color="#9A5B12">
+              Weekly off
+            </AppText>
+            <AppText variant="caption" color="#9A5B12">
+              The shop is normally closed today. You can still mark attendance.
+            </AppText>
+          </View>
+        </View>
+      ) : null}
+
+      {data ? <AttendanceSummary summary={summary} /> : null}
+
+      {data && employees.length > 0 ? (
+        <View style={styles.searchRow}>
+          <View style={styles.searchField}>
+            <Ionicons name="search" size={18} color={colors.placeholder} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search employees"
+              placeholderTextColor={colors.placeholder}
+              style={styles.searchInput}
+              accessibilityLabel="Search employees"
+            />
+            {query ? (
+              <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery("")}>
+                <Ionicons name="close-circle" size={18} color={colors.placeholder} />
+              </Pressable>
+            ) : null}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Filter"
+            onPress={() => navigation.navigate("BulkAttendance", { date })}
+            style={styles.filterButton}
+          >
+            <Ionicons name="options-outline" size={18} color={colors.primary} />
+          </Pressable>
+        </View>
+      ) : null}
+
+      {data && employees.length > 0 ? (
+        <View style={styles.listHeader}>
+          <AppText variant="label">{`Employees (${filteredEmployees.length})`}</AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Mark all present"
+            disabled={saving}
+            onPress={markAllPresent}
+            style={styles.markAll}
+          >
+            <Ionicons name="checkmark-done" size={16} color={colors.primary} />
+            <AppText variant="caption" color={colors.primary} style={styles.markAllText}>
+              Mark all present
+            </AppText>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {data && employees.length === 0 ? (
+        <AttendanceEmptyState
+          title="No active employees"
+          message="Add employees before marking attendance."
+          actionLabel="Add Employee"
+          onAction={() => navigation.navigate("AddEmployee")}
+        />
+      ) : null}
+
+      {data && employees.length > 0 && filteredEmployees.length === 0 ? (
+        <View style={styles.emptySearch}>
+          <AppText variant="body" color={colors.textSecondary} align="center">
+            No employees match “{query.trim()}”.
+          </AppText>
+        </View>
+      ) : null}
+    </View>
+  );
+
   return (
     <View style={styles.screen}>
       <LinearGradient
@@ -277,149 +417,22 @@ export default function AttendanceScreen({ embedded = false }) {
         </View>
       </LinearGradient>
 
-      <ScrollView
+      <FlatList
+        data={filteredEmployees}
+        keyExtractor={(item) => item.employeeId}
+        renderItem={renderEmployee}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={<FieldError message={saveError} />}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={() => load({ refresh: true })} tintColor={colors.primary} />
         }
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.body}>
-          <AttendanceDateSelector date={date} onChange={setDate} />
-
-          <View style={styles.tabs}>
-            {viewTabs.map((tab) => (
-              <Pressable
-                key={tab.id}
-                accessibilityRole="button"
-                accessibilityLabel={tab.label}
-                accessibilityState={{ selected: Boolean(tab.active) }}
-                disabled={Boolean(tab.active)}
-                onPress={tab.onPress || undefined}
-                style={({ pressed }) => [
-                  styles.tab,
-                  tab.active ? styles.tabActive : styles.tabIdle,
-                  pressed && !tab.active && styles.pressed,
-                ]}
-              >
-                <Ionicons
-                  name={tab.icon}
-                  size={16}
-                  color={tab.active ? colors.textInverse : colors.primary}
-                />
-                <AppText
-                  variant="caption"
-                  color={tab.active ? colors.textInverse : colors.primary}
-                  style={styles.tabLabel}
-                  numberOfLines={1}
-                >
-                  {tab.label}
-                </AppText>
-              </Pressable>
-            ))}
-          </View>
-
-          {isLoading && !data ? <AttendanceSkeleton /> : null}
-          {loadError && !data ? (
-            <ErrorView title="Unable to load attendance." message={loadError} onRetry={() => load()} />
-          ) : null}
-
-          {data?.shopClosed ? (
-            <View style={styles.banner}>
-              <Ionicons name="moon-outline" size={18} color="#9A5B12" />
-              <View style={styles.bannerCopy}>
-                <AppText variant="label" color="#9A5B12">
-                  Weekly off
-                </AppText>
-                <AppText variant="caption" color="#9A5B12">
-                  The shop is normally closed today. You can still mark attendance.
-                </AppText>
-              </View>
-            </View>
-          ) : null}
-
-          {data ? <AttendanceSummary summary={summary} /> : null}
-
-          {data && employees.length > 0 ? (
-            <View style={styles.searchRow}>
-              <View style={styles.searchField}>
-                <Ionicons name="search" size={18} color={colors.placeholder} />
-                <TextInput
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder="Search employees"
-                  placeholderTextColor={colors.placeholder}
-                  style={styles.searchInput}
-                  accessibilityLabel="Search employees"
-                />
-                {query ? (
-                  <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery("")}>
-                    <Ionicons name="close-circle" size={18} color={colors.placeholder} />
-                  </Pressable>
-                ) : null}
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Filter"
-                onPress={() => navigation.navigate("BulkAttendance", { date })}
-                style={styles.filterButton}
-              >
-                <Ionicons name="options-outline" size={18} color={colors.primary} />
-              </Pressable>
-            </View>
-          ) : null}
-
-          {data && employees.length > 0 ? (
-            <View style={styles.listHeader}>
-              <AppText variant="label">{`Employees (${filteredEmployees.length})`}</AppText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Mark all present"
-                disabled={saving}
-                onPress={markAllPresent}
-                style={styles.markAll}
-              >
-                <Ionicons name="checkmark-done" size={16} color={colors.primary} />
-                <AppText variant="caption" color={colors.primary} style={styles.markAllText}>
-                  Mark all present
-                </AppText>
-              </Pressable>
-            </View>
-          ) : null}
-
-          {data && employees.length === 0 ? (
-            <AttendanceEmptyState
-              title="No active employees"
-              message="Add employees before marking attendance."
-              actionLabel="Add Employee"
-              onAction={() => navigation.navigate("AddEmployee")}
-            />
-          ) : null}
-
-          {data && employees.length > 0 && filteredEmployees.length === 0 ? (
-            <View style={styles.emptySearch}>
-              <AppText variant="body" color={colors.textSecondary} align="center">
-                No employees match “{query.trim()}”.
-              </AppText>
-            </View>
-          ) : null}
-
-          {filteredEmployees.map((employee) => (
-            <AttendanceEmployeeCard
-              key={employee.employeeId}
-              employee={employee}
-              date={date}
-              value={drafts[employee.employeeId]?.status || null}
-              notes={drafts[employee.employeeId]?.notes || ""}
-              disabled={saving}
-              onChange={(next) => updateDraft(employee.employeeId, next)}
-            />
-          ))}
-
-          <FieldError message={saveError} />
-        </View>
-      </ScrollView>
+        initialNumToRender={12}
+        windowSize={7}
+        removeClippedSubviews
+      />
 
       {data?.employees?.length ? (
         <View

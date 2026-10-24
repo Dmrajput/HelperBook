@@ -17,6 +17,7 @@ import SalaryRecord from "../../models/SalaryRecord.js";
 import AdminAuditLog from "../../models/AdminAuditLog.js";
 import { adminHasPermission } from "../../config/adminPermissions.js";
 import { getSubscriptionConfig } from "../../config/subscription.config.js";
+import { listAdminPlanPricing, resolvePlan, updateAdminPlanPricing } from "../planPricing.service.js";
 import { AppError } from "../../utils/appError.js";
 import { dateFromKey, todayKey } from "../../utils/attendanceDate.js";
 import { createRazorpayRefund, razorpayConfigured } from "../razorpay.service.js";
@@ -401,11 +402,13 @@ export async function listSubscriptions(query) {
     Subscription.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(limit),
     Subscription.countDocuments(filter),
   ]);
-  const config = getSubscriptionConfig();
   const subscriptions = [];
   for (const item of rows) {
     const shop = await Shop.findById(item.shopId).select("name owner");
-    const activeEmployees = await Employee.countDocuments({ shopId: item.shopId, status: "active" });
+    const [activeEmployees, plan] = await Promise.all([
+      Employee.countDocuments({ shopId: item.shopId, status: "active" }),
+      resolvePlan(item.planId),
+    ]);
     subscriptions.push({
       id: String(item._id),
       shop: shop?.name || "",
@@ -417,12 +420,20 @@ export async function listSubscriptions(query) {
       isTrial: item.isTrial,
       currentPeriodEnd: item.currentPeriodEnd,
       trialEndsAt: item.trialEndsAt,
-      employeeLimit: config.plans[item.planId]?.employeeLimit || null,
+      employeeLimit: plan?.employeeLimit || getSubscriptionConfig().plans[item.planId]?.employeeLimit || null,
       activeEmployees,
       cancelAtPeriodEnd: item.cancelAtPeriodEnd,
     });
   }
   return { subscriptions, page, limit, total };
+}
+
+export async function listPlanPricing() {
+  return listAdminPlanPricing();
+}
+
+export async function updatePlanPricing(admin, planId, body) {
+  return updateAdminPlanPricing(admin, planId, body);
 }
 
 export async function getSubscription(id) {

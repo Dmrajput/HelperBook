@@ -12,8 +12,8 @@ import { AppError } from "../utils/appError.js";
 import { keyFromDate } from "../utils/attendanceDate.js";
 import { getLocalUploadRoot } from "./storage/providers/local.provider.js";
 import { buildSalaryReceiptPdf } from "./salaryReceiptPdf.service.js";
+import { requireOwnerShop } from "./shopAccess.service.js";
 
-const SHOP_REQUIRED = "Shop setup is required before managing employees.";
 const NOT_FOUND = "Salary could not be found.";
 const UNPAID = "Salary receipt is available only after salary payment.";
 const REVERSED = "Salary payment has been reversed. A receipt cannot be issued for this payment.";
@@ -37,16 +37,11 @@ const METHOD_LABELS = {
   bank: "Bank Transfer",
 };
 
-async function requireShop(userId) {
-  const user = await User.findById(userId).select("fullName countryCode phoneNumber isActive");
-  if (!user || !user.isActive) {
-    throw new AppError("Account is inactive. Please contact support.", 403);
-  }
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) {
-    throw new AppError(SHOP_REQUIRED, 404);
-  }
-  return { user, shop };
+function requireShop(userId) {
+  return requireOwnerShop(userId, {
+    withUser: true,
+    userSelect: "fullName countryCode phoneNumber isActive",
+  });
 }
 
 function clean(value) {

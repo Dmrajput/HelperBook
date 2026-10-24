@@ -4,15 +4,16 @@ import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
 import Leave from "../models/Leave.js";
 import SalaryRecord from "../models/SalaryRecord.js";
-import Shop from "../models/Shop.js";
-import User from "../models/User.js";
 import { AppError } from "../utils/appError.js";
 import { dateFromKey, keyFromDate, todayKey, weekdayKey } from "../utils/attendanceDate.js";
 import { runInTransaction } from "../utils/mongoTransaction.js";
 import { notifySafely } from "./notification.service.js";
 import { onLeaveApproved, onLeaveCancelled, onLeaveRejected, onLeaveSubmitted } from "./notificationEvent.service.js";
+import {
+  findOwnedEmployee as lookupOwnedEmployee,
+  requireOwnerShop,
+} from "./shopAccess.service.js";
 
-const SHOP_REQUIRED = "Shop setup is required before managing employees.";
 const EMPLOYEE_NOT_FOUND = "Employee not found.";
 const LEAVE_NOT_FOUND = "Leave could not be found.";
 const INACTIVE = "Employee is inactive. New leave cannot be recorded.";
@@ -48,27 +49,12 @@ const STATUS_LABEL = {
   leave: "Leave",
 };
 
-async function requireShop(userId) {
-  const user = await User.findById(userId);
-  if (!user || !user.isActive) {
-    throw new AppError("Account is inactive. Please contact support.", 403);
-  }
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) {
-    throw new AppError(SHOP_REQUIRED, 404);
-  }
-  return shop;
+function requireShop(userId) {
+  return requireOwnerShop(userId);
 }
 
-async function findOwnedEmployee(shopId, employeeId) {
-  if (!mongoose.isValidObjectId(employeeId)) {
-    throw new AppError(EMPLOYEE_NOT_FOUND, 404);
-  }
-  const employee = await Employee.findOne({ _id: employeeId, shopId });
-  if (!employee) {
-    throw new AppError(EMPLOYEE_NOT_FOUND, 404);
-  }
-  return employee;
+function findOwnedEmployee(shopId, employeeId) {
+  return lookupOwnedEmployee(shopId, employeeId, { notFoundMessage: EMPLOYEE_NOT_FOUND });
 }
 
 export function sickLeaveTreatment(shop) {

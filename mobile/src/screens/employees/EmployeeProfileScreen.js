@@ -1,8 +1,7 @@
 import { useCallback, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
-import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
@@ -56,29 +55,30 @@ function ToneBadge({ label, tone = "neutral" }) {
 function StatTile({ label, value, icon, color, background }) {
   return (
     <View style={[styles.statTile, { backgroundColor: background }]}>
-      <Ionicons name={icon} size={16} color={color} />
-      <AppText variant="heading" style={[styles.statValue, { color }]}>
+      <Ionicons name={icon} size={14} color={color} />
+      <AppText variant="heading" style={[styles.statValue, { color }]} numberOfLines={1}>
         {String(value ?? 0)}
       </AppText>
-      <AppText variant="caption" color={colors.textSecondary} numberOfLines={1} align="center">
+      <AppText
+        variant="caption"
+        color={colors.textSecondary}
+        numberOfLines={2}
+        align="center"
+        style={styles.statLabel}
+      >
         {label}
       </AppText>
     </View>
   );
 }
 
-function SectionCard({ title, icon, actionLabel, onAction, children }) {
+function SectionCard({ title, actionLabel, onAction, children }) {
   return (
     <View style={styles.sectionCard}>
       <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleRow}>
-          <View style={styles.sectionIcon}>
-            <Ionicons name={icon} size={16} color={colors.primary} />
-          </View>
-          <AppText variant="label" style={styles.sectionTitle} numberOfLines={1}>
-            {title}
-          </AppText>
-        </View>
+        <AppText variant="label" style={styles.sectionTitle} numberOfLines={1}>
+          {title}
+        </AppText>
         {actionLabel && onAction ? (
           <Pressable accessibilityRole="button" accessibilityLabel={actionLabel} onPress={onAction} hitSlop={8}>
             <AppText variant="label" color={colors.primary}>
@@ -92,12 +92,9 @@ function SectionCard({ title, icon, actionLabel, onAction, children }) {
   );
 }
 
-function LinkRow({ label, subtitle, icon, onPress }) {
+function LinkRow({ label, subtitle, onPress }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.linkRow}>
-      <View style={styles.linkIcon}>
-        <Ionicons name={icon} size={16} color={colors.primary} />
-      </View>
       <View style={styles.linkCopy}>
         <AppText variant="label" numberOfLines={1}>
           {label}
@@ -113,34 +110,24 @@ function LinkRow({ label, subtitle, icon, onPress }) {
   );
 }
 
-function ActionChip({ label, icon, onPress, disabled = false, filled = false }) {
-  const iconColor = disabled ? colors.disabledText : filled ? colors.textInverse : colors.primary;
-  const textColor = disabled ? colors.disabledText : filled ? colors.textInverse : colors.primary;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.actionChip,
-        filled && styles.actionChipFilled,
-        pressed && !disabled && styles.pressed,
-        disabled && styles.disabledChip,
-      ]}
-    >
-      <Ionicons name={icon} size={16} color={iconColor} />
-      <AppText variant="label" color={textColor} numberOfLines={1}>
-        {label}
-      </AppText>
-    </Pressable>
-  );
-}
-
-function FooterButton({ label, icon, onPress, disabled = false, tone = "primary" }) {
+function ActionButton({
+  label,
+  icon,
+  onPress,
+  disabled = false,
+  filled = false,
+  tone = "primary",
+  style,
+}) {
   const isDanger = tone === "danger";
-  const color = disabled ? colors.disabledText : isDanger ? colors.error : colors.primary;
+  const iconColor = disabled
+    ? colors.disabledText
+    : filled
+      ? colors.textInverse
+      : isDanger
+        ? colors.error
+        : colors.primary;
+  const textColor = iconColor;
   return (
     <Pressable
       accessibilityRole="button"
@@ -149,14 +136,17 @@ function FooterButton({ label, icon, onPress, disabled = false, tone = "primary"
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
-        styles.footerButton,
-        isDanger ? styles.footerDanger : styles.footerSecondary,
+        styles.actionButton,
+        filled && !isDanger && styles.actionButtonFilled,
+        filled && isDanger && styles.actionButtonDangerFilled,
+        !filled && isDanger && styles.actionButtonDangerOutline,
         pressed && !disabled && styles.pressed,
         disabled && styles.disabledChip,
+        style,
       ]}
     >
-      <Ionicons name={icon} size={16} color={color} />
-      <AppText variant="label" color={color} numberOfLines={1}>
+      {icon ? <Ionicons name={icon} size={16} color={iconColor} /> : null}
+      <AppText variant="label" color={textColor} style={styles.actionButtonLabel} numberOfLines={2}>
         {label}
       </AppText>
     </Pressable>
@@ -165,6 +155,8 @@ function FooterButton({ label, icon, onPress, disabled = false, tone = "primary"
 
 export default function EmployeeProfileScreen({ navigation, route }) {
   const { employeeId } = route.params;
+  const { width } = useWindowDimensions();
+  const stackLeaveActions = width < 390;
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -315,12 +307,12 @@ export default function EmployeeProfileScreen({ navigation, route }) {
             <View style={styles.heroTop}>
               <View style={styles.heroNameBlock}>
                 <View style={styles.nameBadgeRow}>
-                  <AppText variant="subtitle" style={styles.heroName} numberOfLines={1}>
+                  <AppText variant="subtitle" style={styles.heroName} numberOfLines={2}>
                     {employee.name}
                   </AppText>
                   <StatusBadge status={employee.status} />
                 </View>
-                <AppText variant="body" color={colors.textSecondary}>
+                <AppText variant="body" color={colors.textSecondary} numberOfLines={2}>
                   {roleLabel(employee)}
                 </AppText>
               </View>
@@ -329,6 +321,7 @@ export default function EmployeeProfileScreen({ navigation, route }) {
                 accessibilityLabel="Edit employee"
                 onPress={() => navigation.navigate("EditEmployee", { employeeId: employee.id })}
                 style={styles.editChip}
+                hitSlop={8}
               >
                 <Ionicons name="create-outline" size={14} color={colors.primary} />
                 <AppText variant="caption" color={colors.primary} style={styles.editChipText}>
@@ -338,14 +331,16 @@ export default function EmployeeProfileScreen({ navigation, route }) {
             </View>
             <View style={styles.metaRow}>
               <Ionicons name="call-outline" size={14} color={colors.textSecondary} />
-              <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
-                {employee.phone ? formatPhone(employee.phone) : "Phone not added"}
+              <AppText variant="caption" color={colors.textSecondary} numberOfLines={2} style={styles.metaText}>
+                {employee.phone ? `Phone : ${formatPhone(employee.phone)}` : "Phone not added"}
               </AppText>
             </View>
             <View style={styles.metaRow}>
               <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-              <AppText variant="caption" color={colors.textSecondary} numberOfLines={2}>
-                {joinedLabel(employee.joiningDate)}
+              <AppText variant="caption" color={colors.textSecondary} numberOfLines={2} style={styles.metaText}>
+                {formatJoiningDate(employee.joiningDate)
+                  ? `Joining Date : ${formatJoiningDate(employee.joiningDate)}`
+                  : joinedLabel(employee.joiningDate)}
               </AppText>
             </View>
           </View>
@@ -353,8 +348,7 @@ export default function EmployeeProfileScreen({ navigation, route }) {
 
         <SectionCard
           title="This Month Attendance"
-          icon="calendar-outline"
-          actionLabel="View All ›"
+          actionLabel="View All"
           onAction={() => navigation.navigate("EmployeeAttendance", { employeeId: employee.id })}
         >
           <View style={styles.statRow}>
@@ -366,27 +360,23 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           <LinkRow
             label="Attendance History"
             subtitle="View daily attendance records"
-            icon="bar-chart-outline"
             onPress={() => navigation.navigate("EmployeeAttendance", { employeeId: employee.id })}
           />
         </SectionCard>
 
-        <SectionCard title="Salary" icon="wallet-outline">
+        <SectionCard title="Salary">
           <View style={styles.salaryRow}>
-            <View style={styles.salaryCol}>
+            <View style={styles.salaryCard}>
               <AppText variant="caption" color={colors.textSecondary}>
-                Current Pay
+                {employee.salary?.type === "daily" ? "Daily Salary" : "Monthly Salary"}
               </AppText>
               <AppText variant="subtitle" style={styles.salaryAmount} numberOfLines={1}>
-                {`${formatInr(employee.salary?.amount)}${employee.salary?.type === "daily" ? " / day" : " / month"}`}
+                {formatInr(employee.salary?.amount)}
               </AppText>
-              <AppText variant="caption" color={colors.textSecondary}>
-                {employee.salary?.type === "daily" ? "Daily salary" : "Monthly salary"}
-              </AppText>
+              <ToneBadge label="Active" tone="success" />
             </View>
-            <View style={styles.salaryDivider} />
             <Pressable
-              style={styles.salaryCol}
+              style={styles.salaryCard}
               disabled={!latestSalary}
               onPress={() => latestSalary && navigation.navigate("SalaryDetail", { salaryId: latestSalary.id })}
               accessibilityRole={latestSalary ? "button" : "text"}
@@ -405,9 +395,14 @@ export default function EmployeeProfileScreen({ navigation, route }) {
                   </View>
                   <ToneBadge label={salaryLabel} tone={salaryTone} />
                   {latestSalary.paymentStatus === "paid" && latestSalary.payment?.paymentDate ? (
-                    <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
-                      {`${formatAttendanceDate(latestSalary.payment.paymentDate)} · ${methodLabel(latestSalary.payment.paymentMethod)}`}
-                    </AppText>
+                    <>
+                      <AppText variant="caption" color={colors.textSecondary} numberOfLines={2}>
+                        {formatAttendanceDate(latestSalary.payment.paymentDate)}
+                      </AppText>
+                      <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+                        {methodLabel(latestSalary.payment.paymentMethod)}
+                      </AppText>
+                    </>
                   ) : null}
                 </>
               ) : (
@@ -420,15 +415,13 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           <LinkRow
             label="Salary History"
             subtitle="View all past salary payments"
-            icon="download-outline"
             onPress={() => navigation.navigate("SalaryHistory", { employeeId: employee.id })}
           />
         </SectionCard>
 
         <SectionCard
           title="Leave"
-          icon="calendar-outline"
-          actionLabel="View All ›"
+          actionLabel="View All"
           onAction={() => navigation.navigate("LeaveHistory", { employeeId: employee.id })}
         >
           {leaveLoading ? (
@@ -447,17 +440,19 @@ export default function EmployeeProfileScreen({ navigation, route }) {
               Leave information is unavailable.
             </AppText>
           )}
-          <View style={styles.chipRow}>
-            <ActionChip
+          <View style={[styles.actionRow, stackLeaveActions && styles.actionColumn]}>
+            <ActionButton
               label="Leave History"
               icon="list-outline"
+              style={stackLeaveActions ? styles.actionFull : styles.actionHalf}
               onPress={() => navigation.navigate("LeaveHistory", { employeeId: employee.id })}
             />
-            <ActionChip
+            <ActionButton
               label="New Leave Request"
               icon="add"
               filled
               disabled={employee.status !== "active"}
+              style={stackLeaveActions ? styles.actionFull : styles.actionHalf}
               onPress={() =>
                 navigation.navigate("CreateLeave", {
                   mode: "request",
@@ -469,11 +464,11 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           </View>
         </SectionCard>
 
-        <SectionCard title="Advance / Khata" icon="cash-outline">
+        <SectionCard title="Advance / Khata">
           <View style={styles.advanceRow}>
             <View style={styles.advanceCopy}>
               <AppText variant="caption" color={colors.textSecondary}>
-                Outstanding
+                Outstanding Balance
               </AppText>
               <AppText variant="heading" style={styles.advanceAmount}>
                 {advanceLoading ? "..." : advance ? formatInr(outstanding) : "—"}
@@ -483,42 +478,19 @@ export default function EmployeeProfileScreen({ navigation, route }) {
               ) : null}
             </View>
             <View style={styles.advanceActions}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="View Khata"
+              <ActionButton
+                label="View Khata"
+                icon="document-text-outline"
+                style={styles.actionFull}
                 onPress={() => navigation.navigate("EmployeeAdvance", { employeeId: employee.id })}
-                style={({ pressed }) => [styles.stackChip, pressed && styles.pressed]}
-              >
-                <Ionicons name="document-text-outline" size={16} color={colors.primary} />
-                <AppText variant="label" color={colors.primary} numberOfLines={1}>
-                  View Khata
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Give Advance"
-                accessibilityState={{ disabled: employee.status !== "active" }}
+              />
+              <ActionButton
+                label="Give Advance"
+                icon="cash-outline"
                 disabled={employee.status !== "active"}
+                style={styles.actionFull}
                 onPress={() => navigation.navigate("GiveAdvance", { employeeId: employee.id, employeeName: employee.name })}
-                style={({ pressed }) => [
-                  styles.stackChip,
-                  pressed && employee.status === "active" && styles.pressed,
-                  employee.status !== "active" && styles.disabledChip,
-                ]}
-              >
-                <Ionicons
-                  name="cash-outline"
-                  size={16}
-                  color={employee.status !== "active" ? colors.disabledText : colors.primary}
-                />
-                <AppText
-                  variant="label"
-                  color={employee.status !== "active" ? colors.disabledText : colors.primary}
-                  numberOfLines={1}
-                >
-                  Give Advance
-                </AppText>
-              </Pressable>
+              />
             </View>
           </View>
           {employee.status !== "active" ? (
@@ -528,20 +500,17 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           ) : null}
         </SectionCard>
 
-        <SectionCard title="Login Access" icon="lock-closed-outline">
-          <View style={styles.loginRow}>
-            <View style={styles.loginCol}>
+        <SectionCard title="Login Access">
+          <View style={styles.loginGrid}>
+            <View style={styles.loginItem}>
               <AppText variant="caption" color={colors.textSecondary}>
                 Phone Number
               </AppText>
-              <View style={styles.loginValueRow}>
-                <Ionicons name="call-outline" size={13} color={colors.textSecondary} />
-                <AppText variant="label" numberOfLines={1} style={styles.loginValue}>
-                  {employee.phone ? formatPhone(employee.phone) : "Not added"}
-                </AppText>
-              </View>
+              <AppText variant="label" numberOfLines={2} style={styles.loginValue}>
+                {employee.phone ? formatPhone(employee.phone) : "Not added"}
+              </AppText>
             </View>
-            <View style={styles.loginCol}>
+            <View style={styles.loginItem}>
               <AppText variant="caption" color={colors.textSecondary}>
                 Login Status
               </AppText>
@@ -550,24 +519,24 @@ export default function EmployeeProfileScreen({ navigation, route }) {
                 tone={employee.loginEnabled ? "success" : "danger"}
               />
             </View>
-            <View style={styles.loginCol}>
+            <View style={styles.loginItemWide}>
               <AppText variant="caption" color={colors.textSecondary}>
                 Last Login
               </AppText>
-              <View style={styles.loginValueRow}>
-                <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
-                <AppText variant="caption" numberOfLines={2} style={styles.loginValue}>
-                  {employee.lastLoginAt
-                    ? new Date(employee.lastLoginAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
-                    : "Not yet"}
-                </AppText>
-              </View>
+              <AppText variant="label" numberOfLines={2} style={styles.loginValue}>
+                {employee.lastLoginAt
+                  ? new Date(employee.lastLoginAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+                  : "Not yet"}
+              </AppText>
             </View>
           </View>
           {employee.loginEnabled ? (
-            <AppText variant="caption" color={colors.textSecondary}>
-              They sign in from Employee Login. Temporary passwords must be changed on first login.
-            </AppText>
+            <View style={styles.infoBanner}>
+              <Ionicons name="information-circle-outline" size={16} color={colors.info} />
+              <AppText variant="caption" color={colors.textSecondary} style={styles.infoBannerText}>
+                Employee login is active. Temporary passwords must be changed on first login.
+              </AppText>
+            </View>
           ) : null}
           {employee.mustChangePassword ? (
             <ToneBadge label="Must change password" tone="warning" />
@@ -577,11 +546,12 @@ export default function EmployeeProfileScreen({ navigation, route }) {
               Add a phone number to enable login.
             </AppText>
           ) : (
-            <>
-              <AppButton
-                label={employee.loginEnabled ? "Disable Login for Employee" : "Enable Login for Employee"}
-                variant="secondary"
+            <View style={styles.actionColumn}>
+              <ActionButton
+                label={employee.loginEnabled ? "Disable Login" : "Enable Login"}
+                icon={employee.loginEnabled ? "lock-closed-outline" : "lock-open-outline"}
                 disabled={Boolean(busy)}
+                style={styles.actionFull}
                 onPress={async () => {
                   setBusy(employee.loginEnabled ? "Disabling login..." : "Enabling login...");
                   try {
@@ -611,10 +581,11 @@ export default function EmployeeProfileScreen({ navigation, route }) {
                 }}
               />
               {employee.loginEnabled ? (
-                <AppButton
+                <ActionButton
                   label="Reset Temporary Password"
-                  variant="secondary"
+                  icon="key-outline"
                   disabled={Boolean(busy)}
+                  style={styles.actionFull}
                   onPress={() => {
                     Alert.alert(
                       "Reset password?",
@@ -654,12 +625,12 @@ export default function EmployeeProfileScreen({ navigation, route }) {
                   }}
                 />
               ) : null}
-            </>
+            </View>
           )}
         </SectionCard>
 
         {employee.notes ? (
-          <SectionCard title="Notes" icon="document-text-outline">
+          <SectionCard title="Notes">
             <AppText variant="body">{employee.notes}</AppText>
           </SectionCard>
         ) : null}
@@ -668,20 +639,7 @@ export default function EmployeeProfileScreen({ navigation, route }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Edit Employee"
-          accessibilityState={{ disabled: Boolean(busy) }}
-          disabled={Boolean(busy)}
-          onPress={() => navigation.navigate("EditEmployee", { employeeId: employee.id })}
-          style={({ pressed }) => [styles.editEmployeeBtn, pressed && !busy && styles.pressed, busy && styles.disabledChip]}
-        >
-          <Ionicons name="create-outline" size={18} color={busy ? colors.disabledText : colors.textInverse} />
-          <AppText variant="button" color={busy ? colors.disabledText : colors.textInverse}>
-            Edit Employee
-          </AppText>
-        </Pressable>
-        <FooterButton
+        <ActionButton
           label={
             busy
               ? busy
@@ -691,8 +649,9 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           }
           icon={employee.status === "active" ? "person-remove-outline" : "refresh-outline"}
           tone={employee.status === "active" ? "danger" : "primary"}
-          onPress={confirmStatus}
           disabled={Boolean(busy)}
+          style={styles.actionFull}
+          onPress={confirmStatus}
         />
       </View>
     </AppScreen>
@@ -702,46 +661,41 @@ export default function EmployeeProfileScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   scroll: {
     gap: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
   },
   hero: {
     flexDirection: "row",
     gap: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 14,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: "#000000",
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
   avatarWrap: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.secondaryLight,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarLetter: {
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: "700",
   },
   onlineDot: {
     position: "absolute",
-    right: 2,
-    bottom: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    right: 1,
+    bottom: 1,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: colors.success,
     borderWidth: 2,
     borderColor: colors.surface,
@@ -752,7 +706,7 @@ const styles = StyleSheet.create({
   heroCopy: {
     flex: 1,
     minWidth: 0,
-    gap: 4,
+    gap: spacing.xs,
   },
   heroTop: {
     flexDirection: "row",
@@ -762,20 +716,22 @@ const styles = StyleSheet.create({
   heroNameBlock: {
     flex: 1,
     minWidth: 0,
-    gap: 4,
+    gap: 2,
   },
   nameBadgeRow: {
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 6,
   },
   heroName: {
     fontWeight: "700",
     color: colors.text,
     flexShrink: 1,
+    maxWidth: "100%",
   },
   editChip: {
+    flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -783,7 +739,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     minHeight: 32,
   },
   editChipText: {
@@ -791,83 +747,66 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 6,
+  },
+  metaText: {
+    flex: 1,
+    minWidth: 0,
+    lineHeight: 18,
   },
   sectionCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     gap: spacing.sm,
-    shadowColor: "#000000",
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.sm,
-    minHeight: 32,
-  },
-  sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flex: 1,
-    minWidth: 0,
-  },
-  sectionIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
+    minHeight: 28,
   },
   sectionTitle: {
     flex: 1,
+    minWidth: 0,
     fontWeight: "700",
   },
   statRow: {
     flexDirection: "row",
-    gap: 6,
+    gap: spacing.sm,
   },
   statTile: {
     flex: 1,
     minWidth: 0,
-    borderRadius: 12,
+    borderRadius: 10,
     paddingVertical: spacing.sm,
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
     alignItems: "center",
-    gap: 2,
-    minHeight: 78,
+    justifyContent: "center",
+    gap: 3,
+    minHeight: 76,
   },
   statValue: {
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 17,
+    lineHeight: 21,
     fontWeight: "700",
+  },
+  statLabel: {
+    fontSize: 11,
+    lineHeight: 14,
   },
   linkRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    minHeight: 48,
+    minHeight: 44,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingTop: spacing.sm,
-  },
-  linkIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: colors.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
   },
   linkCopy: {
     flex: 1,
@@ -878,14 +817,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
   },
-  salaryCol: {
+  salaryCard: {
     flex: 1,
     minWidth: 0,
     gap: 4,
-  },
-  salaryDivider: {
-    width: 1,
-    backgroundColor: colors.border,
+    backgroundColor: colors.background,
+    borderRadius: 10,
+    padding: spacing.sm,
   },
   salaryAmount: {
     fontWeight: "700",
@@ -904,12 +842,23 @@ const styles = StyleSheet.create({
   toneBadgeText: {
     fontWeight: "700",
   },
-  chipRow: {
+  actionRow: {
     flexDirection: "row",
     gap: spacing.sm,
   },
-  actionChip: {
+  actionColumn: {
+    flexDirection: "column",
+    gap: spacing.sm,
+  },
+  actionHalf: {
     flex: 1,
+    minWidth: 0,
+  },
+  actionFull: {
+    alignSelf: "stretch",
+    width: "100%",
+  },
+  actionButton: {
     minHeight: 44,
     borderRadius: 12,
     borderWidth: 1,
@@ -919,11 +868,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  actionChipFilled: {
+  actionButtonFilled: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+  },
+  actionButtonDangerOutline: {
+    borderColor: colors.error,
+    backgroundColor: colors.surface,
+  },
+  actionButtonDangerFilled: {
+    backgroundColor: colors.error,
+    borderColor: colors.error,
+  },
+  actionButtonLabel: {
+    flexShrink: 1,
+    textAlign: "center",
+    fontWeight: "600",
   },
   disabledChip: {
     borderColor: colors.disabled,
@@ -932,40 +895,30 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.9,
   },
-  loginValueRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  loginGrid: {
+    gap: spacing.sm,
+  },
+  loginItem: {
+    gap: 4,
+  },
+  loginItemWide: {
     gap: 4,
   },
   loginValue: {
+    flexShrink: 1,
+  },
+  infoBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    backgroundColor: colors.infoBackground,
+    borderRadius: 10,
+    padding: spacing.md,
+  },
+  infoBannerText: {
     flex: 1,
     minWidth: 0,
-  },
-  editEmployeeBtn: {
-    minHeight: 48,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  footerButton: {
-    minHeight: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    backgroundColor: colors.surface,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingHorizontal: spacing.sm,
-  },
-  footerSecondary: {
-    borderColor: colors.primary,
-  },
-  footerDanger: {
-    borderColor: colors.error,
+    lineHeight: 18,
   },
   advanceRow: {
     flexDirection: "row",
@@ -978,37 +931,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   advanceAmount: {
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: "700",
   },
   advanceActions: {
-    width: 132,
+    width: 128,
+    flexShrink: 0,
     gap: spacing.sm,
-  },
-  stackChip: {
-    minHeight: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingHorizontal: spacing.sm,
-  },
-  loginRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  loginCol: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
   },
   footer: {
-    gap: spacing.sm,
     paddingTop: spacing.sm,
   },
 });

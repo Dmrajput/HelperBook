@@ -8,7 +8,7 @@ import AttendanceSummary from "../../components/dashboard/AttendanceSummary";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import DashboardSkeleton from "../../components/dashboard/DashboardSkeleton";
 import FinancialSummary from "../../components/dashboard/FinancialSummary";
-import QuickActions from "../../components/dashboard/QuickActions";
+// import QuickActions from "../../components/dashboard/QuickActions";
 import RecentActivity from "../../components/dashboard/RecentActivity";
 import TeamCard from "../../components/dashboard/TeamCard";
 import { useUnreadCount } from "../../hooks/useNotifications";
@@ -116,11 +116,7 @@ export default function DashboardScreen({
                   />
                 </>
               ) : null}
-              <QuickActions
-                activeCount={active}
-                notMarkedToday={data.attendance?.notMarkedToday ?? 0}
-                isWorkingDay={data.attendance?.isWorkingDay !== false}
-              />
+              {/* <QuickActions activeCount={active} /> */}
               {hasEmployees ? (
                 <RecentActivity
                   recentPayments={data.recentPayments || []}
@@ -138,9 +134,7 @@ export default function DashboardScreen({
                 />
               ) : null}
             </>
-          ) : (
-            <QuickActions activeCount={0} />
-          )}
+          ) : null}
         </View>
       </ScrollView>
     </View>

@@ -2,14 +2,15 @@ import mongoose from "mongoose";
 import EmployeeAdvance from "../models/EmployeeAdvance.js";
 import AdvanceTransaction from "../models/AdvanceTransaction.js";
 import Employee from "../models/Employee.js";
-import Shop from "../models/Shop.js";
-import User from "../models/User.js";
 import { AppError } from "../utils/appError.js";
 import { dateFromKey, keyFromDate } from "../utils/attendanceDate.js";
 import { runInTransaction } from "../utils/mongoTransaction.js";
 import { roundMoney } from "../validators/salary.validator.js";
+import {
+  findOwnedEmployee as lookupOwnedEmployee,
+  requireOwnerShop,
+} from "./shopAccess.service.js";
 
-const SHOP_REQUIRED = "Shop setup is required before managing employees.";
 const NOT_FOUND = "Advance could not be found.";
 const INACTIVE = "Employee is inactive. New advances cannot be given.";
 const BEFORE_JOINING = "Advance cannot be recorded before the employee's joining date.";
@@ -28,27 +29,15 @@ function objectId(value) {
   return new mongoose.Types.ObjectId(String(value));
 }
 
-async function requireShop(userId) {
-  const user = await User.findById(userId);
-  if (!user || !user.isActive) {
-    throw new AppError("Account is inactive. Please contact support.", 403);
-  }
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) {
-    throw new AppError(SHOP_REQUIRED, 404);
-  }
-  return shop;
+function requireShop(userId) {
+  return requireOwnerShop(userId);
 }
 
-async function findOwnedEmployee(shopId, employeeId) {
-  if (!mongoose.isValidObjectId(employeeId)) {
-    throw new AppError("Please select an employee.", 400);
-  }
-  const employee = await Employee.findOne({ _id: employeeId, shopId });
-  if (!employee) {
-    throw new AppError("Employee not found.", 404);
-  }
-  return employee;
+function findOwnedEmployee(shopId, employeeId) {
+  return lookupOwnedEmployee(shopId, employeeId, {
+    invalidIdMessage: "Please select an employee.",
+    invalidIdStatus: 400,
+  });
 }
 
 function sessionQuery(query, session) {
@@ -61,6 +50,26 @@ export async function getAdvanceBalance(employeeId, shopId, session) {
 
 export async function getAdvanceBalanceByAdvanceId(advanceId, shopId, session) {
   return sumSigned({ shopId, advanceId }, session);
+}
+
+/** One aggregate for many employees — avoids N+1 balance lookups on monthly salary lists. */
+export async function getAdvanceBalancesByEmployeeIds(shopId, employeeIds, session) {
+  const ids = (employeeIds || []).filter(Boolean);
+  if (ids.length === 0) {
+    return new Map();
+  }
+
+  const query = AdvanceTransaction.aggregate([
+    {
+      $match: {
+        shopId: objectId(shopId),
+        employeeId: { $in: ids.map((id) => objectId(id)) },
+      },
+    },
+    { $group: { _id: "$employeeId", total: { $sum: "$signedAmount" } } },
+  ]);
+  const rows = await sessionQuery(query, session);
+  return new Map(rows.map((row) => [String(row._id), roundMoney(row.total || 0)]));
 }
 
 async function sumSigned(match, session) {

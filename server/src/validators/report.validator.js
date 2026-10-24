@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
 import Employee from "../models/Employee.js";
-import Shop from "../models/Shop.js";
-import User from "../models/User.js";
 import { AppError } from "../utils/appError.js";
 import { currentMonth, dateFromKey, isValidCalendarKey, keyFromDate, monthBounds } from "../utils/attendanceDate.js";
+import { requireOwnerShop } from "../services/shopAccess.service.js";
 
 export const EXPORT_ROW_LIMIT = 10000;
 
@@ -89,15 +88,11 @@ export function pageOf(items, page, limit) {
 }
 
 export async function requireShop(userId) {
-  const user = await User.findById(userId);
-  if (!user || !user.isActive) {
-    throw new AppError("Please log in again.", 401);
-  }
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) {
-    throw new AppError("Create your shop before viewing reports.", 404);
-  }
-  return shop;
+  return requireOwnerShop(userId, {
+    inactiveMessage: "Please log in again.",
+    inactiveStatus: 401,
+    missingShopMessage: "Create your shop before viewing reports.",
+  });
 }
 
 export async function requireEmployee(shopId, employeeId) {

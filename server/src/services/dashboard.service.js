@@ -4,13 +4,10 @@ import { getRecentSalaryPayments, summarizeUnpaidSalaries } from "./salaryPaymen
 import { approvedEmployeeIdsOnDate, countPendingLeaves } from "./leave.service.js";
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
-import Shop from "../models/Shop.js";
-import User from "../models/User.js";
 import { dateFromKey, todayKey } from "../utils/attendanceDate.js";
-import { AppError } from "../utils/appError.js";
+import { requireOwnerShop } from "./shopAccess.service.js";
 import { getDashboardSubscription } from "./subscription.service.js";
 
-const SHOP_REQUIRED = "Shop setup is required before managing employees.";
 const EMPTY_ATTENDANCE = {
   presentToday: 0,
   absentToday: 0,
@@ -32,17 +29,8 @@ const EMPTY_ADVANCE = {
   employeesWithOutstanding: 0,
 };
 
-async function requireShop(userId) {
-  const user = await User.findById(userId);
-  if (!user || !user.isActive) {
-    throw new AppError("Account is inactive. Please contact support.", 403);
-  }
-
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) {
-    throw new AppError(SHOP_REQUIRED, 404);
-  }
-  return shop;
+function requireShop(userId) {
+  return requireOwnerShop(userId);
 }
 
 function shopTimeZone(shop) {

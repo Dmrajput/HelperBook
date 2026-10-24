@@ -11,6 +11,7 @@ const sessionSchema = new mongoose.Schema(
     refreshTokenHash: {
       type: String,
       required: true,
+      index: true,
     },
     deviceId: {
       type: String,

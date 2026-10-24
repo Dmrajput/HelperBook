@@ -1,25 +1,27 @@
-import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from "react-native";
-import AppButton from "../../components/AppButton";
+import { useMemo, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import AppScreen from "../../components/AppScreen";
+import BillingIntervalToggle from "../../components/subscription/BillingIntervalToggle";
 import CurrentPlanCard from "../../components/subscription/CurrentPlanCard";
 import PlanCard from "../../components/subscription/PlanCard";
 import PlanComparison from "../../components/subscription/PlanComparison";
+import PlanFeaturesRow from "../../components/subscription/PlanFeaturesRow";
 import RazorpayCheckout from "../../components/subscription/RazorpayCheckout";
 import TrialBanner from "../../components/subscription/TrialBanner";
 import useSubscription from "../../hooks/useSubscription";
 import { cancelSubscription, changePlan, resumeSubscription, verifyPayment } from "../../services/subscriptionService";
 import { colors, spacing } from "../../theme";
-
-function priceLabel(plan, interval) {
-  if (plan.id === "free") return "₹0";
-  if (interval === "yearly") {
-    return plan.yearlyPrice === null ? "Yearly plan coming soon" : `₹${plan.yearlyPrice} / year`;
-  }
-  return `₹${plan.monthlyPrice} / month`;
-}
+import {
+  effectivePrice,
+  formatInr,
+  hasDiscount,
+  listPrice,
+  maxYearlySavePercent,
+  sortPlans,
+} from "../../components/subscription/planMeta";
 
 function requestId() {
   return `plan-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
@@ -31,14 +33,21 @@ export default function SubscriptionScreen({ navigation }) {
   const [busy, setBusy] = useState("");
   const [checkout, setCheckout] = useState(null);
   const [paymentState, setPaymentState] = useState("");
+
+  const orderedPlans = useMemo(() => sortPlans(plans), [plans]);
   const yearlyAvailable = plans.some((plan) => plan.yearlyAvailable);
+  const maxSave = maxYearlySavePercent(plans);
 
   async function runChange(plan) {
     if (busy) return;
     setBusy(plan.id);
     setPaymentState("Preparing payment");
     try {
-      const result = await changePlan({ planId: plan.id, billingInterval: plan.id === "free" ? "monthly" : interval, requestId: requestId() });
+      const result = await changePlan({
+        planId: plan.id,
+        billingInterval: plan.id === "free" ? "monthly" : interval,
+        requestId: requestId(),
+      });
       if (result.change === "scheduled") {
         setPaymentState("");
         Alert.alert(result.blocked ? "Downgrade waiting" : "Downgrade scheduled", result.message);
@@ -62,9 +71,20 @@ export default function SubscriptionScreen({ navigation }) {
 
   function confirmPlan(plan) {
     if (!subscription || busy) return;
-    const current = !subscription.isTrial && subscription.plan.id === plan.id && (plan.id === "free" || subscription.billingInterval === interval);
+    const current =
+      !subscription.isTrial &&
+      subscription.status !== "expired" &&
+      subscription.plan.id === plan.id &&
+      (plan.id === "free" || subscription.billingInterval === interval);
     if (current) return;
-    const movingDown = plan.employeeLimit < subscription.plan.employeeLimit && !subscription.isTrial && subscription.status !== "expired";
+
+    if (interval === "yearly" && plan.id !== "free" && !plan.yearlyAvailable) {
+      Alert.alert("Yearly billing", "Yearly billing is not available for this plan yet. Choose monthly, or ask support.");
+      return;
+    }
+
+    const movingDown =
+      plan.employeeLimit < subscription.plan.employeeLimit && !subscription.isTrial && subscription.status !== "expired";
     if (movingDown) {
       const extra = Math.max(0, subscription.activeEmployeeCount - plan.employeeLimit);
       Alert.alert(
@@ -79,17 +99,28 @@ export default function SubscriptionScreen({ navigation }) {
       );
       return;
     }
+
     if (plan.id === "free") {
       runChange(plan);
       return;
     }
-    const amount = interval === "yearly" ? plan.yearlyPrice : plan.monthlyPrice;
+
+    const amount = effectivePrice(plan, interval);
+    const listed = listPrice(plan, interval);
+    const billingLabel = interval === "yearly" ? "year" : "month";
+    const priceLine =
+      amount === null
+        ? "Yearly billing is not available yet."
+        : hasDiscount(plan, interval) && listed != null
+          ? `Regular price ${formatInr(listed)} / ${billingLabel}\nDiscounted price ${formatInr(amount)} / ${billingLabel}`
+          : `Price ${formatInr(amount)} / ${billingLabel}`;
+
     Alert.alert(
       `Upgrade to ${plan.name}?`,
-      `${plan.name} allows up to ${plan.employeeLimit} active employees.\n\nYour current plan:\n${subscription.plan.name} — ${subscription.plan.employeeLimit} employees\n\nNew plan:\n${plan.name} — ${plan.employeeLimit} employees\n\nContinue to payment?`,
+      `${plan.name} allows up to ${plan.employeeLimit} active employees.\n\nYour current plan:\n${subscription.plan.name} — ${subscription.plan.employeeLimit} employees\n\nNew plan:\n${plan.name} — ${plan.employeeLimit} employees\n\n${priceLine}\n\nContinue to payment?`,
       [
         { text: "Cancel", style: "cancel" },
-        { text: amount === null ? "Unavailable" : `Pay ₹${amount}`, onPress: () => runChange(plan) },
+        { text: amount === null ? "Unavailable" : `Pay ${formatInr(amount)}`, onPress: () => runChange(plan) },
       ]
     );
   }
@@ -135,9 +166,23 @@ export default function SubscriptionScreen({ navigation }) {
     }
   }
 
+  function actionLabel(plan, current) {
+    if (busy === plan.id) return "Please wait...";
+    if (current) return "Current Plan";
+    if (plan.id === "free") return "Get Started";
+    if (
+      plan.employeeLimit < (subscription?.plan.employeeLimit || 0) &&
+      !subscription?.isTrial &&
+      subscription?.status !== "expired"
+    ) {
+      return `Downgrade to ${plan.name}`;
+    }
+    return `Choose ${plan.name}`;
+  }
+
   return (
     <AppScreen title="Subscription" subtitle="Plan and billing" icon="ribbon">
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? <ActivityIndicator color={colors.primary} /> : null}
         {error ? (
           <ErrorView
@@ -150,52 +195,107 @@ export default function SubscriptionScreen({ navigation }) {
         {subscription?.status === "expired" ? (
           <View style={styles.notice}>
             <AppText variant="body">Your subscription has expired.</AppText>
-            <AppText variant="body">You're currently on the Free plan.</AppText>
+            <AppText variant="body" color={colors.textSecondary}>
+              You're currently on the Free plan.
+            </AppText>
           </View>
         ) : null}
+
         <TrialBanner subscription={subscription} />
-        <CurrentPlanCard subscription={subscription} />
-        {subscription?.cancelAtPeriodEnd ? (
-          <AppButton label={busy === "resume" ? "Resuming..." : "Resume plan"} onPress={resumePlan} disabled={Boolean(busy)} />
-        ) : null}
-        {subscription?.source === "razorpay" && subscription?.status === "active" ? (
-          <AppButton label={busy === "cancel" ? "Cancelling..." : "Cancel at period end"} variant="secondary" onPress={cancelPlan} disabled={Boolean(busy)} />
-        ) : null}
+        <CurrentPlanCard
+          subscription={subscription}
+          busy={busy}
+          onCancel={cancelPlan}
+          onResume={resumePlan}
+        />
+
         <AppText variant="subtitle">Choose a plan</AppText>
-        {yearlyAvailable ? (
-          <View style={styles.row}>
-            <AppButton label="Monthly" variant={interval === "monthly" ? "primary" : "secondary"} onPress={() => setInterval("monthly")} />
-            <AppButton label="Yearly" variant={interval === "yearly" ? "primary" : "secondary"} onPress={() => setInterval("yearly")} />
-          </View>
-        ) : (
-          <AppText variant="body" color={colors.textSecondary}>Yearly plan coming soon</AppText>
-        )}
-        {plans.map((plan) => {
-          const current = subscription && !subscription.isTrial && subscription.status !== "expired" && subscription.plan.id === plan.id && (plan.id === "free" || subscription.billingInterval === interval);
-          const label = current ? "Current plan" : plan.employeeLimit < (subscription?.plan.employeeLimit || 0) && !subscription?.isTrial && subscription?.status !== "expired" ? `Downgrade to ${plan.name}` : `Choose ${plan.name}`;
+        <BillingIntervalToggle
+          value={interval}
+          onChange={setInterval}
+          maxSavePercent={yearlyAvailable ? maxSave : 0}
+        />
+        {!yearlyAvailable ? (
+          <AppText variant="caption" color={colors.textSecondary}>
+            Yearly billing can be enabled from admin plan pricing. Monthly plans are available now.
+          </AppText>
+        ) : null}
+
+        {orderedPlans.map((plan) => {
+          const current =
+            subscription &&
+            !subscription.isTrial &&
+            subscription.status !== "expired" &&
+            subscription.plan.id === plan.id &&
+            (plan.id === "free" || subscription.billingInterval === interval);
           return (
             <PlanCard
               key={plan.id}
               plan={plan}
+              interval={interval}
               current={current}
-              priceLabel={priceLabel(plan, interval)}
-              actionLabel={busy === plan.id ? "Please wait..." : label}
-              disabled={Boolean(busy) || current || (interval === "yearly" && !plan.yearlyAvailable && plan.id !== "free")}
+              actionLabel={actionLabel(plan, current)}
+              disabled={Boolean(busy) || current}
               onPress={() => confirmPlan(plan)}
             />
           );
         })}
-        <PlanComparison plans={plans} />
-        <AppButton label="Payment History" variant="secondary" onPress={() => navigation.navigate("PaymentHistory")} />
-        <AppButton label="Subscription History" variant="secondary" onPress={() => navigation.navigate("SubscriptionHistory")} />
+
+        <PlanFeaturesRow />
+        <PlanComparison plans={orderedPlans} />
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.navigate("PaymentHistory")}
+          style={({ pressed }) => [styles.historyBtn, pressed && styles.pressed]}
+        >
+          <Ionicons name="time-outline" size={18} color={colors.primary} />
+          <AppText variant="label" color={colors.primary}>
+            Payment History
+          </AppText>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.navigate("SubscriptionHistory")}
+          style={({ pressed }) => [styles.historyBtn, pressed && styles.pressed]}
+        >
+          <Ionicons name="document-text-outline" size={18} color={colors.primary} />
+          <AppText variant="label" color={colors.primary}>
+            Subscription History
+          </AppText>
+        </Pressable>
       </ScrollView>
-      <RazorpayCheckout checkout={checkout} onResult={onPaymentResult} onClose={() => { setCheckout(null); setPaymentState("Payment failed"); }} />
+      <RazorpayCheckout
+        checkout={checkout}
+        onResult={onPaymentResult}
+        onClose={() => {
+          setCheckout(null);
+          setPaymentState("Payment failed");
+        }}
+      />
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.lg, paddingTop: spacing.lg },
-  notice: { gap: spacing.xs },
-  row: { flexDirection: "row", gap: spacing.sm },
+  content: { gap: spacing.md, paddingBottom: spacing.xxl, paddingTop: spacing.lg },
+  notice: {
+    backgroundColor: colors.warningBackground,
+    borderRadius: 14,
+    gap: spacing.xs,
+    padding: spacing.md,
+  },
+  historyBtn: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing.sm,
+    justifyContent: "center",
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+  },
+  pressed: { opacity: 0.88 },
 });

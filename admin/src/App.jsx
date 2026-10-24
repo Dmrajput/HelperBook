@@ -11,6 +11,7 @@ import EmployeesPage from "./pages/EmployeesPage";
 import EmployeeDetailPage from "./pages/EmployeeDetailPage";
 import PaymentDetailPage from "./pages/PaymentDetailPage";
 import SubscriptionsPage from "./pages/SubscriptionsPage";
+import PlanPricingPage from "./pages/PlanPricingPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import ReportsPage from "./pages/ReportsPage";
 import SupportPage from "./pages/SupportPage";
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="employees" element={<EmployeesPage />} />
         <Route path="employees/:id" element={<EmployeeDetailPage />} />
         <Route path="subscriptions" element={<SubscriptionsPage />} />
+        <Route path="plan-pricing" element={<PlanPricingPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="payments/:id" element={<PaymentDetailPage />} />
         <Route path="reports" element={<ReportsPage />} />

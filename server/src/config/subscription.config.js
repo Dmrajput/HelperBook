@@ -3,9 +3,9 @@ const PAID_PLAN_IDS = ["starter", "business", "pro"];
 
 const PLAN_DEFAULTS = {
   free: { name: "Free", employeeLimit: 1, monthlyPrice: 0, yearlyPrice: 0 },
-  starter: { name: "Starter", employeeLimit: 2, monthlyPrice: 19, yearlyPrice: null },
-  business: { name: "Business", employeeLimit: 5, monthlyPrice: 49, yearlyPrice: null },
-  pro: { name: "Pro", employeeLimit: 15, monthlyPrice: 149, yearlyPrice: null },
+  starter: { name: "Starter", employeeLimit: 2, monthlyPrice: 19, yearlyPrice: 190 },
+  business: { name: "Business", employeeLimit: 5, monthlyPrice: 49, yearlyPrice: 490 },
+  pro: { name: "Pro", employeeLimit: 15, monthlyPrice: 149, yearlyPrice: 1490 },
 };
 
 function integerOrNull(value) {
@@ -35,19 +35,19 @@ export function getSubscriptionConfig() {
         id: "starter",
         ...PLAN_DEFAULTS.starter,
         monthlyPrice: monthlyPrice("STARTER_MONTHLY_PRICE", PLAN_DEFAULTS.starter.monthlyPrice),
-        yearlyPrice: integerOrNull(process.env.STARTER_YEARLY_PRICE),
+        yearlyPrice: integerOrNull(process.env.STARTER_YEARLY_PRICE) ?? PLAN_DEFAULTS.starter.yearlyPrice,
       },
       business: {
         id: "business",
         ...PLAN_DEFAULTS.business,
         monthlyPrice: monthlyPrice("BUSINESS_MONTHLY_PRICE", PLAN_DEFAULTS.business.monthlyPrice),
-        yearlyPrice: integerOrNull(process.env.BUSINESS_YEARLY_PRICE),
+        yearlyPrice: integerOrNull(process.env.BUSINESS_YEARLY_PRICE) ?? PLAN_DEFAULTS.business.yearlyPrice,
       },
       pro: {
         id: "pro",
         ...PLAN_DEFAULTS.pro,
         monthlyPrice: monthlyPrice("PRO_MONTHLY_PRICE", PLAN_DEFAULTS.pro.monthlyPrice),
-        yearlyPrice: integerOrNull(process.env.PRO_YEARLY_PRICE),
+        yearlyPrice: integerOrNull(process.env.PRO_YEARLY_PRICE) ?? PLAN_DEFAULTS.pro.yearlyPrice,
       },
     },
   };
@@ -64,6 +64,12 @@ export function publicPlan(plan) {
     name: plan.name,
     monthlyPrice: plan.monthlyPrice,
     yearlyPrice: plan.id === "free" ? 0 : plan.yearlyPrice,
+    monthlyListPrice: plan.monthlyListPrice ?? plan.monthlyPrice,
+    yearlyListPrice: plan.id === "free" ? 0 : plan.yearlyListPrice ?? plan.yearlyPrice,
+    hasMonthlyDiscount: Boolean(plan.hasMonthlyDiscount),
+    hasYearlyDiscount: Boolean(plan.hasYearlyDiscount),
+    monthlyDiscountPercent: plan.monthlyDiscountPercent ?? null,
+    yearlyDiscountPercent: plan.yearlyDiscountPercent ?? null,
     employeeLimit: plan.employeeLimit,
     yearlyAvailable: plan.id === "free" ? false : plan.yearlyPrice !== null,
   };

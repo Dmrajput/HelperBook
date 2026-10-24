@@ -19,6 +19,8 @@ import {
   payment,
   payments,
   paymentsReport,
+  planPricing,
+  planPricingPatch,
   refund,
   refresh,
   registrations,
@@ -74,6 +76,8 @@ router.patch("/employees/:id/login-status", requireSuperAdmin, employeeLogin);
 router.get("/subscriptions", requireAdminPermission("subscriptions.read"), subscriptions);
 router.get("/subscriptions/:id", requireAdminPermission("subscriptions.read"), subscription);
 router.post("/subscriptions/:id/recovery", requireAdminPermission("subscriptions.update"), subscriptionRecovery);
+router.get("/plan-pricing", requireAdminPermission("subscriptions.read"), planPricing);
+router.patch("/plan-pricing/:planId", requireAdminPermission("subscriptions.update"), planPricingPatch);
 
 router.get("/payments", requireAdminPermission("payments.read"), payments);
 router.get("/payments/:id", requireAdminPermission("payments.read"), payment);

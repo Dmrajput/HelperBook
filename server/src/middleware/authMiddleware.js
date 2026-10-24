@@ -19,7 +19,7 @@ export async function requireAuth(req, res, next) {
     if (payload.role !== "owner" || payload.type !== "access") {
       throw new AppError("Your session has expired. Please login again.", 401);
     }
-    const user = await User.findById(payload.sub);
+    const user = await User.findById(payload.sub).select("_id role isActive suspensionReason");
 
     if (!user) {
       throw new AppError("Your session has expired. Please login again.", 401);
@@ -32,7 +32,7 @@ export async function requireAuth(req, res, next) {
       );
     }
 
-    const session = await Session.findById(payload.sid);
+    const session = await Session.findById(payload.sid).select("_id userId revokedAt expiresAt");
     if (
       !session
       || session.revokedAt

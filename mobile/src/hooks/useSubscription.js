@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { getMySubscription, getPlans } from "../services/subscriptionService";
 
-export default function useSubscription() {
+export default function useSubscription({ includePlans = true } = {}) {
   const [subscription, setSubscription] = useState(null);
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,11 +10,16 @@ export default function useSubscription() {
 
   const refreshSubscription = useCallback(async () => {
     setError("");
-    const [nextSubscription, nextPlans] = await Promise.all([getMySubscription(), getPlans()]);
+    if (includePlans) {
+      const [nextSubscription, nextPlans] = await Promise.all([getMySubscription(), getPlans()]);
+      setSubscription(nextSubscription);
+      setPlans(nextPlans);
+      return nextSubscription;
+    }
+    const nextSubscription = await getMySubscription();
     setSubscription(nextSubscription);
-    setPlans(nextPlans);
     return nextSubscription;
-  }, []);
+  }, [includePlans]);
 
   useFocusEffect(
     useCallback(() => {

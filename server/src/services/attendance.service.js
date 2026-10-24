@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
-import Shop from "../models/Shop.js";
-import User from "../models/User.js";
 import { AppError } from "../utils/appError.js";
+import { requireOwnerShop } from "./shopAccess.service.js";
 import { dateFromKey, keyFromDate, monthBounds, todayKey, weekdayKey } from "../utils/attendanceDate.js";
 import {
   approvedEmployeeIdsOnDate,
@@ -11,7 +10,6 @@ import {
   assertNoApprovedLeave,
 } from "./leave.service.js";
 
-const SHOP_REQUIRED = "Shop setup is required before managing employees.";
 const EMPLOYEE_NOT_FOUND = "Employee not found.";
 const ATTENDANCE_NOT_FOUND = "Attendance not found.";
 const DUPLICATE = "Attendance already exists for this employee and date.";
@@ -20,16 +18,8 @@ const INACTIVE = "This employee is inactive. New attendance cannot be marked.";
 
 const EMPTY_COUNTS = { present: 0, absent: 0, halfDay: 0, leave: 0 };
 
-async function requireShop(userId) {
-  const user = await User.findById(userId);
-  if (!user || !user.isActive) {
-    throw new AppError("Account is inactive. Please contact support.", 403);
-  }
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) {
-    throw new AppError(SHOP_REQUIRED, 404);
-  }
-  return shop;
+function requireShop(userId) {
+  return requireOwnerShop(userId);
 }
 
 function shopTimeZone(shop) {

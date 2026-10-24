@@ -24,6 +24,7 @@ import {
   listCoupons,
   listEmployees,
   listPayments,
+  listPlanPricing,
   listShops,
   listSubscriptions,
   listTickets,
@@ -42,6 +43,7 @@ import {
   setUserStatus,
   supportReport,
   updateCoupon,
+  updatePlanPricing,
   updateSettings,
   updateTicket,
 } from "../../services/admin/adminPlatform.service.js";
@@ -155,6 +157,12 @@ export async function ticketNote(req, res) {
 }
 export async function ticketPatch(req, res) {
   sendSuccess(res, "Ticket updated.", await updateTicket(req.admin, req.params.id, req.body));
+}
+export async function planPricing(req, res) {
+  sendSuccess(res, "Plan pricing fetched.", await listPlanPricing());
+}
+export async function planPricingPatch(req, res) {
+  sendSuccess(res, "Plan pricing updated.", await updatePlanPricing(req.admin, req.params.planId, req.body));
 }
 export async function coupons(req, res) {
   sendSuccess(res, "Coupons fetched.", await listCoupons());

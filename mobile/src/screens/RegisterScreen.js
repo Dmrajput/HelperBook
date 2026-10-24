@@ -5,20 +5,7 @@ import AppText from "../components/AppText";
 import ScreenContainer from "../components/ScreenContainer";
 import { useAuth } from "../context/AuthContext";
 import theme, { colors, spacing } from "../theme";
-
-function validateMobile(value) {
-  if (!/^[6-9]\d{9}$/.test(value || "")) {
-    return "Enter a valid 10-digit mobile number.";
-  }
-  return "";
-}
-
-function validatePassword(value) {
-  if (!value || value.length < 8 || value.length > 64 || !/[A-Za-z]/.test(value) || !/\d/.test(value)) {
-    return "Use 8 to 64 characters with a letter and a number.";
-  }
-  return "";
-}
+import { validateMobile, validatePasswordStrength } from "../utils/authValidation";
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
@@ -34,7 +21,7 @@ export default function RegisterScreen({ navigation }) {
     const validationMessage =
       (name.length < 2 ? "Enter your name." : "")
       || validateMobile(mobileNumber)
-      || validatePassword(password)
+      || validatePasswordStrength(password)
       || (password !== confirmPassword ? "Passwords do not match." : "");
 
     if (validationMessage) {

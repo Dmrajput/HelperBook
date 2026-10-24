@@ -5,7 +5,14 @@ import Subscription from "../models/Subscription.js";
 import SubscriptionHistory from "../models/SubscriptionHistory.js";
 import SubscriptionPayment from "../models/SubscriptionPayment.js";
 import User from "../models/User.js";
-import { getSubscriptionConfig, listPlans, priceFor, publicPlan, rupeesToPaise } from "../config/subscription.config.js";
+import { getSubscriptionConfig, publicPlan, rupeesToPaise } from "../config/subscription.config.js";
+import {
+  listAmountForPlan,
+  listPublicPlans,
+  priceForPlan,
+  publicPlanFromResolved,
+  resolvePlan,
+} from "./planPricing.service.js";
 import { EMPLOYEE_TIME_ZONE } from "../constants/employee.js";
 import { dateFromKey, keyFromDate, todayKey } from "../utils/attendanceDate.js";
 import { AppError } from "../utils/appError.js";
@@ -165,17 +172,22 @@ function accessKind(subscription, today) {
 }
 
 async function buildSnapshot(user, shop, subscription) {
-  const config = getSubscriptionConfig();
   const today = todayKey(shopZone(shop));
   const kind = accessKind(subscription, today);
   const effectiveId = kind === "trial" || kind === "paid" ? subscription.planId : "free";
-  const plan = publicPlan(config.plans[effectiveId]);
+  const resolved = await resolvePlan(effectiveId);
+  const plan = publicPlanFromResolved(resolved) || publicPlan(getSubscriptionConfig().plans[effectiveId]);
   const activeEmployeeCount = await Employee.countDocuments({ shopId: shop._id, status: "active" });
   const remainingEmployeeSlots = Math.max(0, plan.employeeLimit - activeEmployeeCount);
   const trialDaysRemaining = kind === "trial" ? Math.max(0, dayGap(today, keyFromDate(subscription.trialEndsAt))) : null;
   const periodEnd = subscription.currentPeriodEnd ? keyFromDate(subscription.currentPeriodEnd) : null;
   const daysUntilExpiry = kind === "paid" && periodEnd ? Math.max(0, dayGap(today, periodEnd)) : trialDaysRemaining;
-  const scheduled = subscription.scheduledPlanId ? publicPlan(config.plans[subscription.scheduledPlanId]) : null;
+  const scheduledResolved = subscription.scheduledPlanId ? await resolvePlan(subscription.scheduledPlanId) : null;
+  const scheduled = scheduledResolved
+    ? publicPlanFromResolved(scheduledResolved)
+    : subscription.scheduledPlanId
+      ? publicPlan(getSubscriptionConfig().plans[subscription.scheduledPlanId])
+      : null;
   return {
     plan,
     billingInterval: kind === "free" ? null : subscription.billingInterval || "monthly",
@@ -214,7 +226,7 @@ async function loadSnapshot(userId) {
 }
 
 export async function getPlans() {
-  return listPlans();
+  return listPublicPlans();
 }
 
 export async function getMySubscription(userId) {
@@ -284,9 +296,8 @@ function ranked(planId) {
   return PLAN_RANK[planId] ?? 0;
 }
 
-function validateTarget(planId, billingInterval) {
-  const config = getSubscriptionConfig();
-  const plan = config.plans[planId];
+async function validateTarget(planId, billingInterval) {
+  const plan = await resolvePlan(planId);
   if (!plan) throw fail("INVALID_PLAN", "Choose a valid plan.", 400);
   if (billingInterval !== "monthly" && billingInterval !== "yearly") {
     throw fail("INVALID_BILLING_INTERVAL", "Choose monthly or yearly billing.", 400);
@@ -303,9 +314,10 @@ async function findReusablePayment(shopId, requestId) {
 }
 
 export async function createCheckout(userId, { planId, billingInterval, requestId, couponCode }) {
-  const plan = validateTarget(planId, billingInterval);
+  const plan = await validateTarget(planId, billingInterval);
   if (planId === "free") throw fail("INVALID_PLAN", "The Free plan does not require payment.", 400);
-  const rupees = priceFor(planId, billingInterval);
+  const rupees = await priceForPlan(planId, billingInterval);
+  const catalogList = await listAmountForPlan(planId, billingInterval);
   if (rupees === null || rupees <= 0) {
     throw fail("INVALID_BILLING_INTERVAL", "Yearly billing is not available yet.", 400);
   }
@@ -317,12 +329,14 @@ export async function createCheckout(userId, { planId, billingInterval, requestI
   if (existing && (existing.status === "created" || existing.status === "pending")) {
     return checkoutPayload(existing, plan);
   }
-  const listAmount = rupeesToPaise(rupees);
-  let amount = listAmount;
+  const catalogListPaise = rupeesToPaise(catalogList ?? rupees);
+  const salePaise = rupeesToPaise(rupees);
+  const planDiscountPaise = Math.max(0, catalogListPaise - salePaise);
+  let amount = salePaise;
   let couponQuote = null;
   if (couponCode) {
     const { quoteCoupon } = await import("./admin/coupon.service.js");
-    couponQuote = await quoteCoupon({ code: couponCode, planId, billingInterval, userId: user._id, listPaise: listAmount });
+    couponQuote = await quoteCoupon({ code: couponCode, planId, billingInterval, userId: user._id, listPaise: salePaise });
     amount = couponQuote.finalPaise;
   }
   const pendingId = new crypto.randomBytes(8).toString("hex");
@@ -351,7 +365,9 @@ export async function createCheckout(userId, { planId, billingInterval, requestI
     razorpayOrderId: order.id,
     metadata: {
       expectedPlanId: planId,
-      listAmountPaise: listAmount,
+      listAmountPaise: catalogListPaise,
+      saleAmountPaise: salePaise,
+      planDiscountPaise,
       discountPaise: couponQuote?.discountPaise || 0,
       couponId: couponQuote ? String(couponQuote.coupon._id) : null,
       couponCode: couponQuote?.coupon.normalizedCode || null,
@@ -371,14 +387,15 @@ function checkoutPayload(payment, plan) {
     planName: plan.name,
     employeeLimit: plan.employeeLimit,
     listAmount: payment.metadata?.listAmountPaise || payment.amount,
+    saleAmount: payment.metadata?.saleAmountPaise || payment.amount,
+    planDiscount: payment.metadata?.planDiscountPaise || 0,
     discount: payment.metadata?.discountPaise || 0,
     couponCode: payment.metadata?.couponCode || null,
   };
 }
 
 async function applyPaidPlan(subscription, payment, session) {
-  const config = getSubscriptionConfig();
-  const plan = config.plans[payment.planId];
+  const plan = (await resolvePlan(payment.planId)) || getSubscriptionConfig().plans[payment.planId];
   const shop = await Shop.findById(subscription.shopId);
   const today = todayKey(shopZone(shop));
   const currentEnd = subscription.currentPeriodEnd ? keyFromDate(subscription.currentPeriodEnd) : null;
@@ -514,7 +531,7 @@ export async function markPaymentFailed(orderId, reason) {
 }
 
 export async function changePlan(userId, { planId, billingInterval, requestId }) {
-  const plan = validateTarget(planId, billingInterval);
+  const plan = await validateTarget(planId, billingInterval);
   const { subscription, snapshot } = await loadSnapshot(userId);
   if (snapshot.isTrial && planId === "free") {
     throw fail("SUBSCRIPTION_CHANGE_NOT_ALLOWED", "The Free plan starts automatically when your trial ends.", 400);
@@ -683,8 +700,7 @@ export async function listHistory(userId, query) {
 }
 
 async function activateScheduled(subscription, shop, today) {
-  const config = getSubscriptionConfig();
-  const plan = config.plans[subscription.scheduledPlanId];
+  const plan = await resolvePlan(subscription.scheduledPlanId);
   if (!plan) return false;
   const activeEmployeeCount = await Employee.countDocuments({ shopId: shop._id, status: "active" });
   if (activeEmployeeCount > plan.employeeLimit) return false;

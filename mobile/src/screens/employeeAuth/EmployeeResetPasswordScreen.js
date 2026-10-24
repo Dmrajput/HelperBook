@@ -6,18 +6,12 @@ import ScreenContainer from "../../components/ScreenContainer";
 import { useAuth } from "../../context/AuthContext";
 import { requestEmployeePasswordReset, resetEmployeePassword } from "../../services/employeeAuthService";
 import theme, { colors, spacing } from "../../theme";
+import { validatePasswordStrength } from "../../utils/authValidation";
 import { getDeviceInfo } from "../../utils/deviceInfo";
 
 function masked(phone) {
   const digits = String(phone || "");
   return `+91 ******${digits.slice(-4)}`;
-}
-
-function validatePassword(value) {
-  if (!value || value.length < 8 || value.length > 64 || !/[A-Za-z]/.test(value) || !/\d/.test(value)) {
-    return "Use 8 to 64 characters with a letter and a number.";
-  }
-  return "";
 }
 
 export default function EmployeeResetPasswordScreen({ route }) {
@@ -40,7 +34,7 @@ export default function EmployeeResetPasswordScreen({ route }) {
   const onSave = async () => {
     const validationMessage =
       (code.length !== 6 ? "Enter the 6-digit code." : "")
-      || validatePassword(password)
+      || validatePasswordStrength(password)
       || (password !== confirmPassword ? "Passwords do not match." : "");
     if (validationMessage || savingRef.current) {
       setError(validationMessage);

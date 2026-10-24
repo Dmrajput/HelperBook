@@ -5,6 +5,7 @@ import AppText from "../components/AppText";
 import ScreenContainer from "../components/ScreenContainer";
 import { useAuth } from "../context/AuthContext";
 import theme, { colors, spacing } from "../theme";
+import { validatePasswordStrength } from "../utils/authValidation";
 
 function formatPhone(phoneNumber) {
   const digits = String(phoneNumber || "");
@@ -12,13 +13,6 @@ function formatPhone(phoneNumber) {
     return `+91 ${digits}`;
   }
   return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
-}
-
-function validatePassword(value) {
-  if (!value || value.length < 8 || value.length > 64 || !/[A-Za-z]/.test(value) || !/\d/.test(value)) {
-    return "Use 8 to 64 characters with a letter and a number.";
-  }
-  return "";
 }
 
 export default function ResetPasswordScreen({ route }) {
@@ -43,7 +37,7 @@ export default function ResetPasswordScreen({ route }) {
   const onSave = async () => {
     const validationMessage =
       (code.length !== 6 ? "Enter the 6-digit code." : "")
-      || validatePassword(password)
+      || validatePasswordStrength(password)
       || (password !== confirmPassword ? "Passwords do not match." : "");
 
     if (validationMessage || verifyingRef.current) {

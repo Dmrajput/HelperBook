@@ -5,6 +5,7 @@ import AppText from "../../components/AppText";
 import ScreenContainer from "../../components/ScreenContainer";
 import { requestEmployeePasswordReset } from "../../services/employeeAuthService";
 import theme, { colors, spacing } from "../../theme";
+import { validateMobile } from "../../utils/authValidation";
 
 export default function EmployeeForgotPasswordScreen({ navigation }) {
   const [mobileNumber, setMobileNumber] = useState("");
@@ -12,8 +13,9 @@ export default function EmployeeForgotPasswordScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const onSend = async () => {
-    if (!/^[6-9]\d{9}$/.test(mobileNumber)) {
-      setError("Enter a valid 10-digit mobile number.");
+    const mobileError = validateMobile(mobileNumber);
+    if (mobileError) {
+      setError(mobileError);
       return;
     }
     setLoading(true);

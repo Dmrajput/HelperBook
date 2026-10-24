@@ -2,16 +2,17 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import { DEPENDENT_COLLECTIONS } from "../constants/employee.js";
 import Employee from "../models/Employee.js";
-import Shop from "../models/Shop.js";
-import User from "../models/User.js";
 import { dateFromKey, todayKey } from "../utils/attendanceDate.js";
 import { AppError } from "../utils/appError.js";
 import { generateTemporaryPassword } from "../utils/password.js";
 import { runInTransaction } from "../utils/mongoTransaction.js";
+import {
+  findOwnedEmployee as lookupOwnedEmployee,
+  requireOwnerShop,
+} from "./shopAccess.service.js";
 import { claimEmployeeSlot, releaseEmployeeSlot } from "./subscription.service.js";
 
 const NOT_FOUND = "Employee not found.";
-const SHOP_REQUIRED = "Shop setup is required before managing employees.";
 const DELETE_BLOCKED =
   "This employee has existing records and cannot be permanently deleted. Deactivate the employee instead.";
 
@@ -19,29 +20,12 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-async function requireShop(userId) {
-  const user = await User.findById(userId);
-  if (!user || !user.isActive) {
-    throw new AppError("Account is inactive. Please contact support.", 403);
-  }
-
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) {
-    throw new AppError(SHOP_REQUIRED, 404);
-  }
-  return shop;
+function requireShop(userId) {
+  return requireOwnerShop(userId);
 }
 
-async function findOwnedEmployee(shopId, employeeId) {
-  if (!mongoose.isValidObjectId(employeeId)) {
-    throw new AppError(NOT_FOUND, 404);
-  }
-
-  const employee = await Employee.findOne({ _id: employeeId, shopId });
-  if (!employee) {
-    throw new AppError(NOT_FOUND, 404);
-  }
-  return employee;
+function findOwnedEmployee(shopId, employeeId) {
+  return lookupOwnedEmployee(shopId, employeeId, { notFoundMessage: NOT_FOUND });
 }
 
 export function toPublicEmployee(employee) {

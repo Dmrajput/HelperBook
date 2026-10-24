@@ -2,16 +2,14 @@ import mongoose from "mongoose";
 import Employee from "../models/Employee.js";
 import SalaryPayment from "../models/SalaryPayment.js";
 import SalaryRecord from "../models/SalaryRecord.js";
-import Shop from "../models/Shop.js";
-import User from "../models/User.js";
 import { AppError } from "../utils/appError.js";
 import { keyFromDate } from "../utils/attendanceDate.js";
 import { runInTransaction } from "../utils/mongoTransaction.js";
 import { roundMoney } from "../validators/salary.validator.js";
 import { notifySafely } from "./notification.service.js";
 import { onSalaryPaid } from "./notificationEvent.service.js";
+import { requireOwnerShop } from "./shopAccess.service.js";
 
-const SHOP_REQUIRED = "Shop setup is required before managing employees.";
 const NOT_FOUND = "Salary could not be found.";
 const PAYMENT_NOT_FOUND = "Payment could not be found.";
 const ALREADY_PAID = "This salary has already been marked as paid.";
@@ -34,16 +32,8 @@ const MONTHS = [
   "December",
 ];
 
-async function requireShop(userId) {
-  const user = await User.findById(userId);
-  if (!user || !user.isActive) {
-    throw new AppError("Account is inactive. Please contact support.", 403);
-  }
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) {
-    throw new AppError(SHOP_REQUIRED, 404);
-  }
-  return shop;
+function requireShop(userId) {
+  return requireOwnerShop(userId);
 }
 
 export function toPublicPayment(payment) {

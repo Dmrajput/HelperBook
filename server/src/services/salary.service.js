@@ -4,17 +4,20 @@ import { DEFAULT_ATTENDANCE_DEDUCTION_MODE } from "../constants/salary.js";
 import { DEDUCTIONS_EXCEED_SALARY } from "../constants/salary.js";
 import {
   getAdvanceBalance,
+  getAdvanceBalancesByEmployeeIds,
   planSalaryDeduction,
   postSalaryDeduction,
   reverseSalaryDeductions,
 } from "./advance.service.js";
 import { approvedCoverage, workingLeaveDays } from "./leave.service.js";
 import { latestPaymentMap, toPublicPayment } from "./salaryPayment.service.js";
+import {
+  findOwnedEmployee as lookupOwnedEmployee,
+  requireOwnerShop,
+} from "./shopAccess.service.js";
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
 import SalaryRecord from "../models/SalaryRecord.js";
-import Shop from "../models/Shop.js";
-import User from "../models/User.js";
 import { AppError } from "../utils/appError.js";
 import {
   currentMonth,
@@ -28,7 +31,6 @@ import { runInTransaction } from "../utils/mongoTransaction.js";
 import { roundMoney } from "../validators/salary.validator.js";
 import { calculateNetSalary, computePayrollAmounts, roundDays } from "./salaryCalculation.js";
 
-const SHOP_REQUIRED = "Shop setup is required before managing employees.";
 const NOT_FOUND = "Salary could not be found.";
 const FINALIZED_MESSAGE = "Salary is finalized. Reopen it before recalculating.";
 const FINALIZED_EDIT = "This salary is finalized. Reopen it before making changes.";
@@ -66,16 +68,8 @@ function eachKey(startKey, endKey) {
   return keys;
 }
 
-async function requireShop(userId) {
-  const user = await User.findById(userId);
-  if (!user || !user.isActive) {
-    throw new AppError("Account is inactive. Please contact support.", 403);
-  }
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) {
-    throw new AppError(SHOP_REQUIRED, 404);
-  }
-  return shop;
+function requireShop(userId) {
+  return requireOwnerShop(userId);
 }
 
 function shopTimeZone(shop) {
@@ -126,15 +120,11 @@ function countModeDays(shop, startKey, endKey, mode, timeZone) {
   return calculateWorkingDays(shop, startKey, endKey, timeZone);
 }
 
-async function findOwnedEmployee(shopId, employeeId) {
-  if (!mongoose.isValidObjectId(employeeId)) {
-    throw new AppError("Please select an employee.", 400);
-  }
-  const employee = await Employee.findOne({ _id: employeeId, shopId });
-  if (!employee) {
-    throw new AppError("Employee not found.", 404);
-  }
-  return employee;
+function findOwnedEmployee(shopId, employeeId) {
+  return lookupOwnedEmployee(shopId, employeeId, {
+    invalidIdMessage: "Please select an employee.",
+    invalidIdStatus: 400,
+  });
 }
 
 function sumAmounts(entries) {
@@ -684,6 +674,10 @@ export async function getMonthlySalaries(userId, year, month, query) {
   const records = await SalaryRecord.find({ shopId: shop._id, year, month });
   const payments = await latestPaymentMap(shop._id, records.map((record) => record._id));
   const recordByEmployee = new Map(records.map((record) => [String(record.employeeId), record]));
+  const balances = await getAdvanceBalancesByEmployeeIds(
+    shop._id,
+    employees.map((employee) => employee._id)
+  );
   const search = (query.search || "").toLowerCase();
 
   const rows = [];
@@ -692,7 +686,7 @@ export async function getMonthlySalaries(userId, year, month, query) {
     if (!record && !eligibleForMonth(employee, period)) {
       continue;
     }
-    const outstanding = roundMoney(Math.max(0, await getAdvanceBalance(employee._id, shop._id)));
+    const outstanding = roundMoney(Math.max(0, balances.get(String(employee._id)) || 0));
     rows.push({
       employee: employeeCard(employee),
       salary: record

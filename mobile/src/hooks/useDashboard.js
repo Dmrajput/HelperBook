@@ -8,8 +8,10 @@ export function useDashboard(active = true) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const hasData = useRef(false);
+  const requestId = useRef(0);
 
   const loadDashboard = useCallback(async () => {
+    const id = ++requestId.current;
     if (!hasData.current) {
       setIsLoading(true);
     }
@@ -17,27 +19,36 @@ export function useDashboard(active = true) {
 
     try {
       const next = await getDashboard();
+      if (id !== requestId.current) return;
       hasData.current = true;
       setData(next);
     } catch (nextError) {
+      if (id !== requestId.current) return;
       setError(nextError);
     } finally {
-      setIsLoading(false);
+      if (id === requestId.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   const refreshDashboard = useCallback(async () => {
+    const id = ++requestId.current;
     setIsRefreshing(true);
     setError(null);
 
     try {
       const next = await getDashboard();
+      if (id !== requestId.current) return;
       hasData.current = true;
       setData(next);
     } catch (nextError) {
+      if (id !== requestId.current) return;
       setError(nextError);
     } finally {
-      setIsRefreshing(false);
+      if (id === requestId.current) {
+        setIsRefreshing(false);
+      }
     }
   }, []);
 
@@ -47,7 +58,9 @@ export function useDashboard(active = true) {
         return undefined;
       }
       loadDashboard();
-      return undefined;
+      return () => {
+        requestId.current += 1;
+      };
     }, [active, loadDashboard])
   );
 

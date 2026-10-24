@@ -4,13 +4,12 @@ import Notification from "../models/Notification.js";
 import Subscription from "../models/Subscription.js";
 import NotificationPreference from "../models/NotificationPreference.js";
 import PushToken from "../models/PushToken.js";
-import Shop from "../models/Shop.js";
-import User from "../models/User.js";
 import { NOTIFICATION_RETENTION_DAYS, PUSH_ATTEMPT_LIMIT } from "../constants/notification.js";
 import { AppError } from "../utils/appError.js";
 import { dateFromKey, keyFromDate, todayKey } from "../utils/attendanceDate.js";
 import { EMPLOYEE_TIME_ZONE } from "../constants/employee.js";
 import { isExpoPushToken, sendExpoPush } from "./pushNotification.service.js";
+import { requireOwnerShop } from "./shopAccess.service.js";
 
 const PREFERENCE_FIELDS = [
   "pushEnabled",
@@ -42,11 +41,12 @@ export function defaultPreferences() {
 }
 
 export async function requireShop(userId) {
-  const user = await User.findById(userId);
-  if (!user || !user.isActive) throw new AppError("Please log in again.", 401);
-  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
-  if (!shop) throw new AppError("Create your shop before using notifications.", 404);
-  return { user, shop };
+  return requireOwnerShop(userId, {
+    withUser: true,
+    inactiveMessage: "Please log in again.",
+    inactiveStatus: 401,
+    missingShopMessage: "Create your shop before using notifications.",
+  });
 }
 
 export async function getPreferences(userId) {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -27,18 +27,58 @@ const TABS = [
   { key: "Profile", label: "Settings", icon: "settings", iconOutline: "settings-outline" },
 ];
 
+function TabPanel({ active, children }) {
+  return (
+    <View
+      style={[styles.panel, active ? styles.panelActive : styles.panelHidden]}
+      pointerEvents={active ? "auto" : "none"}
+      accessibilityElementsHidden={!active}
+      importantForAccessibility={active ? "auto" : "no-hide-descendants"}
+      collapsable={false}
+    >
+      {children}
+    </View>
+  );
+}
+
 function EmployeeTabs({ navigation }) {
   usePushNotifications();
   const [tab, setTab] = useState("Home");
+  const [mounted, setMounted] = useState({ Home: true });
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    setMounted((current) => (current[tab] ? current : { ...current, [tab]: true }));
+  }, [tab]);
+
   return (
     <View style={styles.shell}>
       <View style={styles.body}>
-        {tab === "Home" ? <EmployeeHomeScreen navigation={navigation} onOpenTab={setTab} /> : null}
-        {tab === "Attendance" ? <EmployeeAttendanceScreen navigation={navigation} embedded /> : null}
-        {tab === "Salary" ? <EmployeeSalaryScreen navigation={navigation} /> : null}
-        {tab === "Leave" ? <EmployeeLeaveScreen navigation={navigation} /> : null}
-        {tab === "Profile" ? <EmployeeProfileScreen navigation={navigation} /> : null}
+        {mounted.Home ? (
+          <TabPanel active={tab === "Home"}>
+            <EmployeeHomeScreen navigation={navigation} onOpenTab={setTab} />
+          </TabPanel>
+        ) : null}
+        {mounted.Attendance ? (
+          <TabPanel active={tab === "Attendance"}>
+            <EmployeeAttendanceScreen navigation={navigation} embedded />
+          </TabPanel>
+        ) : null}
+        {mounted.Salary ? (
+          <TabPanel active={tab === "Salary"}>
+            <EmployeeSalaryScreen navigation={navigation} />
+          </TabPanel>
+        ) : null}
+        {mounted.Leave ? (
+          <TabPanel active={tab === "Leave"}>
+            <EmployeeLeaveScreen navigation={navigation} />
+          </TabPanel>
+        ) : null}
+        {mounted.Profile ? (
+          <TabPanel active={tab === "Profile"}>
+            <EmployeeProfileScreen navigation={navigation} />
+          </TabPanel>
+        ) : null}
       </View>
       <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
         {TABS.map((item) => {
@@ -90,6 +130,9 @@ export default function EmployeeNavigator() {
 const styles = StyleSheet.create({
   shell: { flex: 1, backgroundColor: colors.background },
   body: { flex: 1 },
+  panel: { flex: 1 },
+  panelActive: { display: "flex" },
+  panelHidden: { display: "none" },
   bar: {
     flexDirection: "row",
     borderTopWidth: 1,
