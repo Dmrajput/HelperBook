@@ -6,11 +6,11 @@ This policy describes the HelperBook mobile app, the HelperBook API, and the Hel
 
 ## 1. Who provides the service
 
-- Legal name: [OWNER LEGAL NAME]
+- Legal name: [Divyarajsinh Mavendrasinh Padhiyar]
 - Trade name: HelperBook
-- Contact email: [SUPPORT EMAIL]
-- Address: [OWNER ADDRESS]
-- India grievance contact, if required: [GRIEVANCE NAME, EMAIL, AND ADDRESS]
+- Contact email: [helperbookofficial@gmail.com]
+- Address: [Ahemdabad]
+
 
 ## 2. Who this policy covers
 
