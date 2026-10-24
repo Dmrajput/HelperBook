@@ -10,7 +10,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../components/AppText";
-import { APP_NAME, LOGIN_HEADLINE } from "../constants/app";
+import BrandLogo from "../components/BrandLogo";
+import { LOGIN_HEADLINE } from "../constants/app";
 import { useAuth } from "../context/AuthContext";
 import { colors, spacing } from "../theme";
 
@@ -29,17 +30,6 @@ function validatePassword(value) {
     return "Enter your password.";
   }
   return "";
-}
-
-function BrandMark() {
-  return (
-    <LinearGradient colors={["#818CF8", "#6366F1"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.brandMark}>
-      <Ionicons name="people" size={22} color={colors.textInverse} />
-      <View style={styles.brandCheck}>
-        <Ionicons name="checkmark" size={10} color={colors.textInverse} />
-      </View>
-    </LinearGradient>
-  );
 }
 
 function HeroIllustration() {
@@ -119,12 +109,7 @@ export default function LoginScreen({ navigation }) {
       >
         <View style={styles.brandRow}>
           <View style={styles.brandCopy}>
-            <View style={styles.brandTitleRow}>
-              <BrandMark />
-              <AppText variant="heading" style={styles.brandName}>
-                {APP_NAME}
-              </AppText>
-            </View>
+            <BrandLogo size={72} style={styles.brandLogo} />
             <AppText variant="caption" color={colors.textSecondary} style={styles.tagline}>
               {LOGIN_HEADLINE}
             </AppText>
@@ -328,34 +313,8 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.sm,
   },
-  brandTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  brandMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  brandCheck: {
-    position: "absolute",
-    right: -2,
-    bottom: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.success,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.surface,
-  },
-  brandName: {
-    fontSize: 28,
-    lineHeight: 34,
+  brandLogo: {
+    borderRadius: 16,
   },
   tagline: {
     maxWidth: 200,

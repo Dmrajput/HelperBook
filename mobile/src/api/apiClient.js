@@ -5,7 +5,7 @@ import { attachAuthInterceptors } from "./authInterceptor";
 
 const apiClient = axios.create({
   baseURL: ENV.API_URL,
-  timeout: 15000,
+  timeout: 45000,
   headers: {
     "Content-Type": "application/json",
   },

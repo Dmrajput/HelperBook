@@ -10,7 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../../components/AppText";
-import { APP_NAME } from "../../constants/app";
+import BrandLogo from "../../components/BrandLogo";
 import { useAuth } from "../../context/AuthContext";
 import { loginEmployee } from "../../services/employeeAuthService";
 import { colors, spacing } from "../../theme";
@@ -20,19 +20,6 @@ function validateMobile(value) {
   if (!value) return "Enter your mobile number.";
   if (!/^[6-9]\d{9}$/.test(value)) return "Enter a valid 10-digit mobile number.";
   return "";
-}
-
-function BrandMark() {
-  return (
-    <LinearGradient
-      colors={["#818CF8", "#6366F1"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.brandMark}
-    >
-      <Ionicons name="id-card" size={20} color={colors.textInverse} />
-    </LinearGradient>
-  );
 }
 
 function HeroIllustration() {
@@ -135,12 +122,7 @@ export default function EmployeeLoginScreen({ navigation }) {
 
         <View style={styles.brandRow}>
           <View style={styles.brandCopy}>
-            <View style={styles.brandTitleRow}>
-              <BrandMark />
-              <AppText variant="heading" style={styles.brandName}>
-                {APP_NAME}
-              </AppText>
-            </View>
+            <BrandLogo size={72} style={styles.brandLogo} />
             <AppText variant="caption" color={colors.textSecondary} style={styles.tagline}>
               Sign in with the mobile number and password shared by your shop.
             </AppText>
@@ -338,21 +320,8 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.sm,
   },
-  brandTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  brandMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  brandName: {
-    fontSize: 28,
-    lineHeight: 34,
+  brandLogo: {
+    borderRadius: 16,
   },
   tagline: {
     maxWidth: 220,

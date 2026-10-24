@@ -1,18 +1,14 @@
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 import AppText from "../components/AppText";
+import BrandLogo from "../components/BrandLogo";
 import ScreenContainer from "../components/ScreenContainer";
-import { APP_NAME, APP_TAGLINE } from "../constants/app";
+import { APP_TAGLINE } from "../constants/app";
 import { colors, spacing } from "../theme";
 
 export default function SplashScreen() {
   return (
     <ScreenContainer centered>
-      {/* Replace this wordmark with the HelperBook logo when the asset is ready. */}
-      <View style={styles.logoSlot}>
-        <AppText variant="title" align="center" accessibilityRole="header">
-          {APP_NAME}
-        </AppText>
-      </View>
+      <BrandLogo size={148} style={styles.logo} />
       <AppText variant="subtitle" align="center" color={colors.textSecondary}>
         {APP_TAGLINE}
       </AppText>
@@ -21,9 +17,8 @@ export default function SplashScreen() {
 }
 
 const styles = StyleSheet.create({
-  logoSlot: {
-    alignItems: "center",
-    justifyContent: "center",
+  logo: {
     marginBottom: spacing.lg,
+    borderRadius: 28,
   },
 });
