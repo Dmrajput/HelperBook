@@ -16,10 +16,13 @@ const queryClient = new QueryClient({
   },
 });
 
+const base = import.meta.env.BASE_URL || "/";
+const basename = base === "/" ? undefined : base.replace(/\/$/, "");
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <AdminAuthProvider>
           <App />
         </AdminAuthProvider>

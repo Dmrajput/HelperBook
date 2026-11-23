@@ -6,7 +6,8 @@ import tailwindcss from "@tailwindcss/vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: command === "build" ? "/admin/" : "/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -14,4 +15,4 @@ export default defineConfig({
     },
   },
   server: { port: 5173 },
-});
+}));
