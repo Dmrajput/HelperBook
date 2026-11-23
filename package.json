@@ -5,6 +5,8 @@
   "description": "Simple Staff Management for Small Businesses",
   "scripts": {
     "mobile": "npm --prefix mobile start",
-    "server": "npm --prefix server run dev"
+    "server": "npm --prefix server run dev",
+    "admin": "npm --prefix admin run dev",
+    "website": "npm --prefix website run dev"
   }
 }

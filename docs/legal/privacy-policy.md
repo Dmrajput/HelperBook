@@ -29,6 +29,7 @@ HelperBook processes:
 - Subscription plan, trial state, Razorpay order and payment references, and coupon redemption records. Card or UPI credentials are entered on Razorpay's page and are not stored by HelperBook.
 - Device id, device name, and platform stored with a login session. Push tokens and notification preferences.
 - Support messages and account-deletion requests.
+- Demo requests and website inquiries submitted on the public marketing site (name, business name, email, phone, team size, preferred meeting times when provided, message text, privacy acknowledgment, and optional marketing consent).
 - IP address and request time in rate-limit records and server logs.
 - Admin names, emails, and password hashes for the separate admin panel.
 
@@ -42,6 +43,7 @@ HelperBook does not include a third-party analytics or crash-reporting SDK in th
 - To send the shop's own notifications, such as leave updates and salary-paid notices. Push text for salary does not include the amount.
 - To bill the HelperBook subscription the owner chooses.
 - To answer support and deletion requests.
+- To respond to demo requests and marketing-site inquiries.
 - To investigate abuse, fraud, and security incidents.
 
 ## 5. Who else processes it

@@ -1359,6 +1359,16 @@ export async function getSettings() {
     supportHours: setting?.supportHours || "",
     maintenanceBanner: setting?.maintenanceBanner || "",
     couponsEnabled: setting?.couponsEnabled !== false,
+    legalCompanyName: setting?.legalCompanyName || "",
+    companyDescription: setting?.companyDescription || "",
+    address: setting?.address || "",
+    whatsappNumber: setting?.whatsappNumber || "",
+    websiteUrl: setting?.websiteUrl || "",
+    appDownloadUrl: setting?.appDownloadUrl || "",
+    loginUrl: setting?.loginUrl || "",
+    demoInboxEmail: setting?.demoInboxEmail || "",
+    privacyPolicyVersion: setting?.privacyPolicyVersion || "2026-10-24",
+    reportingTimezone: setting?.reportingTimezone || "Asia/Kolkata",
   };
 }
 
@@ -1374,6 +1384,16 @@ export async function updateSettings(admin, body) {
       supportHours: String(body.supportHours || "").slice(0, 160),
       maintenanceBanner: String(body.maintenanceBanner || "").slice(0, 300),
       couponsEnabled: body.couponsEnabled !== false,
+      legalCompanyName: String(body.legalCompanyName || "").slice(0, 160),
+      companyDescription: String(body.companyDescription || "").slice(0, 500),
+      address: String(body.address || "").slice(0, 300),
+      whatsappNumber: String(body.whatsappNumber || "").slice(0, 20),
+      websiteUrl: String(body.websiteUrl || "").slice(0, 300),
+      appDownloadUrl: String(body.appDownloadUrl || "").slice(0, 300),
+      loginUrl: String(body.loginUrl || "").slice(0, 300),
+      demoInboxEmail: String(body.demoInboxEmail || "").slice(0, 254),
+      privacyPolicyVersion: String(body.privacyPolicyVersion || "2026-10-24").slice(0, 40),
+      reportingTimezone: String(body.reportingTimezone || "Asia/Kolkata").slice(0, 64),
     },
     { upsert: true, returnDocument: "after" }
   );

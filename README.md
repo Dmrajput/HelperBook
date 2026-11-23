@@ -27,7 +27,7 @@ helperbook/
 
 ### Platform Admin
 
-The `admin/` Vite app is the platform administration portal (companies, owners, billing, analytics, audit). It uses `/api/admin` and a separate admin JWT — owner/employee tokens are rejected.
+The `admin/` Vite app is the platform administration portal (companies, owners, billing, analytics, audit, leads). It uses `/api/admin` and a separate admin JWT — owner/employee tokens are rejected.
 
 ```bash
 cd admin
@@ -36,6 +36,19 @@ npm run dev
 ```
 
 Create the first Super Admin from the server package (`node scripts/create-admin.js`) with `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD` in `server/.env`. See [`admin/README.md`](admin/README.md) for roles, session behavior (memory-only tokens), and limitations (no MFA, no impersonation).
+
+### Marketing website
+
+The `website/` Vite app is the public HelperBook marketing site (features, about, book a demo, contact, pricing, privacy, terms).
+
+```bash
+cd website
+npm install
+cp .env.example .env
+npm run dev
+```
+
+Default local URL: `http://localhost:5174`. Add that origin to server `CLIENT_URL` for production CORS. Demo/inquiry forms post to `/api/public/*` and appear in Admin → Leads & demos. See [`website/README.md`](website/README.md).
 
 ### Mobile Setup
 

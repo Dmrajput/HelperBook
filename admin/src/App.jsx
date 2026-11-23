@@ -20,6 +20,7 @@ import AuditPage from "./pages/AuditPage";
 import SettingsPage from "./pages/SettingsPage";
 import SupportPage from "./pages/SupportPage";
 import CouponsPage from "./pages/CouponsPage";
+import LeadsPage from "./pages/LeadsPage";
 import { ForbiddenPage } from "./components/PermissionGate";
 
 function Private({ children }) {
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="payments" element={<RequirePerm permission="payments.read"><PaymentsPage /></RequirePerm>} />
         <Route path="payments/:id" element={<RequirePerm permission="payments.read"><PaymentDetailPage /></RequirePerm>} />
         <Route path="analytics" element={<RequirePerm permission="analytics.read"><AnalyticsPage /></RequirePerm>} />
+        <Route path="leads" element={<RequirePerm permission="leads.read"><LeadsPage /></RequirePerm>} />
         <Route path="admins" element={<RequirePerm superOnly><AdminsPage /></RequirePerm>} />
         <Route path="audit" element={<RequirePerm permission="audit.read"><AuditPage /></RequirePerm>} />
         <Route path="settings" element={<RequirePerm superOnly><SettingsPage /></RequirePerm>} />

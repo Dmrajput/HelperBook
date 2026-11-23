@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://helperbook.example/</loc></url>
+  <url><loc>https://helperbook.example/features</loc></url>
+  <url><loc>https://helperbook.example/about</loc></url>
+  <url><loc>https://helperbook.example/book-demo</loc></url>
+  <url><loc>https://helperbook.example/contact</loc></url>
+  <url><loc>https://helperbook.example/pricing</loc></url>
+  <url><loc>https://helperbook.example/privacy</loc></url>
+  <url><loc>https://helperbook.example/terms</loc></url>
+</urlset>

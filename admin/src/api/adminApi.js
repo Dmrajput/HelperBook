@@ -106,4 +106,7 @@ export const adminApi = {
   createAdmin: (body) => request("/admin/admins", { method: "POST", body }),
   setAdminActive: (id, body) => request(`/admin/admins/${id}/status`, { method: "PATCH", body }),
   search: (q) => request(`/admin/search?q=${encodeURIComponent(q)}`),
+  leads: (query) => request(`/admin/leads${qs(query)}`),
+  lead: (id) => request(`/admin/leads/${id}`),
+  updateLead: (id, body) => request(`/admin/leads/${id}`, { method: "PATCH", body }),
 };

@@ -16,10 +16,12 @@ import salaryRoutes from "./salary.routes.js";
 import shopRoutes from "./shop.routes.js";
 import supportRoutes from "./support.routes.js";
 import subscriptionRoutes from "./subscription.routes.js";
+import publicRoutes from "./public.routes.js";
 
 const router = Router();
 
 router.use("/health", healthRoutes);
+router.use("/public", publicRoutes);
 router.use("/auth", authRoutes);
 router.use("/account", accountRoutes);
 router.use("/shops", shopRoutes);

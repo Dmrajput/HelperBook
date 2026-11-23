@@ -10,6 +10,16 @@ const platformSettingSchema = new mongoose.Schema(
     maintenanceBanner: { type: String, default: "", trim: true, maxlength: 300 },
     couponsEnabled: { type: Boolean, default: true },
     ticketSequence: { type: Number, default: 0 },
+    legalCompanyName: { type: String, default: "", trim: true, maxlength: 160 },
+    companyDescription: { type: String, default: "", trim: true, maxlength: 500 },
+    address: { type: String, default: "", trim: true, maxlength: 300 },
+    whatsappNumber: { type: String, default: "", trim: true, maxlength: 20 },
+    websiteUrl: { type: String, default: "", trim: true, maxlength: 300 },
+    appDownloadUrl: { type: String, default: "", trim: true, maxlength: 300 },
+    loginUrl: { type: String, default: "", trim: true, maxlength: 300 },
+    demoInboxEmail: { type: String, default: "", trim: true, maxlength: 254 },
+    privacyPolicyVersion: { type: String, default: "2026-10-24", trim: true, maxlength: 40 },
+    reportingTimezone: { type: String, default: "Asia/Kolkata", trim: true, maxlength: 64 },
   },
   { timestamps: true }
 );

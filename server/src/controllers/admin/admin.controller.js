@@ -53,6 +53,7 @@ import {
   updateTicket,
 } from "../../services/admin/adminPlatform.service.js";
 import { auditMeta } from "../../services/admin/adminMeta.js";
+import { getLead, listLeads, updateLead } from "../../services/marketingLead.service.js";
 
 function ip(req) {
   return String(req.ip || "").replace("::ffff:", "");
@@ -225,4 +226,13 @@ export async function adminStatus(req, res) {
     "Admin updated.",
     await setAdminActive(req.admin, req.params.id, req.body?.isActive, auditMeta(req))
   );
+}
+export async function leads(req, res) {
+  sendSuccess(res, "Leads fetched.", await listLeads(req.query));
+}
+export async function lead(req, res) {
+  sendSuccess(res, "Lead fetched.", await getLead(req.params.id));
+}
+export async function leadPatch(req, res) {
+  sendSuccess(res, "Lead updated.", await updateLead(req.admin, req.params.id, req.body, auditMeta(req)));
 }

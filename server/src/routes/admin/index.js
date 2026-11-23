@@ -15,6 +15,9 @@ import {
   employeeLogin,
   employees,
   login,
+  lead,
+  leadPatch,
+  leads,
   logout,
   me,
   payment,
@@ -109,6 +112,9 @@ router.post("/coupons", requireAdminPermission("coupons.create"), couponCreate);
 router.patch("/coupons/:id", requireAdminPermission("coupons.update"), couponPatch);
 
 router.get("/analytics/:section", requireAdminPermission("analytics.read"), analyticsSection);
+router.get("/leads", requireAdminPermission("leads.read"), leads);
+router.get("/leads/:id", requireAdminPermission("leads.read"), lead);
+router.patch("/leads/:id", requireAdminPermission("leads.update"), leadPatch);
 router.get("/audit-logs", requireAdminPermission("audit.read"), audit);
 router.get("/settings", requireSuperAdmin, settings);
 router.patch("/settings", requireSuperAdmin, settingsPatch);

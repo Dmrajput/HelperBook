@@ -159,3 +159,15 @@ node scripts/ensure-admin-indexes.js
 ```
 
 The Vite UI is in `../admin` — see [`../admin/README.md`](../admin/README.md). Live Razorpay refunds need `RAZORPAY_*` configured; otherwise refunds are recorded as requested only. Schema changes are additive Mongoose fields/indexes (no SQL migration runner).
+
+### Public marketing APIs
+
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/api/public/platform` | None |
+| GET | `/api/public/plans` | None |
+| POST | `/api/public/demo-requests` | None (rate limited) |
+| POST | `/api/public/inquiries` | None (rate limited) |
+| GET/PATCH | `/api/admin/leads` | Admin (`leads.read` / `leads.update`) |
+
+Optional email: set `EMAIL_PROVIDER=smtp` and `SMTP_*`. Requests are always stored first; email failure does not discard leads.
