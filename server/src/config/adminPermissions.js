@@ -1,14 +1,24 @@
 export const ADMIN_ROLES = ["super_admin", "support_agent", "finance_admin", "read_only_admin"];
 
+export const ROLE_LABELS = {
+  super_admin: "Super Admin",
+  support_agent: "Support Admin",
+  finance_admin: "Billing Admin",
+  read_only_admin: "Analyst",
+};
+
 export const ROLE_PERMISSIONS = {
   super_admin: ["*"],
   support_agent: [
     "dashboard.read",
     "users.read",
     "users.suspend",
+    "users.update",
     "shops.read",
     "shops.suspend",
+    "shops.update",
     "employees.read",
+    "employees.update",
     "payments.read",
     "support.read",
     "support.reply",

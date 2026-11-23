@@ -5,6 +5,7 @@ import {
   adminStatus,
   admins,
   analyticsSection,
+  attention,
   audit,
   couponCreate,
   couponPatch,
@@ -17,6 +18,7 @@ import {
   logout,
   me,
   payment,
+  paymentManual,
   payments,
   paymentsReport,
   planPricing,
@@ -28,9 +30,12 @@ import {
   settings,
   settingsPatch,
   shop,
+  shopNotes,
   shopStatus,
   shops,
   subscription,
+  subscriptionAssignPlan,
+  subscriptionCancelRenewal,
   subscriptionRecovery,
   subscriptions,
   summary,
@@ -60,6 +65,7 @@ router.get("/search", search);
 router.get("/dashboard/summary", requireAdminPermission("dashboard.read"), summary);
 router.get("/dashboard/trends", requireAdminPermission("dashboard.read"), trends);
 router.get("/dashboard/recent-activity", requireAdminPermission("dashboard.read"), activity);
+router.get("/dashboard/attention", requireAdminPermission("dashboard.read"), attention);
 
 router.get("/users", requireAdminPermission("users.read"), users);
 router.get("/users/:id", requireAdminPermission("users.read"), user);
@@ -68,19 +74,23 @@ router.patch("/users/:id/status", requireAdminPermission("users.suspend"), userS
 router.get("/shops", requireAdminPermission("shops.read"), shops);
 router.get("/shops/:id", requireAdminPermission("shops.read"), shop);
 router.patch("/shops/:id/status", requireAdminPermission("shops.suspend"), shopStatus);
+router.patch("/shops/:id", requireAdminPermission("shops.update"), shopNotes);
 
 router.get("/employees", requireAdminPermission("employees.read"), employees);
 router.get("/employees/:id", requireAdminPermission("employees.read"), employee);
-router.patch("/employees/:id/login-status", requireSuperAdmin, employeeLogin);
+router.patch("/employees/:id/login-status", requireAdminPermission("employees.update"), employeeLogin);
 
 router.get("/subscriptions", requireAdminPermission("subscriptions.read"), subscriptions);
 router.get("/subscriptions/:id", requireAdminPermission("subscriptions.read"), subscription);
 router.post("/subscriptions/:id/recovery", requireAdminPermission("subscriptions.update"), subscriptionRecovery);
+router.post("/subscriptions/:id/cancel-renewal", requireAdminPermission("subscriptions.update"), subscriptionCancelRenewal);
+router.post("/subscriptions/:id/assign-plan", requireAdminPermission("subscriptions.update"), subscriptionAssignPlan);
 router.get("/plan-pricing", requireAdminPermission("subscriptions.read"), planPricing);
 router.patch("/plan-pricing/:planId", requireAdminPermission("subscriptions.update"), planPricingPatch);
 
 router.get("/payments", requireAdminPermission("payments.read"), payments);
 router.get("/payments/:id", requireAdminPermission("payments.read"), payment);
+router.post("/payments/manual", requireAdminPermission("payments.refund"), paymentManual);
 router.post("/payments/:id/refunds", requireAdminPermission("payments.refund"), refund);
 
 router.get("/reports/registrations", requireAdminPermission("reports.read"), registrations);

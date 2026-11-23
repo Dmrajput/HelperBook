@@ -116,7 +116,12 @@ test("permission helpers reject unrelated roles", () => {
   assert.equal(adminHasPermission({ role: "read_only_admin" }, "payments.refund"), false);
   assert.equal(adminHasPermission({ role: "support_agent" }, "payments.refund"), false);
   assert.equal(adminHasPermission({ role: "support_agent" }, "subscriptions.update"), false);
+  assert.equal(adminHasPermission({ role: "support_agent" }, "users.update"), true);
+  assert.equal(adminHasPermission({ role: "support_agent" }, "employees.update"), true);
+  assert.equal(adminHasPermission({ role: "support_agent" }, "shops.update"), true);
   assert.equal(adminHasPermission({ role: "finance_admin" }, "users.suspend"), false);
+  assert.equal(adminHasPermission({ role: "finance_admin" }, "subscriptions.update"), true);
+  assert.equal(adminHasPermission({ role: "read_only_admin" }, "payroll.read"), false);
 });
 
 test("unsigned and none-algorithm tokens are rejected", () => {
@@ -193,9 +198,132 @@ test("admin roles cannot cross their permissions", async () => {
   assert.equal((await api("/admin/users/000000000000000000000000/status", { method: "PATCH", token: readerToken, body: { status: "suspended", reason: "Not permitted" } })).status, 403);
   assert.equal((await api("/admin/payments/000000000000000000000000/refunds", { method: "POST", token: supportToken, body: { reason: "Not permitted" } })).status, 403);
   assert.equal((await api("/admin/subscriptions", { token: supportToken })).status, 403);
+  assert.equal((await api("/admin/subscriptions/000000000000000000000000/assign-plan", { method: "POST", token: supportToken, body: { planId: "starter", reason: "Not permitted" } })).status, 403);
+  assert.equal((await api("/admin/payments/manual", { method: "POST", token: supportToken, body: { shopId: "000000000000000000000000", amount: 100, reason: "Not permitted" } })).status, 403);
   await AdminUser.updateOne({ _id: reader._id }, { isActive: false });
   assert.equal((await api("/admin/users", { token: readerToken })).status, 401);
   assert.equal((await api("/admin/auth/login", { method: "POST", body: { email: reader.email, password } })).status, 403);
+});
+
+test("last active super admin cannot be disabled", async () => {
+  const { setAdminActive } = await import("../src/services/admin/adminPlatform.service.js");
+  const password = "Phase17!Security";
+  const hash = await hashPassword(password);
+  const sole = await AdminUser.create({
+    email: "phase17-sole-super@helperbook.test",
+    name: "Sole Super",
+    role: "super_admin",
+    passwordHash: hash,
+  });
+  const actor = await AdminUser.create({
+    email: "phase17-actor-super@helperbook.test",
+    name: "Actor Super",
+    role: "super_admin",
+    passwordHash: hash,
+  });
+  const login = await api("/admin/auth/login", { method: "POST", body: { email: actor.email, password } });
+  assert.equal(login.status, 200);
+  const token = login.json.data.accessToken;
+  const self = await api(`/admin/admins/${actor._id}/status`, {
+    method: "PATCH",
+    token,
+    body: { isActive: false },
+  });
+  assert.equal(self.status, 400);
+
+  await AdminUser.updateOne({ _id: actor._id }, { isActive: false });
+  await assert.rejects(
+    () => setAdminActive(actor, sole._id, false),
+    (error) =>
+      error?.details?.code === "LAST_SUPER_ADMIN" || /last active Super Admin/i.test(error?.message || "")
+  );
+  await AdminUser.updateOne({ _id: actor._id }, { isActive: true });
+  const disabled = await setAdminActive(actor, sole._id, false);
+  assert.equal(disabled.isActive, false);
+});
+
+test("company suspend and subscription admin actions require authz and reason", async () => {
+  const password = "Phase17!Security";
+  const hash = await hashPassword(password);
+  const finance = await AdminUser.create({
+    email: "phase17-billing@helperbook.test",
+    name: "Billing",
+    role: "finance_admin",
+    passwordHash: hash,
+  });
+  const support = await AdminUser.findOne({ email: "phase17-support@helperbook.test" });
+  const financeLogin = await api("/admin/auth/login", { method: "POST", body: { email: finance.email, password } });
+  const supportLogin = await api("/admin/auth/login", {
+    method: "POST",
+    body: { email: support.email, password },
+  });
+  const financeToken = financeLogin.json.data.accessToken;
+  const supportToken = supportLogin.json.data.accessToken;
+
+  const owner = await ownerFixture("9876501901", "Suspend Shop Owner");
+  const shop = await api("/shops", { method: "POST", token: owner.accessToken, body: shopBody("Suspend Target Shop") });
+  assert.equal(shop.status, 201, shop.json.message);
+  const shopId = shop.json.data.shop.id;
+  const subscription = await Subscription.findOne({ shopId });
+
+  const badReason = await api(`/admin/shops/${shopId}/status`, {
+    method: "PATCH",
+    token: supportToken,
+    body: { status: "suspended", reason: "x" },
+  });
+  assert.equal(badReason.status, 400);
+
+  const suspended = await api(`/admin/shops/${shopId}/status`, {
+    method: "PATCH",
+    token: supportToken,
+    body: { status: "suspended", reason: "Policy violation review" },
+  });
+  assert.equal(suspended.status, 200, suspended.json.message);
+  assert.equal(suspended.json.data.accessSuspended, true);
+
+  assert.equal(
+    (
+      await api(`/admin/subscriptions/${subscription._id}/cancel-renewal`, {
+        method: "POST",
+        token: financeToken,
+        body: { reason: "Customer requested stop" },
+      })
+    ).status,
+    200
+  );
+
+  assert.equal(
+    (
+      await api(`/admin/subscriptions/${subscription._id}/assign-plan`, {
+        method: "POST",
+        token: supportToken,
+        body: { planId: "starter", reason: "Support cannot assign plans" },
+      })
+    ).status,
+    403
+  );
+});
+
+test("analytics date boundaries and paise math stay integer-safe", async () => {
+  const password = "Phase17!Security";
+  const finance = await AdminUser.findOne({ email: "phase17-billing@helperbook.test" });
+  const login = await api("/admin/auth/login", {
+    method: "POST",
+    body: { email: finance.email, password },
+  });
+  const token = login.json.data.accessToken;
+  const badRange = await api("/admin/dashboard/summary?range=custom&startDate=2026-12-01&endDate=2026-01-01", {
+    token,
+  });
+  assert.equal(badRange.status, 400);
+  const summary = await api("/admin/dashboard/summary?range=last_30_days", { token });
+  assert.equal(summary.status, 200);
+  assert.equal(typeof summary.json.data.mrrPaise, "number");
+  assert.equal(Number.isInteger(summary.json.data.mrrPaise), true);
+  assert.ok(summary.json.data.definitions?.mrr);
+  const amountPaise = Math.round(19.0 * 100);
+  assert.equal(amountPaise, 1900);
+  assert.equal(Math.round((1900 * 100) / 12), 15833);
 });
 
 test("webhook signatures and duplicate events are enforced", async () => {

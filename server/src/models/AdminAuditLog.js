@@ -10,12 +10,14 @@ const adminAuditLogSchema = new mongoose.Schema(
     beforeSummary: { type: mongoose.Schema.Types.Mixed, default: null },
     afterSummary: { type: mongoose.Schema.Types.Mixed, default: null },
     requestId: { type: String, default: "", trim: true, maxlength: 80 },
+    ipAddress: { type: String, default: "", trim: true, maxlength: 80 },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );
 
 adminAuditLogSchema.index({ createdAt: -1 });
 adminAuditLogSchema.index({ adminId: 1, createdAt: -1 });
+adminAuditLogSchema.index({ action: 1, createdAt: -1 });
 adminAuditLogSchema.index({ resourceType: 1, resourceId: 1, createdAt: -1 });
 
 const AdminAuditLog = mongoose.model("AdminAuditLog", adminAuditLogSchema);

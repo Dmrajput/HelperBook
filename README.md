@@ -21,8 +21,21 @@ Mongoose
 ```text
 helperbook/
 ├── mobile/
+├── admin/
 └── server/
 ```
+
+### Platform Admin
+
+The `admin/` Vite app is the platform administration portal (companies, owners, billing, analytics, audit). It uses `/api/admin` and a separate admin JWT — owner/employee tokens are rejected.
+
+```bash
+cd admin
+npm install
+npm run dev
+```
+
+Create the first Super Admin from the server package (`node scripts/create-admin.js`) with `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD` in `server/.env`. See [`admin/README.md`](admin/README.md) for roles, session behavior (memory-only tokens), and limitations (no MFA, no impersonation).
 
 ### Mobile Setup
 

@@ -7,6 +7,8 @@ import {
 } from "../../services/admin/adminAuth.service.js";
 import {
   analytics,
+  assignSubscriptionPlan,
+  cancelSubscriptionRenewal,
   couponReport,
   createAdmin,
   createCoupon,
@@ -30,8 +32,10 @@ import {
   listTickets,
   listUsers,
   noteTicket,
+  overviewAttention,
   paymentReport,
   recentActivity,
+  recordManualPayment,
   recoverSubscription,
   refundPayment,
   registrationReport,
@@ -45,8 +49,10 @@ import {
   updateCoupon,
   updatePlanPricing,
   updateSettings,
+  updateShopNotes,
   updateTicket,
 } from "../../services/admin/adminPlatform.service.js";
+import { auditMeta } from "../../services/admin/adminMeta.js";
 
 function ip(req) {
   return String(req.ip || "").replace("::ffff:", "");
@@ -80,6 +86,9 @@ export async function trends(req, res) {
 export async function activity(req, res) {
   sendSuccess(res, "Activity fetched.", await recentActivity());
 }
+export async function attention(req, res) {
+  sendSuccess(res, "Attention panel fetched.", await overviewAttention());
+}
 export async function users(req, res) {
   sendSuccess(res, "Users fetched.", await listUsers(req.query));
 }
@@ -87,7 +96,7 @@ export async function user(req, res) {
   sendSuccess(res, "User fetched.", await getUser(req.params.id));
 }
 export async function userStatus(req, res) {
-  sendSuccess(res, "User updated.", await setUserStatus(req.admin, req.params.id, req.body));
+  sendSuccess(res, "User updated.", await setUserStatus(req.admin, req.params.id, req.body, auditMeta(req)));
 }
 export async function shops(req, res) {
   sendSuccess(res, "Shops fetched.", await listShops(req.query));
@@ -96,7 +105,10 @@ export async function shop(req, res) {
   sendSuccess(res, "Shop fetched.", await getShop(req.params.id));
 }
 export async function shopStatus(req, res) {
-  sendSuccess(res, "Shop updated.", await setShopStatus(req.admin, req.params.id, req.body));
+  sendSuccess(res, "Shop updated.", await setShopStatus(req.admin, req.params.id, req.body, auditMeta(req)));
+}
+export async function shopNotes(req, res) {
+  sendSuccess(res, "Shop updated.", await updateShopNotes(req.admin, req.params.id, req.body, auditMeta(req)));
 }
 export async function employees(req, res) {
   sendSuccess(res, "Employees fetched.", await listEmployees(req.query));
@@ -105,7 +117,7 @@ export async function employee(req, res) {
   sendSuccess(res, "Employee fetched.", await getEmployee(req.params.id));
 }
 export async function employeeLogin(req, res) {
-  sendSuccess(res, "Employee login updated.", await setEmployeeLogin(req.admin, req.params.id, req.body));
+  sendSuccess(res, "Employee login updated.", await setEmployeeLogin(req.admin, req.params.id, req.body, auditMeta(req)));
 }
 export async function subscriptions(req, res) {
   sendSuccess(res, "Subscriptions fetched.", await listSubscriptions(req.query));
@@ -114,7 +126,20 @@ export async function subscription(req, res) {
   sendSuccess(res, "Subscription fetched.", await getSubscription(req.params.id));
 }
 export async function subscriptionRecovery(req, res) {
-  sendSuccess(res, "Subscription updated.", await recoverSubscription(req.admin, req.params.id, req.body));
+  sendSuccess(res, "Subscription updated.", await recoverSubscription(req.admin, req.params.id, req.body, auditMeta(req)));
+}
+export async function subscriptionCancelRenewal(req, res) {
+  sendSuccess(
+    res,
+    "Renewal cancelled.",
+    await cancelSubscriptionRenewal(req.admin, req.params.id, req.body, auditMeta(req))
+  );
+}
+export async function subscriptionAssignPlan(req, res) {
+  sendSuccess(res, "Plan assigned.", await assignSubscriptionPlan(req.admin, req.params.id, req.body, auditMeta(req)));
+}
+export async function paymentManual(req, res) {
+  sendSuccess(res, "Manual payment recorded.", await recordManualPayment(req.admin, req.body, auditMeta(req)), 201);
 }
 export async function payments(req, res) {
   sendSuccess(res, "Payments fetched.", await listPayments(req.query));
@@ -123,7 +148,7 @@ export async function payment(req, res) {
   sendSuccess(res, "Payment fetched.", await getPayment(req.params.id));
 }
 export async function refund(req, res) {
-  sendSuccess(res, "Refund recorded.", await refundPayment(req.admin, req.params.id, req.body));
+  sendSuccess(res, "Refund recorded.", await refundPayment(req.admin, req.params.id, req.body, auditMeta(req)));
 }
 export async function registrations(req, res) {
   const data = await registrationReport(req.query);
@@ -195,5 +220,9 @@ export async function adminCreate(req, res) {
   sendSuccess(res, "Admin created.", await createAdmin(req.admin, req.body), 201);
 }
 export async function adminStatus(req, res) {
-  sendSuccess(res, "Admin updated.", await setAdminActive(req.admin, req.params.id, req.body?.isActive));
+  sendSuccess(
+    res,
+    "Admin updated.",
+    await setAdminActive(req.admin, req.params.id, req.body?.isActive, auditMeta(req))
+  );
 }

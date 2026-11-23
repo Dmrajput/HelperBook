@@ -1,51 +1,114 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { adminApi } from "../api/adminApi";
-import { useAdminAuth } from "../context/AdminAuthContext";
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminApi } from "@/api/adminApi";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ErrorState } from "@/components/ErrorState";
+import { PageHeader } from "@/components/PageHeader";
+import { PermissionGate } from "@/components/PermissionGate";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDate, formatDateTime } from "@/lib/utils";
 
 export default function EmployeeDetailPage() {
   const { id } = useParams();
-  const { admin } = useAdminAuth();
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
-  const [reason, setReason] = useState("");
-  const [open, setOpen] = useState(false);
-  const load = () => adminApi.employee(id).then(setData).catch((loadError) => setError(loadError.message));
-  useEffect(() => { load(); }, [id]);
+  const queryClient = useQueryClient();
+  const [loginDialog, setLoginDialog] = useState(false);
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["employee", id],
+    queryFn: () => adminApi.employee(id),
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: ({ loginEnabled, reason }) => adminApi.employeeLogin(id, { loginEnabled, reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee", id] });
+      setLoginDialog(false);
+    },
+  });
+
   const employee = data?.employee;
+
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (isLoading || !employee) return <p className="text-sm text-muted">Loading employee…</p>;
+
   return (
-    <main className="content">
-      <h1>Employee</h1>
-      <p>Salary and advance amounts are not shown in the admin panel.</p>
-      {error ? <p className="error">{error}</p> : null}
-      {!employee && !error ? <p>Loading employee...</p> : null}
-      {employee ? (
-        <section className="panel">
-          <p>{employee.name}</p>
-          <p>Role {employee.role}</p>
-          <p>Status {employee.status}</p>
-          <p>Shop {data.shop?.name || "—"}</p>
-          <p>Owner {data.shop?.owner || "—"}</p>
-          <p>Phone {employee.phone || "Not available"}</p>
-          <p>Login {employee.loginEnabled ? "Enabled" : "Disabled"}</p>
-          <p>Last login {employee.lastLoginAt ? new Date(employee.lastLoginAt).toLocaleString("en-IN") : "Not recorded"}</p>
-          {admin?.role === "super_admin" ? <button type="button" onClick={() => setOpen(true)}>{employee.loginEnabled ? "Disable login" : "Enable login"}</button> : null}
-        </section>
-      ) : null}
-      {open && employee ? (
-        <div className="modal"><form className="panel" onSubmit={async (event) => {
-          event.preventDefault();
-          await adminApi.employeeLogin(id, { loginEnabled: !employee.loginEnabled, reason });
-          setOpen(false);
-          setReason("");
-          load();
-        }}>
-          <h2>{employee.loginEnabled ? "Disable employee login" : "Enable employee login"}</h2>
-          <p>This records the reason and revokes active employee sessions when login is turned off.</p>
-          <textarea aria-label="Reason" value={reason} onChange={(event) => setReason(event.target.value)} required />
-          <div className="row"><button type="submit">Confirm</button><button className="secondary" type="button" onClick={() => setOpen(false)}>Cancel</button></div>
-        </form></div>
-      ) : null}
-    </main>
+    <div>
+      <PageHeader
+        title={employee.name}
+        description="Salary and advance details are not available in the admin panel."
+        actions={
+          <PermissionGate permission="employees.update">
+            <Button variant={employee.loginEnabled ? "danger" : "default"} onClick={() => setLoginDialog(true)}>
+              {employee.loginEnabled ? "Disable login" : "Enable login"}
+            </Button>
+          </PermissionGate>
+        }
+      />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p>
+              Role <strong>{employee.role}</strong>
+            </p>
+            <p>
+              Status <StatusBadge status={employee.status} />
+            </p>
+            <p>Joined {formatDate(employee.joiningDate)}</p>
+            <p>Phone {employee.phone || "Not available"}</p>
+            <p>
+              Login{" "}
+              <Badge tone={employee.loginEnabled ? "success" : "default"}>
+                {employee.loginEnabled ? "Enabled" : "Disabled"}
+              </Badge>
+            </p>
+            <p>Last login {employee.lastLoginAt ? formatDateTime(employee.lastLoginAt) : "Not recorded"}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Company</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            {data.shop ? (
+              <>
+                <p className="font-medium">{data.shop.name}</p>
+                <p className="text-muted">Owner {data.shop.owner || "—"}</p>
+                <Link to={`/companies/${data.shop.id}`} className="mt-2 inline-block text-brand hover:underline">
+                  Open company
+                </Link>
+              </>
+            ) : (
+              <p className="text-muted">No company linked.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <ConfirmDialog
+        open={loginDialog}
+        onClose={() => setLoginDialog(false)}
+        title={employee.loginEnabled ? "Disable employee login" : "Enable employee login"}
+        description={
+          employee.loginEnabled
+            ? "Disabling login revokes active employee sessions."
+            : "The employee can sign in again with their existing credentials."
+        }
+        confirmLabel={employee.loginEnabled ? "Disable login" : "Enable login"}
+        danger={employee.loginEnabled}
+        loading={loginMutation.isPending}
+        onConfirm={(reason) =>
+          loginMutation.mutateAsync({ loginEnabled: !employee.loginEnabled, reason })
+        }
+      />
+    </div>
   );
 }

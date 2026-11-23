@@ -143,3 +143,19 @@ POST  /api/salaries/payments/:paymentId/reverse
 ```
 
 These routes require a bearer access token. The shop is taken from that user. Salary totals are calculated on the server. A month has one salary record per employee. Draft records can be recalculated. Finalized records stay unchanged until they are reopened. Recording a payment does not change the calculated amount, leave, or advance balance. Only a finalized salary with a payable amount greater than zero can be paid, and only for that exact amount. A reversal keeps the payment record and returns the salary to unpaid. A paid salary must be reversed before it can be reopened. A salary receipt can be opened only after that payment. The receipt reads the finalized salary and the payment record. It does not recalculate or change them. The PDF is created when the owner asks for it and is not stored in the database.
+
+## Platform admin
+
+Admin routes live under `/api/admin`. Owner and employee JWTs are rejected. Bootstrap the first Super Admin with:
+
+```bash
+node scripts/create-admin.js
+```
+
+Set `ADMIN_BOOTSTRAP_EMAIL` and `ADMIN_BOOTSTRAP_PASSWORD` in `.env` (never commit real passwords). Optional additive index sync:
+
+```bash
+node scripts/ensure-admin-indexes.js
+```
+
+The Vite UI is in `../admin` — see [`../admin/README.md`](../admin/README.md). Live Razorpay refunds need `RAZORPAY_*` configured; otherwise refunds are recorded as requested only. Schema changes are additive Mongoose fields/indexes (no SQL migration runner).

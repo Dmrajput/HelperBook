@@ -1,34 +1,124 @@
 import { useEffect, useState } from "react";
-import { adminApi } from "../api/adminApi";
-import { useAdminAuth } from "../context/AdminAuthContext";
+import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminApi } from "@/api/adminApi";
+import { ErrorState } from "@/components/ErrorState";
+import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function SettingsPage() {
-  const { admin } = useAdminAuth();
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState(null);
-  const [admins, setAdmins] = useState([]);
-  const [error, setError] = useState("");
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => adminApi.settings(),
+  });
+
   useEffect(() => {
-    if (admin?.role !== "super_admin") return;
-    Promise.all([adminApi.settings(), adminApi.admins()]).then(([nextSettings, nextAdmins]) => {
-      setSettings(nextSettings);
-      setAdmins(nextAdmins.admins || []);
-    }).catch((loadError) => setError(loadError.message));
-  }, [admin]);
-  if (admin?.role !== "super_admin") return <main className="content"><h1>Settings</h1><p>Only a Super Admin can change platform settings.</p></main>;
+    if (data) setSettings(data);
+  }, [data]);
+
+  const saveMutation = useMutation({
+    mutationFn: () => adminApi.saveSettings(settings),
+    onSuccess: (next) => {
+      setSettings(next);
+      queryClient.setQueryData(["settings"], next);
+    },
+  });
+
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+
   return (
-    <main className="content">
-      <h1>Settings</h1>
-      {error ? <p className="error">{error}</p> : null}
-      {settings ? <form className="panel" onSubmit={async (event) => { event.preventDefault(); setSettings(await adminApi.saveSettings(settings)); }}>
-        <label>Display name<input value={settings.displayName} onChange={(event) => setSettings({ ...settings, displayName: event.target.value })} /></label>
-        <label>Support email<input value={settings.supportEmail} onChange={(event) => setSettings({ ...settings, supportEmail: event.target.value })} /></label>
-        <label>Support hours<input value={settings.supportHours} onChange={(event) => setSettings({ ...settings, supportHours: event.target.value })} /></label>
-        <label>Maintenance banner<input value={settings.maintenanceBanner} onChange={(event) => setSettings({ ...settings, maintenanceBanner: event.target.value })} /></label>
-        <label><input type="checkbox" checked={settings.couponsEnabled} onChange={(event) => setSettings({ ...settings, couponsEnabled: event.target.checked })} /> Coupons enabled</label>
-        <button type="submit">Save</button>
-      </form> : <p>Loading settings...</p>}
-      <section className="panel"><h2>Admin accounts</h2>{admins.map((item) => <p key={item._id}>{item.email} · {item.role} · {item.isActive ? "Active" : "Disabled"}</p>)}</section>
-      <p>Multi-factor authentication is not enabled yet. Password changes use the bootstrap command or a Super Admin creating a new account.</p>
-    </main>
+    <div>
+      <PageHeader
+        title="Settings"
+        description="Platform branding, support contact, and feature toggles."
+        actions={
+          <div className="flex gap-2">
+            <Link
+              to="/settings/support"
+              className="inline-flex h-9 items-center rounded-md border border-border bg-white px-4 text-sm hover:bg-slate-50"
+            >
+              Support tickets
+            </Link>
+            <Link
+              to="/settings/coupons"
+              className="inline-flex h-9 items-center rounded-md border border-border bg-white px-4 text-sm hover:bg-slate-50"
+            >
+              Coupons
+            </Link>
+          </div>
+        }
+      />
+
+      <Card className="mb-6 border-amber-100 bg-amber-50">
+        <CardContent className="p-4 text-sm text-amber-950">
+          <p className="font-medium">Security notes</p>
+          <p className="mt-1">Multi-factor authentication is not available yet.</p>
+          <p>Sessions are held in memory only — signing out or refreshing tokens ends the session.</p>
+        </CardContent>
+      </Card>
+
+      {isLoading || !settings ? (
+        <p className="text-sm text-muted">Loading settings…</p>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Platform</CardTitle>
+            <CardDescription>Visible to shop owners in the app and support flows.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="grid max-w-xl gap-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveMutation.mutate();
+              }}
+            >
+              <Field label="Display name">
+                <Input value={settings.displayName || ""} onChange={(e) => setSettings({ ...settings, displayName: e.target.value })} />
+              </Field>
+              <Field label="Support email">
+                <Input type="email" value={settings.supportEmail || ""} onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })} />
+              </Field>
+              <Field label="Support phone">
+                <Input value={settings.supportPhone || ""} onChange={(e) => setSettings({ ...settings, supportPhone: e.target.value })} />
+              </Field>
+              <Field label="Support hours">
+                <Input value={settings.supportHours || ""} onChange={(e) => setSettings({ ...settings, supportHours: e.target.value })} />
+              </Field>
+              <Field label="Maintenance banner">
+                <Input value={settings.maintenanceBanner || ""} onChange={(e) => setSettings({ ...settings, maintenanceBanner: e.target.value })} />
+              </Field>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings.couponsEnabled)}
+                  onChange={(e) => setSettings({ ...settings, couponsEnabled: e.target.checked })}
+                />
+                Coupons enabled
+              </label>
+              <Button type="submit" disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? "Saving…" : "Save settings"}
+              </Button>
+              {saveMutation.error ? <p className="text-sm text-danger">{saveMutation.error.message}</p> : null}
+            </form>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <Label className="mb-1 block">{label}</Label>
+      {children}
+    </div>
   );
 }

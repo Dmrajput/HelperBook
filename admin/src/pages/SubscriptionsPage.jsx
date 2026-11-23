@@ -1,23 +1,107 @@
-import { useEffect, useState } from "react";
-import { adminApi } from "../api/adminApi";
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { adminApi } from "@/api/adminApi";
+import { DataTable } from "@/components/DataTable";
+import { ErrorState } from "@/components/ErrorState";
+import { FilterBar } from "@/components/FilterBar";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { useQueryParams } from "@/hooks/useQueryParams";
+import { formatDate, formatINR, toSearchParams } from "@/lib/utils";
+
+const DEFAULTS = { page: "1", limit: "20", status: "", planId: "" };
 
 export default function SubscriptionsPage() {
-  const [planId, setPlanId] = useState("");
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
-  useEffect(() => { adminApi.subscriptions(new URLSearchParams({ planId })).then(setData).catch((loadError) => setError(loadError.message)); }, [planId]);
+  const navigate = useNavigate();
+  const [params, setParams] = useQueryParams(DEFAULTS);
+  const page = Number(params.page) || 1;
+  const limit = Number(params.limit) || 20;
+
+  const queryString = useMemo(
+    () =>
+      toSearchParams({
+        page,
+        limit,
+        status: params.status || undefined,
+        planId: params.planId || undefined,
+      }),
+    [page, limit, params.status, params.planId]
+  );
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["subscriptions", queryString],
+    queryFn: () => adminApi.subscriptions(queryString),
+  });
+
   return (
-    <main className="content">
-      <h1>Subscriptions</h1>
-      <select aria-label="Plan" value={planId} onChange={(event) => setPlanId(event.target.value)}>
-        <option value="">All plans</option><option>free</option><option>starter</option><option>business</option><option>pro</option>
-      </select>
-      {error ? <p className="error">{error}</p> : null}
-      {!data && !error ? <p>Loading subscriptions...</p> : null}
-      {data && !data.subscriptions.length ? <p>No subscriptions found for this period.</p> : null}
-      {data?.subscriptions?.length ? <div className="panel"><table><thead><tr><th>Shop</th><th>Plan</th><th>Status</th><th>Trial</th><th>Employees</th><th>Limit</th></tr></thead><tbody>
-        {data.subscriptions.map((item) => <tr key={item.id}><td>{item.shop}</td><td>{item.planId}</td><td>{item.status}</td><td>{item.isTrial ? "Yes" : "No"}</td><td>{item.activeEmployees}</td><td>{item.employeeLimit}</td></tr>)}
-      </tbody></table></div> : null}
-    </main>
+    <div>
+      <PageHeader title="Subscriptions" description="Billing status across companies." />
+
+      <FilterBar>
+        <FilterField label="Plan" className="w-40">
+          <Select value={params.planId} onChange={(e) => setParams({ planId: e.target.value, page: "1" })}>
+            <option value="">All</option>
+            <option value="free">Free</option>
+            <option value="starter">Starter</option>
+            <option value="business">Business</option>
+            <option value="pro">Pro</option>
+          </Select>
+        </FilterField>
+        <FilterField label="Status" className="w-44">
+          <Select value={params.status} onChange={(e) => setParams({ status: e.target.value, page: "1" })}>
+            <option value="">All</option>
+            <option value="active">Active</option>
+            <option value="trialing">Trialing</option>
+            <option value="expired">Expired</option>
+            <option value="past_due">Past due</option>
+            <option value="cancelled">Cancelled</option>
+          </Select>
+        </FilterField>
+      </FilterBar>
+
+      {error ? <ErrorState message={error.message} onRetry={refetch} /> : null}
+
+      <DataTable
+        columns={[
+          { key: "shop", header: "Company", className: "font-medium" },
+          { key: "owner", header: "Owner" },
+          { key: "planId", header: "Plan" },
+          { key: "status", header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
+          { key: "isTrial", header: "Trial", cell: (row) => (row.isTrial ? "Yes" : "No") },
+          {
+            key: "employees",
+            header: "Employees",
+            cell: (row) =>
+              row.employeeLimit != null ? `${row.activeEmployees}/${row.employeeLimit}` : row.activeEmployees,
+          },
+          { key: "amount", header: "Amount", cell: (row) => formatINR(row.amount) },
+          {
+            key: "renewal",
+            header: "Renews",
+            cell: (row) => formatDate(row.currentPeriodEnd || row.trialEndsAt),
+          },
+        ]}
+        rows={data?.subscriptions || []}
+        loading={isLoading}
+        page={page}
+        limit={limit}
+        total={data?.total || 0}
+        onPageChange={(next) => setParams({ page: String(next) })}
+        onRowClick={(row) => navigate(`/subscriptions/${row.id}`)}
+        emptyTitle="No subscriptions"
+      />
+    </div>
+  );
+}
+
+function FilterField({ label, children, className }) {
+  return (
+    <div className={className}>
+      <Label className="mb-1 block text-xs text-muted">{label}</Label>
+      {children}
+    </div>
   );
 }
