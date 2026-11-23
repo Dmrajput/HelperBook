@@ -1,6 +1,7 @@
 import ReportBrowser from "../../components/reports/ReportBrowser";
 import ReportRow from "../../components/reports/ReportRow";
 import { exportAttendanceExcel, exportAttendancePdf, getAttendanceReport } from "../../services/reportService";
+import { colors } from "../../theme";
 import { formatAttendanceDate } from "../../utils/attendanceFormat";
 
 const STATUSES = [
@@ -14,8 +15,11 @@ const STATUSES = [
 export default function AttendanceReportScreen() {
   return (
     <ReportBrowser
-      title="Attendance Report"
-      description="How did employees attend during this period?"
+      title="Attendance"
+      description="How staff attended this period"
+      icon="calendar-outline"
+      iconColor="#3B6FE0"
+      iconBackground="#EEF3FF"
       loader={getAttendanceReport}
       exportPdf={exportAttendancePdf}
       exportExcel={exportAttendanceExcel}

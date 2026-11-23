@@ -19,8 +19,11 @@ const STATUSES = [
 export default function PaymentReportScreen() {
   return (
     <ReportBrowser
-      title="Payment Report"
-      description="Payments are filtered by the date they were paid."
+      title="Payments"
+      description="Salary already paid"
+      icon="cash-outline"
+      iconColor="#D4535E"
+      iconBackground="#FDECEC"
       loader={getPaymentReport}
       exportPdf={exportPaymentPdf}
       exportExcel={exportPaymentExcel}

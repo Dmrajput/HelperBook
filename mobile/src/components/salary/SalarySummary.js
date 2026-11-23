@@ -4,190 +4,142 @@ import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
 import { formatInr } from "../../utils/dashboardFormat";
 
-function StatusTile({ label, value, icon, color, background }) {
-  return (
-    <View style={[styles.statusTile, { backgroundColor: background }]}>
-      <Ionicons name={icon} size={14} color={color} />
-      <AppText variant="label" color={color} style={styles.statusValue} numberOfLines={1}>
-        {value}
-      </AppText>
-      <AppText variant="caption" color={color} numberOfLines={1}>
-        {label}
-      </AppText>
-    </View>
-  );
-}
+const STATUS_TILES = [
+  { key: "calculated", label: "Calculated", color: colors.primary },
+  { key: "draft", label: "Draft", color: colors.warning },
+  { key: "finalized", label: "Finalized", color: colors.success },
+  { key: "unpaid", label: "Unpaid", color: colors.error },
+];
 
 export default function SalarySummary({ summary, unpaidCount = 0 }) {
   const totals = summary || {};
   const employees = Number(totals.totalEmployees) || 0;
   const calculated = Number(totals.calculated) || 0;
+  const values = {
+    calculated: `${calculated}/${employees}`,
+    draft: String(totals.draft || 0),
+    finalized: String(totals.finalized || 0),
+    unpaid: String(unpaidCount),
+  };
 
   return (
-    <View style={styles.card}>
-      <View style={styles.topRow}>
-        <View style={styles.netBlock}>
-          <View style={styles.netLabelRow}>
-            <View style={styles.walletIcon}>
-              <Ionicons name="wallet" size={16} color={colors.primary} />
-            </View>
+    <View style={styles.wrap}>
+      <View style={styles.netCard}>
+        <View style={styles.netTop}>
+          <View style={styles.walletIcon}>
+            <Ionicons name="wallet-outline" size={18} color={colors.primary} />
+          </View>
+          <View style={styles.netCopy}>
             <AppText variant="caption" color={colors.textSecondary}>
-              Net Salary (after deductions)
+              Net salary this month
+            </AppText>
+            <AppText style={styles.netAmount} numberOfLines={1}>
+              {formatInr(totals.totalNetSalary)}
             </AppText>
           </View>
-          <AppText variant="heading" style={styles.netAmount} numberOfLines={1}>
-            {formatInr(totals.totalNetSalary)}
-          </AppText>
+          <View style={styles.employeeChip}>
+            <AppText variant="caption" color={colors.primary} style={styles.chipText}>
+              {`${employees} staff`}
+            </AppText>
+          </View>
         </View>
-        <View style={styles.employeeChip}>
-          <Ionicons name="people" size={16} color={colors.secondary} />
-          <AppText variant="caption" color={colors.textSecondary}>
-            Employees
-          </AppText>
-          <AppText variant="subtitle" style={styles.employeeCount}>
-            {String(employees)}
-          </AppText>
+
+        <View style={styles.metricsRow}>
+          <View style={styles.metric}>
+            <AppText variant="caption" color={colors.textSecondary}>
+              Gross
+            </AppText>
+            <AppText variant="label" numberOfLines={1} style={styles.metricValue}>
+              {formatInr(totals.totalGrossSalary)}
+            </AppText>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metric}>
+            <AppText variant="caption" color={colors.textSecondary}>
+              Deductions
+            </AppText>
+            <AppText variant="label" numberOfLines={1} style={styles.metricValue}>
+              {formatInr(totals.totalDeductions)}
+            </AppText>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metric}>
+            <AppText variant="caption" color={colors.textSecondary}>
+              Advances
+            </AppText>
+            <AppText variant="label" numberOfLines={1} style={styles.metricValue}>
+              {formatInr(totals.totalAdvances)}
+            </AppText>
+          </View>
         </View>
       </View>
 
-      <View style={styles.statusRow}>
-        <StatusTile
-          label="Calculated"
-          value={`${calculated} / ${employees}`}
-          icon="calculator-outline"
-          color={colors.primary}
-          background={colors.primaryLight}
-        />
-        <StatusTile
-          label="Draft"
-          value={String(totals.draft || 0)}
-          icon="document-text-outline"
-          color={colors.warning}
-          background={colors.warningBackground}
-        />
-        <StatusTile
-          label="Finalized"
-          value={String(totals.finalized || 0)}
-          icon="checkmark-circle"
-          color={colors.success}
-          background={colors.successBackground}
-        />
-        <StatusTile
-          label="Unpaid"
-          value={String(unpaidCount)}
-          icon="hourglass-outline"
-          color={colors.error}
-          background={colors.errorBackground}
-        />
-      </View>
-
-      <View style={styles.metricsRow}>
-        <View style={styles.metric}>
-          <AppText variant="caption" color={colors.textSecondary}>
-            Gross Salary
-          </AppText>
-          <AppText variant="label" numberOfLines={1}>
-            {formatInr(totals.totalGrossSalary)}
-          </AppText>
-        </View>
-        <View style={styles.metricDivider} />
-        <View style={styles.metric}>
-          <AppText variant="caption" color={colors.textSecondary}>
-            Deductions
-          </AppText>
-          <AppText variant="label" numberOfLines={1}>
-            {formatInr(totals.totalDeductions)}
-          </AppText>
-        </View>
-        <View style={styles.metricDivider} />
-        <View style={styles.metric}>
-          <AppText variant="caption" color={colors.textSecondary}>
-            Advances
-          </AppText>
-          <AppText variant="label" numberOfLines={1}>
-            {formatInr(totals.totalAdvances)}
-          </AppText>
-        </View>
+      <View style={styles.statusCard}>
+        {STATUS_TILES.map((tile, index) => (
+          <View key={tile.key} style={[styles.statusTile, index > 0 && styles.statusDivider]}>
+            <View style={styles.statusLabelRow}>
+              <View style={[styles.dot, { backgroundColor: tile.color }]} />
+              <AppText variant="caption" color={colors.textSecondary} numberOfLines={1} style={styles.statusLabel}>
+                {tile.label}
+              </AppText>
+            </View>
+            <AppText style={styles.statusValue}>{values[tile.key]}</AppText>
+          </View>
+        ))}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  wrap: {
+    gap: spacing.sm,
+  },
+  netCard: {
     backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     gap: spacing.md,
-    shadowColor: "#000000",
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
   },
-  topRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "flex-start",
-  },
-  netBlock: {
-    flex: 1,
-    minWidth: 0,
-    gap: 6,
-  },
-  netLabelRow: {
+  netTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   walletIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
+  netCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
   netAmount: {
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: "700",
+    fontWeight: "800",
+    color: colors.text,
   },
   employeeChip: {
-    alignItems: "center",
-    gap: 2,
-    backgroundColor: colors.secondaryLight,
-    borderRadius: 14,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    minWidth: 72,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  employeeCount: {
-    fontWeight: "700",
-  },
-  statusRow: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  statusTile: {
-    flex: 1,
-    minWidth: 0,
-    borderRadius: 12,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: 4,
-    alignItems: "center",
-    gap: 2,
-    minHeight: 72,
-  },
-  statusValue: {
+  chipText: {
     fontWeight: "700",
   },
   metricsRow: {
     flexDirection: "row",
     alignItems: "stretch",
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     paddingTop: spacing.sm,
   },
@@ -197,8 +149,50 @@ const styles = StyleSheet.create({
     gap: 2,
     alignItems: "center",
   },
+  metricValue: {
+    fontWeight: "700",
+  },
   metricDivider: {
-    width: 1,
+    width: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
+  },
+  statusCard: {
+    flexDirection: "row",
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+  },
+  statusTile: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  statusDivider: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: colors.border,
+  },
+  statusLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  statusLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  statusValue: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "800",
+    color: colors.text,
   },
 });

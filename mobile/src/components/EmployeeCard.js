@@ -3,13 +3,17 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import AppText from "./AppText";
 import StatusBadge from "./StatusBadge";
 import { colors, spacing } from "../theme";
-import { formatSalary, roleLabel } from "../utils/employeeFormat";
+import { formatInr } from "../utils/dashboardFormat";
+import { roleLabel } from "../utils/employeeFormat";
 
 export default function EmployeeCard({ employee, onPress }) {
   const initial = String(employee.name || "A").trim().charAt(0).toUpperCase() || "A";
   const active = employee.status === "active";
   const role = roleLabel(employee) || "Staff";
-  const salary = formatSalary(employee.salary);
+  const salaryType = employee.salary?.type === "daily" ? "Daily salary" : "Monthly salary";
+  const salaryAmount = Number.isFinite(Number(employee.salary?.amount))
+    ? formatInr(employee.salary.amount)
+    : "—";
 
   return (
     <Pressable
@@ -18,42 +22,60 @@ export default function EmployeeCard({ employee, onPress }) {
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <View style={[styles.avatar, !active && styles.avatarMuted]}>
-        <AppText variant="label" color={active ? colors.primary : colors.textSecondary}>
-          {initial}
+      <View style={styles.top}>
+        <View style={[styles.avatar, !active && styles.avatarMuted]}>
+          <AppText variant="label" color={active ? colors.primary : colors.textSecondary} style={styles.initial}>
+            {initial}
+          </AppText>
+        </View>
+        <View style={styles.copy}>
+          <AppText variant="label" numberOfLines={1} style={styles.name}>
+            {employee.name}
+          </AppText>
+          <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+            {role}
+          </AppText>
+        </View>
+        <StatusBadge status={employee.status} />
+        <Ionicons name="chevron-forward" size={16} color={colors.placeholder} />
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.salaryRow}>
+        <AppText variant="caption" color={colors.textSecondary}>
+          {salaryType}
+        </AppText>
+        <AppText variant="label" style={styles.salaryAmount}>
+          {salaryAmount}
         </AppText>
       </View>
-      <View style={styles.copy}>
-        <AppText variant="label" numberOfLines={1}>
-          {employee.name}
-        </AppText>
-        <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
-          {salary ? `${role} · ${salary}` : role}
-        </AppText>
-      </View>
-      <StatusBadge status={employee.status} />
-      <Ionicons name="chevron-forward" size={16} color={colors.placeholder} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
   pressed: {
     opacity: 0.88,
   },
+  top: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
@@ -61,9 +83,29 @@ const styles = StyleSheet.create({
   avatarMuted: {
     backgroundColor: colors.disabled,
   },
+  initial: {
+    fontWeight: "800",
+  },
   copy: {
     flex: 1,
     minWidth: 0,
     gap: 2,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+  },
+  salaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  salaryAmount: {
+    fontWeight: "700",
   },
 });

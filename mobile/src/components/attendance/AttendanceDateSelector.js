@@ -22,6 +22,7 @@ export default function AttendanceDateSelector({ date, onChange }) {
   const [showPicker, setShowPicker] = useState(false);
   const today = todayKey();
   const nextDisabled = shiftKey(date, 1) > today;
+  const isToday = date === today;
 
   function apply(next) {
     if (!next || next > today) {
@@ -39,8 +40,9 @@ export default function AttendanceDateSelector({ date, onChange }) {
           onPress={() => apply(shiftKey(date, -1))}
           style={({ pressed }) => [styles.arrow, pressed && styles.pressed]}
         >
-          <Ionicons name="chevron-back" size={18} color={colors.primary} />
+          <Ionicons name="chevron-back" size={18} color={colors.text} />
         </Pressable>
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Attendance date, ${shortDateLabel(date)}`}
@@ -50,8 +52,16 @@ export default function AttendanceDateSelector({ date, onChange }) {
           <AppText variant="label" numberOfLines={1} style={styles.dateLabel}>
             {shortDateLabel(date)}
           </AppText>
-          <Ionicons name="chevron-down" size={16} color={colors.primary} />
+          {isToday ? (
+            <View style={styles.todayChip}>
+              <AppText variant="caption" color={colors.primary} style={styles.todayText}>
+                Today
+              </AppText>
+            </View>
+          ) : null}
+          <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
         </Pressable>
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Next day"
@@ -60,21 +70,23 @@ export default function AttendanceDateSelector({ date, onChange }) {
           onPress={() => apply(shiftKey(date, 1))}
           style={({ pressed }) => [styles.arrow, nextDisabled && styles.disabled, pressed && !nextDisabled && styles.pressed]}
         >
-          <Ionicons name="chevron-forward" size={18} color={nextDisabled ? colors.disabledText : colors.primary} />
+          <Ionicons name="chevron-forward" size={18} color={nextDisabled ? colors.disabledText : colors.text} />
         </Pressable>
       </View>
-      {date !== today ? (
+
+      {!isToday ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Jump to today"
           onPress={() => onChange(today)}
-          style={styles.today}
+          style={styles.jumpToday}
         >
-          <AppText variant="label" color={colors.primary}>
-            Today
+          <AppText variant="caption" color={colors.primary} style={styles.todayText}>
+            Jump to today
           </AppText>
         </Pressable>
       ) : null}
+
       {showPicker ? (
         <DateTimePicker
           value={pickerDateFromKey(date)}
@@ -106,21 +118,17 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: spacing.xs,
     backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: spacing.xs,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 4,
   },
   arrow: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -130,23 +138,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 8,
     paddingHorizontal: spacing.sm,
   },
   dateLabel: {
     flexShrink: 1,
+    fontWeight: "700",
   },
-  today: {
-    alignSelf: "center",
-    minHeight: 32,
-    paddingHorizontal: spacing.md,
-    borderRadius: 999,
+  todayChip: {
     backgroundColor: colors.primaryLight,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  todayText: {
+    fontWeight: "700",
+    fontSize: 11,
+  },
+  jumpToday: {
+    alignSelf: "center",
+    minHeight: 28,
+    paddingHorizontal: spacing.sm,
     alignItems: "center",
     justifyContent: "center",
   },
   disabled: {
-    opacity: 0.45,
+    opacity: 0.4,
   },
   pressed: {
     opacity: 0.88,

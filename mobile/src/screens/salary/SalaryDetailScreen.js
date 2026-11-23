@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import AppScreen from "../../components/AppScreen";
 import BonusForm from "../../components/salary/BonusForm";
 import DeductionForm from "../../components/salary/DeductionForm";
 import PaidLeaveEditor from "../../components/salary/PaidLeaveEditor";
@@ -24,6 +24,48 @@ import {
 import { colors, spacing } from "../../theme";
 import { formatAttendanceDate } from "../../utils/attendanceFormat";
 import { formatInr } from "../../utils/dashboardFormat";
+
+function SalaryHeader({ title, subtitle, onBack, statusLabel, statusTone }) {
+  return (
+    <View style={styles.headerRow}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={styles.back}>
+        <Ionicons name="chevron-back" size={22} color={colors.text} />
+      </Pressable>
+      <View style={styles.headerCopy}>
+        <AppText variant="heading" accessibilityRole="header" style={styles.headerTitle} numberOfLines={1}>
+          {title}
+        </AppText>
+        <AppText variant="body" color={colors.textSecondary} numberOfLines={1}>
+          {subtitle}
+        </AppText>
+      </View>
+      {statusLabel ? (
+        <View
+          style={[
+            styles.statusPill,
+            statusTone === "warning" && styles.statusWarning,
+            statusTone === "success" && styles.statusSuccess,
+            statusTone === "info" && styles.statusInfo,
+          ]}
+        >
+          <AppText
+            variant="caption"
+            color={
+              statusTone === "warning" ? colors.warning : statusTone === "success" ? colors.success : colors.primary
+            }
+            style={styles.statusPillText}
+          >
+            {statusLabel}
+          </AppText>
+        </View>
+      ) : (
+        <View style={styles.headerAction}>
+          <Ionicons name="wallet-outline" size={20} color={colors.primary} />
+        </View>
+      )}
+    </View>
+  );
+}
 
 const MONTHS = [
   "January",
@@ -113,6 +155,7 @@ function AdjustmentRow({
 }
 
 export default function SalaryDetailScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { salaryId } = route.params;
   const [salary, setSalary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -187,20 +230,28 @@ export default function SalaryDetailScreen({ navigation, route }) {
 
   if (loading && !salary) {
     return (
-      <AppScreen title="Salary" subtitle="Loading" icon="wallet">
-        <View style={styles.skeleton} accessibilityLabel="Loading salary">
+      <View style={styles.screen}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+          <SalaryHeader title="Salary" subtitle="Loading" onBack={() => navigation.goBack()} />
+        </View>
+        <View style={styles.loadingWrap} accessibilityLabel="Loading salary">
           <View style={styles.block} />
           <View style={styles.block} />
         </View>
-      </AppScreen>
+      </View>
     );
   }
 
   if (!salary) {
     return (
-      <AppScreen title="Salary" subtitle="Could not load this salary" icon="wallet">
-        <ErrorView message={error || "Unable to load salary. Please try again."} onRetry={load} />
-      </AppScreen>
+      <View style={styles.screen}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+          <SalaryHeader title="Salary" subtitle="Could not load this salary" onBack={() => navigation.goBack()} />
+        </View>
+        <View style={styles.loadingWrap}>
+          <ErrorView message={error || "Unable to load salary. Please try again."} onRetry={load} />
+        </View>
+      </View>
     );
   }
 
@@ -224,30 +275,17 @@ export default function SalaryDetailScreen({ navigation, route }) {
         : "info";
 
   return (
-    <AppScreen
-      title={salary.employee?.name || "Salary"}
-      subtitle={`Salary • ${monthName}`}
-      headerRight={
-        <View
-          style={[
-            styles.statusPill,
-            statusTone === "warning" && styles.statusWarning,
-            statusTone === "success" && styles.statusSuccess,
-            statusTone === "info" && styles.statusInfo,
-          ]}
-        >
-          <AppText
-            variant="caption"
-            color={
-              statusTone === "warning" ? colors.warning : statusTone === "success" ? colors.success : colors.primary
-            }
-            style={styles.statusPillText}
-          >
-            {statusLabel}
-          </AppText>
-        </View>
-      }
-    >
+    <View style={styles.screen}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <SalaryHeader
+          title={salary.employee?.name || "Salary"}
+          subtitle={`Salary • ${monthName}`}
+          onBack={() => navigation.goBack()}
+          statusLabel={statusLabel}
+          statusTone={statusTone}
+        />
+      </View>
+
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.netCard}>
           <View style={styles.netTop}>
@@ -634,20 +672,64 @@ export default function SalaryDetailScreen({ navigation, route }) {
           </>
         )}
       </ScrollView>
-    </AppScreen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  back: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  headerTitle: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  headerAction: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingWrap: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
   scroll: {
     gap: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   statusPill: {
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: colors.primaryLight,
   },
   statusWarning: {
     backgroundColor: colors.warningBackground,

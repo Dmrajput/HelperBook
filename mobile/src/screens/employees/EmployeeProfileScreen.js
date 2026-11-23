@@ -2,10 +2,10 @@ import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import FieldError from "../../components/FieldError";
-import AppScreen from "../../components/AppScreen";
 import StatusBadge from "../../components/StatusBadge";
 import { getEmployeeAdvances } from "../../services/advanceService";
 import { getEmployeeSalaryHistory } from "../../services/salaryService";
@@ -18,6 +18,33 @@ import { colors, spacing } from "../../theme";
 import { formatInr } from "../../utils/dashboardFormat";
 import { formatJoiningDate, formatPhone, roleLabel } from "../../utils/employeeFormat";
 import { showEmployeeLimitAlert } from "../../utils/employeeLimit";
+
+function ProfileHeader({ title, subtitle, onBack, onEdit }) {
+  return (
+    <View style={styles.headerRow}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={styles.back}>
+        <Ionicons name="chevron-back" size={22} color={colors.text} />
+      </Pressable>
+      <View style={styles.headerCopy}>
+        <AppText variant="heading" accessibilityRole="header" style={styles.headerTitle} numberOfLines={1}>
+          {title}
+        </AppText>
+        <AppText variant="body" color={colors.textSecondary} numberOfLines={1}>
+          {subtitle}
+        </AppText>
+      </View>
+      {onEdit ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Edit employee" onPress={onEdit} style={styles.headerAction}>
+          <Ionicons name="create-outline" size={20} color={colors.primary} />
+        </Pressable>
+      ) : (
+        <View style={styles.headerAction}>
+          <Ionicons name="person-outline" size={20} color={colors.primary} />
+        </View>
+      )}
+    </View>
+  );
+}
 
 function joinedLabel(joiningDate) {
   const formatted = formatJoiningDate(joiningDate);
@@ -154,6 +181,7 @@ function ActionButton({
 }
 
 export default function EmployeeProfileScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { employeeId } = route.params;
   const { width } = useWindowDimensions();
   const stackLeaveActions = width < 390;
@@ -260,17 +288,28 @@ export default function EmployeeProfileScreen({ navigation, route }) {
 
   if (loading && !employee) {
     return (
-      <AppScreen title="Employee" subtitle="Employee Profile">
-        <AppText color={colors.textSecondary}>Loading employee...</AppText>
-      </AppScreen>
+      <View style={styles.screen}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+          <ProfileHeader title="Employee" subtitle="Employee profile" onBack={() => navigation.goBack()} />
+        </View>
+        <View style={styles.loadingWrap}>
+          <View style={styles.skeleton} accessibilityLabel="Loading employee" />
+          <View style={styles.skeleton} />
+        </View>
+      </View>
     );
   }
 
   if (!employee) {
     return (
-      <AppScreen title="Employee" subtitle="Employee Profile">
-        <ErrorView title="Employee not found." message={error} onRetry={loadEmployee} />
-      </AppScreen>
+      <View style={styles.screen}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+          <ProfileHeader title="Employee" subtitle="Employee profile" onBack={() => navigation.goBack()} />
+        </View>
+        <View style={styles.loadingWrap}>
+          <ErrorView title="Employee not found." message={error} onRetry={loadEmployee} />
+        </View>
+      </View>
     );
   }
 
@@ -292,7 +331,16 @@ export default function EmployeeProfileScreen({ navigation, route }) {
   const initial = String(employee.name || "A").trim().charAt(0).toUpperCase();
 
   return (
-    <AppScreen title={employee.name} subtitle="Employee Profile">
+    <View style={styles.screen}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <ProfileHeader
+          title={employee.name}
+          subtitle={roleLabel(employee)}
+          onBack={() => navigation.goBack()}
+          onEdit={() => navigation.navigate("EditEmployee", { employeeId: employee.id })}
+        />
+      </View>
+
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <View style={styles.avatarWrap}>
@@ -316,18 +364,6 @@ export default function EmployeeProfileScreen({ navigation, route }) {
                   {roleLabel(employee)}
                 </AppText>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Edit employee"
-                onPress={() => navigation.navigate("EditEmployee", { employeeId: employee.id })}
-                style={styles.editChip}
-                hitSlop={8}
-              >
-                <Ionicons name="create-outline" size={14} color={colors.primary} />
-                <AppText variant="caption" color={colors.primary} style={styles.editChipText}>
-                  Edit
-                </AppText>
-              </Pressable>
             </View>
             <View style={styles.metaRow}>
               <Ionicons name="call-outline" size={14} color={colors.textSecondary} />
@@ -638,7 +674,7 @@ export default function EmployeeProfileScreen({ navigation, route }) {
         <FieldError message={error} />
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
         <ActionButton
           label={
             busy
@@ -654,20 +690,69 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           onPress={confirmStatus}
         />
       </View>
-    </AppScreen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  back: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  headerTitle: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  headerAction: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingWrap: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  skeleton: {
+    height: 96,
+    borderRadius: 16,
+    backgroundColor: colors.disabled,
+  },
   scroll: {
     gap: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
   },
   hero: {
     flexDirection: "row",
     gap: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: 18,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -730,21 +815,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     maxWidth: "100%",
   },
-  editChip: {
-    flexShrink: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    minHeight: 32,
-  },
-  editChipText: {
-    fontWeight: "700",
-  },
   metaRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -757,7 +827,7 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
@@ -942,5 +1012,9 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
   },
 });

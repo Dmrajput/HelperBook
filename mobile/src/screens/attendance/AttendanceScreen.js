@@ -8,7 +8,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -260,11 +259,13 @@ export default function AttendanceScreen({ embedded = false }) {
     [date, drafts, saving, updateDraft]
   );
 
+  const canSave = !saving && pending.length > 0;
+
   const listHeader = (
     <View style={styles.body}>
       <AttendanceDateSelector date={date} onChange={setDate} />
 
-      <View style={styles.tabs}>
+      <View style={styles.tabTrack}>
         {viewTabs.map((tab) => (
           <Pressable
             key={tab.id}
@@ -275,14 +276,14 @@ export default function AttendanceScreen({ embedded = false }) {
             onPress={tab.onPress || undefined}
             style={({ pressed }) => [
               styles.tab,
-              tab.active ? styles.tabActive : styles.tabIdle,
+              tab.active ? styles.tabActive : null,
               pressed && !tab.active && styles.pressed,
             ]}
           >
-            <Ionicons name={tab.icon} size={16} color={tab.active ? colors.textInverse : colors.primary} />
+            <Ionicons name={tab.icon} size={15} color={tab.active ? colors.primary : colors.textSecondary} />
             <AppText
               variant="caption"
-              color={tab.active ? colors.textInverse : colors.primary}
+              color={tab.active ? colors.primary : colors.textSecondary}
               style={styles.tabLabel}
               numberOfLines={1}
             >
@@ -343,20 +344,27 @@ export default function AttendanceScreen({ embedded = false }) {
       ) : null}
 
       {data && employees.length > 0 ? (
-        <View style={styles.listHeader}>
-          <AppText variant="label">{`Employees (${filteredEmployees.length})`}</AppText>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Mark all present"
-            disabled={saving}
-            onPress={markAllPresent}
-            style={styles.markAll}
-          >
-            <Ionicons name="checkmark-done" size={16} color={colors.primary} />
-            <AppText variant="caption" color={colors.primary} style={styles.markAllText}>
-              Mark all present
+        <View style={styles.listHeaderBlock}>
+          <View style={styles.listHeader}>
+            <AppText variant="label" style={styles.listTitle}>
+              {`Employees (${filteredEmployees.length})`}
             </AppText>
-          </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Mark all present"
+              disabled={saving}
+              onPress={markAllPresent}
+              style={styles.markAll}
+            >
+              <Ionicons name="checkmark-done" size={16} color={colors.primary} />
+              <AppText variant="caption" color={colors.primary} style={styles.markAllText}>
+                Mark all present
+              </AppText>
+            </Pressable>
+          </View>
+          <AppText variant="caption" color={colors.textSecondary}>
+            Choose a status for each employee.
+          </AppText>
         </View>
       ) : null}
 
@@ -381,12 +389,7 @@ export default function AttendanceScreen({ embedded = false }) {
 
   return (
     <View style={styles.screen}>
-      <LinearGradient
-        colors={["#818CF8", "#6366F1", "#4F46E5"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + spacing.sm }]}
-      >
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <View style={styles.headerRow}>
           {embedded ? null : (
             <Pressable
@@ -395,14 +398,14 @@ export default function AttendanceScreen({ embedded = false }) {
               onPress={() => navigation.goBack()}
               style={styles.back}
             >
-              <Ionicons name="chevron-back" size={22} color={colors.textInverse} />
+              <Ionicons name="chevron-back" size={22} color={colors.text} />
             </Pressable>
           )}
           <View style={styles.headerCopy}>
-            <AppText variant="heading" color={colors.textInverse} accessibilityRole="header" style={styles.title}>
+            <AppText variant="heading" accessibilityRole="header" style={styles.title}>
               Attendance
             </AppText>
-            <AppText variant="caption" color="rgba(255,255,255,0.85)" numberOfLines={1}>
+            <AppText variant="body" color={colors.textSecondary} numberOfLines={1}>
               Mark your team's attendance.
             </AppText>
           </View>
@@ -412,10 +415,10 @@ export default function AttendanceScreen({ embedded = false }) {
             onPress={() => navigation.navigate("MonthlyAttendance")}
             style={styles.headerAction}
           >
-            <Ionicons name="calendar" size={20} color={colors.primary} />
+            <Ionicons name="calendar-outline" size={20} color={colors.primary} />
           </Pressable>
         </View>
-      </LinearGradient>
+      </View>
 
       <FlatList
         data={filteredEmployees}
@@ -432,6 +435,7 @@ export default function AttendanceScreen({ embedded = false }) {
         initialNumToRender={12}
         windowSize={7}
         removeClippedSubviews
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
       {data?.employees?.length ? (
@@ -448,43 +452,25 @@ export default function AttendanceScreen({ embedded = false }) {
             <AppText variant="caption" color={colors.textSecondary}>
               {pending.length
                 ? `${pending.length} change${pending.length === 1 ? "" : "s"} to save`
-                : "Attendance is up to date"}
+                : "Select attendance to save."}
             </AppText>
           </View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Save attendance"
-            accessibilityState={{ disabled: saving || pending.length === 0 }}
-            disabled={saving || pending.length === 0}
+            accessibilityState={{ disabled: !canSave }}
+            disabled={!canSave}
             onPress={confirmSave}
             style={({ pressed }) => [
-              styles.savePressable,
-              (saving || pending.length === 0) && styles.saveDisabled,
-              pressed && pending.length > 0 && !saving && styles.pressed,
+              styles.saveButton,
+              !canSave && styles.saveDisabled,
+              pressed && canSave && styles.pressed,
             ]}
           >
-            <LinearGradient
-              colors={
-                saving || pending.length === 0
-                  ? [colors.disabled, colors.disabled]
-                  : ["#818CF8", "#6366F1", "#4F46E5"]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.saveButton}
-            >
-              <Ionicons
-                name="save-outline"
-                size={18}
-                color={saving || pending.length === 0 ? colors.disabledText : colors.textInverse}
-              />
-              <AppText
-                variant="button"
-                color={saving || pending.length === 0 ? colors.disabledText : colors.textInverse}
-              >
-                {saving ? "Saving..." : "Save Attendance"}
-              </AppText>
-            </LinearGradient>
+            <Ionicons name="save-outline" size={18} color={canSave ? colors.textInverse : colors.disabledText} />
+            <AppText variant="button" color={canSave ? colors.textInverse : colors.disabledText}>
+              {saving ? "Saving..." : "Save attendance"}
+            </AppText>
           </Pressable>
         </View>
       ) : null}
@@ -500,8 +486,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
+    backgroundColor: colors.background,
   },
   headerRow: {
     flexDirection: "row",
@@ -522,31 +507,37 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     lineHeight: 34,
+    fontWeight: "800",
+    color: colors.text,
   },
   headerAction: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
   content: {
     paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   body: {
-    paddingTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
     gap: spacing.md,
+    marginBottom: spacing.md,
   },
-  tabs: {
+  tabTrack: {
     flexDirection: "row",
-    gap: spacing.sm,
+    backgroundColor: "#EEF1F6",
+    borderRadius: 16,
+    padding: 4,
+    gap: 2,
   },
   tab: {
     flex: 1,
-    minHeight: 44,
-    borderRadius: 14,
+    minHeight: 42,
+    borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -554,12 +545,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   tabActive: {
-    backgroundColor: colors.primary,
-  },
-  tabIdle: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   tabLabel: {
     fontWeight: "700",
@@ -598,11 +589,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  listHeaderBlock: {
+    gap: 4,
+  },
   listHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.sm,
+  },
+  listTitle: {
+    fontWeight: "700",
+    fontSize: 15,
   },
   markAll: {
     flexDirection: "row",
@@ -617,6 +615,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: spacing.md,
+  },
+  separator: {
+    height: spacing.sm,
   },
   pressed: {
     opacity: 0.88,
@@ -637,13 +638,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   skeletonSummary: {
-    height: 88,
+    height: 72,
     borderRadius: 16,
     backgroundColor: colors.disabled,
   },
   skeletonRow: {
     height: 148,
-    borderRadius: 20,
+    borderRadius: 18,
     backgroundColor: colors.disabled,
   },
   footer: {
@@ -661,10 +662,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 2,
   },
-  savePressable: {
-    borderRadius: 16,
-    overflow: "hidden",
-  },
   saveButton: {
     minHeight: 52,
     borderRadius: 16,
@@ -673,8 +670,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
+    backgroundColor: colors.primary,
   },
   saveDisabled: {
-    opacity: 1,
+    backgroundColor: colors.disabled,
   },
 });

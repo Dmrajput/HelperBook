@@ -1,6 +1,7 @@
 import ReportBrowser from "../../components/reports/ReportBrowser";
 import ReportRow from "../../components/reports/ReportRow";
 import { exportSalaryExcel, exportSalaryPdf, getSalaryReport } from "../../services/reportService";
+import { colors } from "../../theme";
 import { formatInr } from "../../utils/dashboardFormat";
 
 const SALARY_STATUS = [
@@ -18,8 +19,11 @@ const PAYMENT_STATUS = [
 export default function SalaryReportScreen() {
   return (
     <ReportBrowser
-      title="Salary Report"
-      description="Salary calculated for this period. Payment date is not used here."
+      title="Salary"
+      description="Calculated pay for this period"
+      icon="wallet-outline"
+      iconColor={colors.success}
+      iconBackground={colors.successBackground}
       loader={getSalaryReport}
       exportPdf={exportSalaryPdf}
       exportExcel={exportSalaryExcel}

@@ -1,6 +1,7 @@
 import ReportBrowser from "../../components/reports/ReportBrowser";
 import ReportRow from "../../components/reports/ReportRow";
 import { exportAdvanceExcel, exportAdvancePdf, getAdvanceReport } from "../../services/reportService";
+import { colors } from "../../theme";
 import { formatAttendanceDate } from "../../utils/attendanceFormat";
 import { formatInr } from "../../utils/dashboardFormat";
 
@@ -22,8 +23,11 @@ const TYPES = [
 export default function AdvanceReportScreen() {
   return (
     <ReportBrowser
-      title="Advance Report"
-      description="Advances, repayments, and the current outstanding balance."
+      title="Advance / Khata"
+      description="Money given and repaid"
+      icon="book-outline"
+      iconColor={colors.secondary}
+      iconBackground={colors.secondaryLight}
       loader={getAdvanceReport}
       exportPdf={exportAdvancePdf}
       exportExcel={exportAdvanceExcel}

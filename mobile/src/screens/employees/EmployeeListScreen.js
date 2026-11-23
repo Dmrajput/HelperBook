@@ -3,7 +3,6 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AppButton from "../../components/AppButton";
 import AppText from "../../components/AppText";
 import EmployeeCard from "../../components/EmployeeCard";
 import ErrorView from "../../components/ErrorView";
@@ -13,9 +12,6 @@ import useSubscription from "../../hooks/useSubscription";
 import { getEmployees } from "../../services/employeeService";
 import { showEmployeeLimitAlert } from "../../utils/employeeLimit";
 
-const PAGE_BG = colors.background;
-const HEADER = colors.primary;
-
 function EmployeeListSkeleton() {
   return (
     <View style={styles.skeleton} accessibilityLabel="Loading employees">
@@ -23,6 +19,46 @@ function EmployeeListSkeleton() {
         <View key={item} style={styles.skeletonRow} />
       ))}
     </View>
+  );
+}
+
+function PlanUsageCard({ subscription, onUpgrade }) {
+  if (!subscription?.plan) return null;
+  const used = Number(subscription.activeEmployeeCount) || 0;
+  const limit = Number(subscription.plan.employeeLimit) || 0;
+  const full = limit > 0 && used >= limit;
+  const progress = limit > 0 ? Math.min(1, used / limit) : 0;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${subscription.plan.name} plan usage`}
+      onPress={onUpgrade}
+      style={({ pressed }) => [styles.planCard, pressed && styles.pressed]}
+    >
+      <View style={styles.planTop}>
+        <View style={styles.planTitleRow}>
+          <View style={styles.planIcon}>
+            <Ionicons name="briefcase-outline" size={16} color={colors.primary} />
+          </View>
+          <AppText variant="label" style={styles.planName}>
+            {`${subscription.plan.name} plan`}
+          </AppText>
+        </View>
+        <AppText variant="caption" color={colors.textSecondary} style={styles.planCount}>
+          {`${used} / ${limit} used`}
+        </AppText>
+      </View>
+      <View style={styles.track}>
+        <View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} />
+      </View>
+      <AppText variant="label" style={styles.planMessage}>
+        {full ? "Active employee limit reached" : `${Math.max(limit - used, 0)} slot${limit - used === 1 ? "" : "s"} remaining`}
+      </AppText>
+      <AppText variant="caption" color={colors.textSecondary}>
+        {full ? "Upgrade to add more employees" : "Upgrade anytime for more employee slots"}
+      </AppText>
+    </Pressable>
   );
 }
 
@@ -95,6 +131,10 @@ export default function EmployeeListScreen({ embedded = false }) {
     loadPage(pagination.page + 1, { append: true });
   }
 
+  function openUpgrade() {
+    navigation.navigate("Subscription");
+  }
+
   function openAddEmployee() {
     if (canAddEmployee === false) {
       showEmployeeLimitAlert(navigation, {
@@ -109,10 +149,6 @@ export default function EmployeeListScreen({ embedded = false }) {
     navigation.navigate("AddEmployee");
   }
 
-  const countLabel = status === "active" ? "active staff" : "inactive staff";
-  const subtitle = loading && employees.length === 0
-    ? "Your team"
-    : `${pagination.total} ${countLabel}`;
   const emptyTitle = search
     ? "No employees found"
     : status === "active"
@@ -123,6 +159,9 @@ export default function EmployeeListScreen({ embedded = false }) {
     : search
       ? "Try a different name."
       : "Inactive staff will appear here.";
+
+  const planFull = canAddEmployee === false;
+  const activeCountLabel = pagination.total === 1 ? "1 employee" : `${pagination.total} employees`;
 
   return (
     <View style={styles.screen}>
@@ -135,57 +174,73 @@ export default function EmployeeListScreen({ embedded = false }) {
               onPress={() => navigation.goBack()}
               style={styles.back}
             >
-              <Ionicons name="chevron-back" size={22} color={colors.textInverse} />
+              <Ionicons name="chevron-back" size={22} color={colors.text} />
             </Pressable>
           )}
           <View style={styles.headerCopy}>
-            <AppText variant="heading" color={colors.textInverse} accessibilityRole="header" style={styles.title}>
+            <AppText variant="heading" accessibilityRole="header" style={styles.title}>
               Employees
             </AppText>
-            <AppText variant="caption" color={colors.primaryLight}>
-              {subtitle}
+            <AppText variant="body" color={colors.textSecondary}>
+              Manage your team
             </AppText>
           </View>
           <View style={styles.mark} accessibilityElementsHidden>
-            <Ionicons name="people" size={26} color={colors.primary} />
+            <Ionicons name="people-outline" size={22} color={colors.primary} />
           </View>
         </View>
-      </View>
 
-      <View style={styles.toolbar}>
-        <View style={styles.search}>
-          <Ionicons name="search" size={18} color={colors.placeholder} />
-          <TextInput
-            value={searchInput}
-            onChangeText={setSearchInput}
-            placeholder="Search employees"
-            placeholderTextColor={colors.placeholder}
-            autoCapitalize="words"
-            autoCorrect={false}
-            accessibilityLabel="Search employees"
-            style={styles.searchInput}
-          />
-          {searchInput ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setSearchInput("")}>
-              <Ionicons name="close-circle" size={18} color={colors.placeholder} />
-            </Pressable>
-          ) : null}
+        <View style={styles.searchRow}>
+          <View style={styles.search}>
+            <Ionicons name="search" size={18} color={colors.placeholder} />
+            <TextInput
+              value={searchInput}
+              onChangeText={setSearchInput}
+              placeholder="Search employees"
+              placeholderTextColor={colors.placeholder}
+              autoCapitalize="words"
+              autoCorrect={false}
+              accessibilityLabel="Search employees"
+              style={styles.searchInput}
+            />
+            {searchInput ? (
+              <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setSearchInput("")}>
+                <Ionicons name="close-circle" size={18} color={colors.placeholder} />
+              </Pressable>
+            ) : null}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Filter employees"
+            onPress={() => setStatus((current) => (current === "active" ? "inactive" : "active"))}
+            style={styles.filterButton}
+          >
+            <Ionicons name="funnel-outline" size={18} color={colors.primary} />
+          </Pressable>
         </View>
-        <View style={styles.filters}>
-          {["active", "inactive"].map((item) => {
-            const selected = status === item;
-            const label = item === "active" ? "Active" : "Inactive";
+
+        <View style={styles.tabTrack}>
+          {[
+            { id: "active", label: status === "active" && !loading ? `Active (${pagination.total})` : "Active" },
+            { id: "inactive", label: status === "inactive" && !loading ? `Inactive (${pagination.total})` : "Inactive" },
+          ].map((tab) => {
+            const selected = status === tab.id;
             return (
               <Pressable
-                key={item}
+                key={tab.id}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                accessibilityLabel={label}
-                onPress={() => setStatus(item)}
-                style={[styles.filter, selected && styles.filterSelected]}
+                accessibilityLabel={tab.label}
+                onPress={() => setStatus(tab.id)}
+                style={[styles.tab, selected && styles.tabSelected]}
               >
-                <AppText variant="label" align="center" color={selected ? colors.textInverse : colors.text}>
-                  {label}
+                <AppText
+                  variant="label"
+                  align="center"
+                  color={selected ? colors.primary : colors.textSecondary}
+                  style={styles.tabLabel}
+                >
+                  {tab.label}
                 </AppText>
               </Pressable>
             );
@@ -214,6 +269,18 @@ export default function EmployeeListScreen({ embedded = false }) {
           }
           onEndReached={loadMore}
           onEndReachedThreshold={0.4}
+          ListHeaderComponent={
+            employees.length > 0 ? (
+              <View style={styles.sectionHeader}>
+                <AppText variant="label" style={styles.sectionTitle}>
+                  Your team
+                </AppText>
+                <AppText variant="caption" color={colors.textSecondary}>
+                  {activeCountLabel}
+                </AppText>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <View style={styles.emptyIcon}>
@@ -228,11 +295,16 @@ export default function EmployeeListScreen({ embedded = false }) {
             </View>
           }
           ListFooterComponent={
-            loadingMore ? (
-              <AppText variant="caption" color={colors.textSecondary} align="center">
-                Loading employees...
-              </AppText>
-            ) : null
+            <View style={styles.listFooter}>
+              {loadingMore ? (
+                <AppText variant="caption" color={colors.textSecondary} align="center">
+                  Loading employees...
+                </AppText>
+              ) : null}
+              {status === "active" ? (
+                <PlanUsageCard subscription={subscription} onUpgrade={openUpgrade} />
+              ) : null}
+            </View>
           }
           renderItem={({ item }) => (
             <EmployeeCard
@@ -243,20 +315,44 @@ export default function EmployeeListScreen({ embedded = false }) {
           ItemSeparatorComponent={() => <View style={styles.separator} />}
         />
       )}
+
       {error && employees.length > 0 ? (
         <View style={styles.errorWrap}>
           <FieldError message={error} />
         </View>
       ) : null}
-      <View style={styles.footer}>
-        {canAddEmployee === false ? (
-          <View style={styles.limitNote}>
-            <AppText variant="caption" color="#9A5B12">
-              {`${subscription?.plan?.name || "Your plan"} allows ${subscription?.plan?.employeeLimit} active employees. Upgrade to add more.`}
+
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+        {planFull ? (
+          <>
+            <AppText variant="caption" color={colors.textSecondary} align="center">
+              {`Your ${subscription?.plan?.name || "current"} plan is full`}
             </AppText>
-          </View>
-        ) : null}
-        <AppButton label="Add Employee" onPress={openAddEmployee} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Upgrade to add employees"
+              onPress={openUpgrade}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+            >
+              <Ionicons name="sparkles-outline" size={18} color={colors.textInverse} />
+              <AppText variant="button" color={colors.textInverse}>
+                Upgrade to add employees
+              </AppText>
+            </Pressable>
+          </>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add employee"
+            onPress={openAddEmployee}
+            style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+          >
+            <Ionicons name="person-add-outline" size={18} color={colors.textInverse} />
+            <AppText variant="button" color={colors.textInverse}>
+              Add employee
+            </AppText>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -265,12 +361,13 @@ export default function EmployeeListScreen({ embedded = false }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: PAGE_BG,
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: HEADER,
     paddingHorizontal: spacing.lg,
-    paddingBottom: 36,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
+    backgroundColor: colors.background,
   },
   headerRow: {
     flexDirection: "row",
@@ -289,73 +386,105 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+    color: colors.text,
   },
   mark: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: "#F7F3EA",
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
-  toolbar: {
-    marginTop: -22,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    zIndex: 1,
-  },
-  search: {
+  searchRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    minHeight: 52,
+  },
+  search: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    minHeight: 48,
     paddingHorizontal: spacing.md,
     borderRadius: 16,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   searchInput: {
     flex: 1,
     minHeight: 44,
     color: colors.text,
-    fontSize: 16,
+    fontSize: 15,
   },
-  filters: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  filter: {
-    flex: 1,
-    minHeight: 40,
-    borderRadius: 999,
+  filterButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  filterSelected: {
-    backgroundColor: HEADER,
+  tabTrack: {
+    flexDirection: "row",
+    backgroundColor: "#EEF1F6",
+    borderRadius: 16,
+    padding: 4,
+    gap: 2,
+  },
+  tab: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabSelected: {
+    backgroundColor: colors.surface,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  tabLabel: {
+    fontWeight: "700",
   },
   list: {
     flex: 1,
-    marginTop: spacing.md,
   },
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
     flexGrow: 1,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+  sectionTitle: {
+    fontWeight: "700",
+    fontSize: 16,
+  },
   separator: {
     height: spacing.sm,
   },
   skeleton: {
     flex: 1,
-    marginTop: spacing.md,
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
   },
   skeletonRow: {
-    height: 72,
+    height: 104,
     borderRadius: 18,
     backgroundColor: colors.disabled,
   },
@@ -370,6 +499,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: 16,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   emptyIcon: {
     width: 56,
@@ -380,16 +511,76 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: spacing.xs,
   },
+  listFooter: {
+    gap: spacing.md,
+    marginTop: spacing.md,
+  },
+  planCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  planTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  planTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  planIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  planName: {
+    fontWeight: "700",
+  },
+  planCount: {
+    fontWeight: "600",
+  },
+  track: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#EEF2F7",
+    overflow: "hidden",
+  },
+  fill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+  },
+  planMessage: {
+    fontWeight: "700",
+  },
   footer: {
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
   },
-  limitNote: {
-    backgroundColor: "#FFF4E8",
-    borderRadius: 14,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  primaryButton: {
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  pressed: {
+    opacity: 0.9,
   },
 });

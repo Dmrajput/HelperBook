@@ -29,9 +29,9 @@ export default function RecentActivity({
   if (pendingLeave > 0) {
     items.push({
       id: "pending-leave",
-      type: "leave",
       title: "Pending leave",
       subtitle: `${pendingLeave} request${pendingLeave === 1 ? "" : "s"} to review`,
+      meta: "Review",
       icon: "calendar-outline",
       color: colors.warning,
       background: colors.warningBackground,
@@ -42,9 +42,10 @@ export default function RecentActivity({
   for (const payment of recentPayments.slice(0, 3)) {
     items.push({
       id: `pay-${payment.id}`,
-      type: "payment",
-      title: payment.employeeName,
-      subtitle: `${formatInr(payment.amount)} · ${methodLabel(payment.paymentMethod)} · ${paymentWhen(payment.paymentDate)}`,
+      title: "Salary paid",
+      subtitle: `${payment.employeeName} · ${methodLabel(payment.paymentMethod)}`,
+      amount: formatInr(payment.amount),
+      meta: paymentWhen(payment.paymentDate),
       icon: "wallet-outline",
       color: colors.primary,
       background: colors.primaryLight,
@@ -56,10 +57,10 @@ export default function RecentActivity({
     for (const employee of recentEmployees.slice(0, 4 - items.length)) {
       items.push({
         id: `emp-${employee.id}`,
-        type: "employee",
         title: employee.name,
-        subtitle: `${roleLabel(employee)} added`,
-        icon: "person-add-outline",
+        subtitle: `${roleLabel(employee)} · Employee record updated`,
+        meta: "Recently",
+        icon: "person-outline",
         color: colors.primary,
         background: colors.primaryLight,
         onPress: () => onPressEmployee(employee),
@@ -92,7 +93,7 @@ export default function RecentActivity({
               style={({ pressed }) => [styles.row, index > 0 && styles.divider, pressed && styles.pressed]}
             >
               <View style={[styles.icon, { backgroundColor: item.background }]}>
-                <Ionicons name={item.icon} size={15} color={item.color} />
+                <Ionicons name={item.icon} size={16} color={item.color} />
               </View>
               <View style={styles.copy}>
                 <AppText variant="label" numberOfLines={1} style={styles.title}>
@@ -102,7 +103,18 @@ export default function RecentActivity({
                   {item.subtitle}
                 </AppText>
               </View>
-              <Ionicons name="chevron-forward" size={14} color={colors.placeholder} />
+              <View style={styles.meta}>
+                {item.amount ? (
+                  <AppText variant="label" numberOfLines={1} style={styles.amount}>
+                    {item.amount}
+                  </AppText>
+                ) : null}
+                {item.meta ? (
+                  <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+                    {item.meta}
+                  </AppText>
+                ) : null}
+              </View>
             </Pressable>
           ))}
         </View>
@@ -117,7 +129,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
@@ -126,7 +138,7 @@ const styles = StyleSheet.create({
   },
   list: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
@@ -135,7 +147,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    minHeight: 48,
+    minHeight: 64,
     paddingVertical: spacing.sm,
   },
   divider: {
@@ -143,19 +155,28 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   icon: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   copy: {
     flex: 1,
     minWidth: 0,
-    gap: 1,
+    gap: 2,
   },
   title: {
     fontSize: 14,
+    fontWeight: "700",
+  },
+  meta: {
+    alignItems: "flex-end",
+    gap: 2,
+    maxWidth: "34%",
+  },
+  amount: {
+    fontWeight: "700",
   },
   pressed: {
     opacity: 0.88,

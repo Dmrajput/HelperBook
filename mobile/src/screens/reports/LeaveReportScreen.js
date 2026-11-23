@@ -25,8 +25,11 @@ const TREATMENTS = [
 export default function LeaveReportScreen() {
   return (
     <ReportBrowser
-      title="Leave Report"
-      description="Approved leave days inside the selected period."
+      title="Leave"
+      description="Approved and pending leave"
+      icon="sunny-outline"
+      iconColor="#EA580C"
+      iconBackground="#FFF7ED"
       loader={getLeaveReport}
       exportPdf={exportLeavePdf}
       exportExcel={exportLeaveExcel}

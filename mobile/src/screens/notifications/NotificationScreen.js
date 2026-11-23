@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
 import NotificationCard from "../../components/notifications/NotificationCard";
 import NotificationEmptyState from "../../components/notifications/NotificationEmptyState";
-import AppScreen from "../../components/AppScreen";
 import useNotifications from "../../hooks/useNotifications";
 import { colors, spacing } from "../../theme";
 import { formatAttendanceDate, shiftKey, todayKey } from "../../utils/attendanceFormat";
@@ -44,9 +45,11 @@ function groupLabel(key) {
 
 export default function NotificationScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { data, loading, refreshing, error, reload, markRead, markAllRead } = useNotifications();
   const [pageError, setPageError] = useState("");
   const items = data?.notifications || [];
+  const unreadCount = data?.unreadCount || 0;
   const groups = [];
   items.forEach((item) => {
     const label = groupLabel(dayKey(item.createdAt));
@@ -75,25 +78,74 @@ export default function NotificationScreen() {
   }
 
   return (
-    <AppScreen title="Notifications" subtitle="Shop alerts" icon="notifications">
+    <View style={styles.screen}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={styles.headerRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => navigation.goBack()}
+            style={styles.back}
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <View style={styles.headerCopy}>
+            <AppText variant="heading" accessibilityRole="header" style={styles.title}>
+              Notifications
+            </AppText>
+            <AppText variant="body" color={colors.textSecondary} numberOfLines={1}>
+              {unreadCount > 0 ? `${unreadCount} unread` : "Shop alerts"}
+            </AppText>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Notification settings"
+            onPress={() => navigation.navigate("NotificationSettings")}
+            style={styles.headerAction}
+          >
+            <Ionicons name="settings-outline" size={20} color={colors.info} />
+          </Pressable>
+        </View>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={colors.primary} />}
+        showsVerticalScrollIndicator={false}
       >
-        {data?.unreadCount > 0 ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Mark all as read" onPress={readAll} style={styles.back}>
+        {unreadCount > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Mark all as read"
+            onPress={readAll}
+            style={({ pressed }) => [styles.markAll, pressed && styles.pressed]}
+          >
+            <Ionicons name="checkmark-done-outline" size={16} color={colors.primary} />
             <AppText variant="label" color={colors.primary}>
               Mark all as read
             </AppText>
           </Pressable>
         ) : null}
-        {pageError ? <AppText color={colors.error}>{pageError}</AppText> : null}
-        {loading ? <ActivityIndicator color={colors.primary} /> : null}
+
+        {pageError ? (
+          <AppText variant="caption" color={colors.error}>
+            {pageError}
+          </AppText>
+        ) : null}
+        {loading && !data ? <ActivityIndicator color={colors.primary} /> : null}
         {error ? <ErrorView title="Unable to load notifications." message="Please try again." onRetry={reload} /> : null}
         {!loading && !error && items.length === 0 ? <NotificationEmptyState /> : null}
+
         {groups.map((group) => (
           <View key={group.label} style={styles.group}>
-            <AppText variant="subtitle">{group.label}</AppText>
+            <View style={styles.sectionHeader}>
+              <AppText variant="label" style={styles.sectionTitle}>
+                {group.label}
+              </AppText>
+              <AppText variant="caption" color={colors.textSecondary}>
+                {`${group.items.length}`}
+              </AppText>
+            </View>
             {group.items.map((item) => (
               <NotificationCard
                 key={item.id}
@@ -107,18 +159,85 @@ export default function NotificationScreen() {
             ))}
           </View>
         ))}
+
         {!loading && data?.pagination?.pages > 1 ? (
-          <AppText variant="caption" color={colors.textSecondary}>
+          <AppText variant="caption" color={colors.textSecondary} align="center">
             Showing page {data.pagination.page} of {data.pagination.pages}
           </AppText>
         ) : null}
       </ScrollView>
-    </AppScreen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xl },
-  back: { minHeight: 44, justifyContent: "center", alignSelf: "flex-start" },
-  group: { gap: spacing.sm },
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  back: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  title: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  headerAction: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.infoBackground,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  content: {
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  markAll: {
+    alignSelf: "flex-start",
+    minHeight: 40,
+    borderRadius: 999,
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  group: {
+    gap: spacing.sm,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sectionTitle: {
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  pressed: {
+    opacity: 0.9,
+  },
 });

@@ -9,11 +9,11 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import AppButton from "../../components/AppButton";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import FieldError from "../../components/FieldError";
-import ScreenContainer from "../../components/ScreenContainer";
 import { SETUP_STEPS } from "../../constants/shop";
 import { useAuth } from "../../context/AuthContext";
 import { useShop } from "../../context/ShopContext";
@@ -29,11 +29,21 @@ const TITLES = [
   "About you",
   "Shop address",
   "Working schedule",
-  "Add your shop logo",
+  "Shop logo",
   "Review your shop",
 ];
 
+const SUBTITLES = [
+  "Name and business type",
+  "Owner and contact details",
+  "Where your shop operates",
+  "Days and opening hours",
+  "Optional brand image",
+  "Confirm before creating",
+];
+
 export default function ShopSetupScreen() {
+  const insets = useSafeAreaInsets();
   const { user, logout, isLoggingOut } = useAuth();
   const { createShop, uploadLogo, adoptShop, fetchShop } = useShop();
   const [step, setStep] = useState(0);
@@ -133,7 +143,7 @@ export default function ShopSetupScreen() {
             return;
           }
         } catch {
-          // The message below is shown when the existing shop cannot be loaded.
+          // Existing shop cannot be loaded; form error is shown below.
         }
       }
       setFormError(error?.message || "Please check your information.");
@@ -144,40 +154,73 @@ export default function ShopSetupScreen() {
 
   if (success) {
     return (
-      <ScreenContainer centered>
-        <AppText variant="heading" align="center" accessibilityRole="header">
+      <View style={[styles.screen, styles.successScreen, { paddingTop: insets.top + spacing.xl }]}>
+        <View style={styles.successIcon}>
+          <Ionicons name="checkmark-circle" size={48} color={colors.success} />
+        </View>
+        <AppText variant="heading" align="center" accessibilityRole="header" style={styles.successTitle}>
           Shop created successfully!
         </AppText>
-      </ScreenContainer>
+        <AppText variant="body" color={colors.textSecondary} align="center">
+          Opening your dashboard...
+        </AppText>
+      </View>
     );
   }
 
   const loginNumber = formatIndianPhone(user?.phoneNumber);
 
   return (
-    <ScreenContainer>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <View style={styles.screen}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={styles.headerRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={step === 0 ? "Logout" : "Back"}
+            onPress={goBack}
+            style={styles.back}
+          >
+            <Ionicons name={step === 0 ? "log-out-outline" : "chevron-back"} size={22} color={colors.text} />
+          </Pressable>
+          <View style={styles.headerCopy}>
+            <AppText variant="heading" accessibilityRole="header" style={styles.title} numberOfLines={1}>
+              {TITLES[step]}
+            </AppText>
+            <AppText variant="body" color={colors.textSecondary} numberOfLines={1}>
+              {SUBTITLES[step]}
+            </AppText>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Logout"
+            onPress={confirmLeave}
+            disabled={isLoggingOut}
+            style={styles.headerAction}
+          >
+            <Ionicons name="close" size={20} color={colors.textSecondary} />
+          </Pressable>
+        </View>
+
         <View style={styles.progressRow}>
           <AppText variant="caption" color={colors.textSecondary}>
-            {step + 1} of {SETUP_STEPS}
+            Step {step + 1} of {SETUP_STEPS}
           </AppText>
-          <Pressable accessibilityRole="button" accessibilityLabel="Logout" onPress={confirmLeave} disabled={isLoggingOut}>
-            <AppText variant="caption" color={colors.primary}>
-              {isLoggingOut ? "Logging out..." : "Logout"}
-            </AppText>
-          </Pressable>
+          <AppText variant="caption" color={colors.primary} style={styles.progressPct}>
+            {Math.round(((step + 1) / SETUP_STEPS) * 100)}%
+          </AppText>
         </View>
         <View style={styles.track}>
           <View style={[styles.fill, { width: `${((step + 1) / SETUP_STEPS) * 100}%` }]} />
         </View>
+      </View>
+
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           style={styles.flex}
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <AppText variant="heading" accessibilityRole="header">
-            {TITLES[step]}
-          </AppText>
           {step === 0 ? (
             <View style={styles.section}>
               <AppText variant="body" color={colors.textSecondary}>
@@ -192,7 +235,9 @@ export default function ShopSetupScreen() {
                 maxLength={100}
               />
               <FieldError message={errors.name} />
-              <AppText variant="label">Business type</AppText>
+              <AppText variant="label" style={styles.fieldLabel}>
+                Business type
+              </AppText>
               <BusinessTypeScreen
                 selected={form.businessType}
                 onSelect={(businessType) => updateForm({ businessType })}
@@ -213,12 +258,18 @@ export default function ShopSetupScreen() {
               ) : null}
             </View>
           ) : null}
+
           {step === 1 ? (
             <View style={styles.section}>
-              <AppText variant="body">Login number</AppText>
-              <AppText variant="body" color={colors.textSecondary}>
-                {loginNumber}
-              </AppText>
+              <View style={styles.infoCard}>
+                <Ionicons name="call-outline" size={16} color={colors.info} />
+                <View style={styles.infoCopy}>
+                  <AppText variant="caption" color={colors.textSecondary}>
+                    Login number
+                  </AppText>
+                  <AppText variant="body">{loginNumber}</AppText>
+                </View>
+              </View>
               <AppTextInput
                 label="Your name"
                 value={form.ownerName}
@@ -257,6 +308,7 @@ export default function ShopSetupScreen() {
               <FieldError message={errors.shopEmail} />
             </View>
           ) : null}
+
           {step === 2 ? (
             <View style={styles.section}>
               <AppTextInput
@@ -305,9 +357,9 @@ export default function ShopSetupScreen() {
               <FieldError message={errors.pincode} />
             </View>
           ) : null}
-          {step === 3 ? (
-            <WorkingScheduleScreen form={form} onChange={updateForm} errors={errors} />
-          ) : null}
+
+          {step === 3 ? <WorkingScheduleScreen form={form} onChange={updateForm} errors={errors} /> : null}
+
           {step === 4 ? (
             <ShopLogoScreen
               logo={form.logo}
@@ -316,82 +368,235 @@ export default function ShopSetupScreen() {
               onError={setFormError}
             />
           ) : null}
+
           {step === 5 ? (
-            <View style={styles.section}>
-              <ReviewRow label="Shop" value={form.name.trim()} />
-              <ReviewRow label="Business" value={businessLabel(form)} />
-              <ReviewRow label="Owner" value={form.ownerName.trim()} />
-              <ReviewRow label="Phone" value={loginNumber} />
-              {form.shopPhone ? <ReviewRow label="Shop phone" value={formatIndianPhone(form.shopPhone)} /> : null}
-              <ReviewRow label="Address" value={formatAddress({
-                addressLine1: form.addressLine1.trim(),
-                addressLine2: form.addressLine2.trim(),
-                city: form.city.trim(),
-                state: form.state.trim(),
-                pincode: form.pincode.trim(),
-              })} />
-              <ReviewRow label="Working days" value={formatWorkingDays(form.workingDays)} />
-              <ReviewRow label="Working hours" value={`${formatTime(form.startTime)} – ${formatTime(form.endTime)}`} />
-              <ReviewRow label="Logo" value={form.logo?.uri ? "Added" : "Not added"} />
-              <ReviewRow label="Currency" value="₹ INR" />
+            <View style={styles.reviewCard}>
+              <ReviewRow icon="storefront-outline" label="Shop" value={form.name.trim()} />
+              <ReviewRow icon="briefcase-outline" label="Business" value={businessLabel(form)} />
+              <ReviewRow icon="person-outline" label="Owner" value={form.ownerName.trim()} />
+              <ReviewRow icon="call-outline" label="Phone" value={loginNumber} />
+              {form.shopPhone ? (
+                <ReviewRow icon="call-outline" label="Shop phone" value={formatIndianPhone(form.shopPhone)} />
+              ) : null}
+              <ReviewRow
+                icon="location-outline"
+                label="Address"
+                value={formatAddress({
+                  addressLine1: form.addressLine1.trim(),
+                  addressLine2: form.addressLine2.trim(),
+                  city: form.city.trim(),
+                  state: form.state.trim(),
+                  pincode: form.pincode.trim(),
+                })}
+              />
+              <ReviewRow icon="calendar-outline" label="Working days" value={formatWorkingDays(form.workingDays)} />
+              <ReviewRow
+                icon="time-outline"
+                label="Working hours"
+                value={`${formatTime(form.startTime)} – ${formatTime(form.endTime)}`}
+              />
+              <ReviewRow icon="image-outline" label="Logo" value={form.logo?.uri ? "Added" : "Not added"} last />
             </View>
           ) : null}
         </ScrollView>
-        {step === 5 && formError ? <FieldError message={formError} /> : null}
-        <View style={styles.footer}>
-          {step > 0 ? <AppButton label="Back" variant="secondary" onPress={goBack} disabled={submitting} /> : null}
-          {step < 4 ? <AppButton label="Continue" onPress={continueStep} /> : null}
-          {step === 4 ? (
-            <AppButton
-              label={form.logo?.uri ? "Continue" : "Skip for now"}
+
+        {step === 5 && formError ? (
+          <View style={styles.footerError}>
+            <FieldError message={formError} />
+          </View>
+        ) : null}
+
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+          {step > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              disabled={submitting}
+              onPress={goBack}
+              style={({ pressed }) => [styles.footerSecondary, pressed && !submitting && styles.pressed]}
+            >
+              <AppText variant="label" color={colors.primary}>
+                Back
+              </AppText>
+            </Pressable>
+          ) : null}
+
+          {step < 4 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Continue"
               onPress={continueStep}
-            />
+              style={({ pressed }) => [styles.footerPrimary, pressed && styles.pressed]}
+            >
+              <AppText variant="label" color={colors.textInverse}>
+                Continue
+              </AppText>
+              <Ionicons name="arrow-forward" size={18} color={colors.textInverse} />
+            </Pressable>
           ) : null}
+
+          {step === 4 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={form.logo?.uri ? "Continue" : "Skip for now"}
+              onPress={continueStep}
+              style={({ pressed }) => [styles.footerPrimary, pressed && styles.pressed]}
+            >
+              <AppText variant="label" color={colors.textInverse}>
+                {form.logo?.uri ? "Continue" : "Skip for now"}
+              </AppText>
+              <Ionicons name="arrow-forward" size={18} color={colors.textInverse} />
+            </Pressable>
+          ) : null}
+
           {step === 5 && pendingShop ? (
-            <AppButton label="Continue" onPress={() => adoptShop(pendingShop)} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Continue"
+              onPress={() => adoptShop(pendingShop)}
+              style={({ pressed }) => [styles.footerPrimary, pressed && styles.pressed]}
+            >
+              <AppText variant="label" color={colors.textInverse}>
+                Continue
+              </AppText>
+            </Pressable>
           ) : null}
+
           {step === 5 && !pendingShop ? (
             <>
-              <AppButton label="Edit" variant="secondary" onPress={() => setStep(0)} disabled={submitting} />
-              <AppButton
-                label={submitting ? "Creating your shop..." : "Create Shop"}
-                onPress={submitShop}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit"
                 disabled={submitting}
-              />
+                onPress={() => setStep(0)}
+                style={({ pressed }) => [styles.footerSecondary, pressed && !submitting && styles.pressed]}
+              >
+                <AppText variant="label" color={colors.primary}>
+                  Edit
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Create Shop"
+                accessibilityState={{ disabled: submitting, busy: submitting }}
+                disabled={submitting}
+                onPress={submitShop}
+                style={({ pressed }) => [
+                  styles.footerPrimary,
+                  pressed && !submitting && styles.pressed,
+                  submitting && styles.footerDisabled,
+                ]}
+              >
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={18}
+                  color={submitting ? colors.disabledText : colors.textInverse}
+                />
+                <AppText variant="label" color={submitting ? colors.disabledText : colors.textInverse}>
+                  {submitting ? "Creating..." : "Create Shop"}
+                </AppText>
+              </Pressable>
             </>
           ) : null}
         </View>
       </KeyboardAvoidingView>
-    </ScreenContainer>
+    </View>
   );
 }
 
-function ReviewRow({ label, value }) {
+function ReviewRow({ icon, label, value, last }) {
   return (
-    <View style={styles.reviewRow}>
-      <AppText variant="caption" color={colors.textSecondary}>
-        {label}
-      </AppText>
-      <AppText variant="body">{value}</AppText>
+    <View style={[styles.reviewRow, !last && styles.reviewBorder]}>
+      <View style={styles.reviewIcon}>
+        <Ionicons name={icon} size={16} color={colors.info} />
+      </View>
+      <View style={styles.reviewCopy}>
+        <AppText variant="caption" color={colors.textSecondary}>
+          {label}
+        </AppText>
+        <AppText variant="body">{value}</AppText>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   flex: {
     flex: 1,
+  },
+  successScreen: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  successIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 28,
+    backgroundColor: colors.successBackground,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  successTitle: {
+    fontWeight: "800",
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  back: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  title: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  headerAction: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
   progressRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: spacing.md,
+  },
+  progressPct: {
+    fontWeight: "700",
   },
   track: {
     height: 6,
     borderRadius: 999,
     backgroundColor: colors.disabled,
     marginTop: spacing.sm,
-    marginBottom: spacing.lg,
     overflow: "hidden",
   },
   fill: {
@@ -400,16 +605,95 @@ const styles = StyleSheet.create({
   },
   scroll: {
     gap: spacing.lg,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
   section: {
     gap: spacing.md,
   },
-  footer: {
+  fieldLabel: {
+    fontWeight: "700",
+  },
+  infoCard: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
-    paddingTop: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+  },
+  infoCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  reviewCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
   },
   reviewRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  reviewBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  reviewIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: colors.infoBackground,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  reviewCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  footerError: {
+    paddingHorizontal: spacing.lg,
+  },
+  footer: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    backgroundColor: colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  footerSecondary: {
+    flex: 1,
+    minHeight: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  footerPrimary: {
+    flex: 1.4,
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.xs,
+  },
+  footerDisabled: {
+    backgroundColor: colors.disabled,
+  },
+  pressed: {
+    opacity: 0.88,
   },
 });

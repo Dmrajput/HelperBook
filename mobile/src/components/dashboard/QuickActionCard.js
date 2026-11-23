@@ -28,12 +28,12 @@ export default function QuickActionCard({
       ]}
     >
       <View style={[styles.iconWrap, compact && styles.iconWrapCompact, { backgroundColor: iconBackground }]}>
-        <Ionicons name={icon} size={compact ? 20 : 22} color={iconColor} />
+        <Ionicons name={icon} size={compact ? 22 : 22} color={iconColor} />
       </View>
       <AppText
         variant="label"
-        numberOfLines={compact ? 1 : 2}
-        style={styles.title}
+        numberOfLines={compact ? 2 : 2}
+        style={[styles.title, compact && styles.titleCompact]}
         align={compact ? "center" : "left"}
       >
         {title}
@@ -61,10 +61,10 @@ const styles = StyleSheet.create({
   compact: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    minHeight: 72,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: 4,
+    gap: 8,
+    minHeight: 96,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   pressed: {
     opacity: 0.9,
@@ -80,12 +80,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   iconWrapCompact: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
   },
   title: {
     fontSize: 12,
     lineHeight: 15,
+  },
+  titleCompact: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "700",
   },
 });

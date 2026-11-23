@@ -8,7 +8,7 @@ import AttendanceSummary from "../../components/dashboard/AttendanceSummary";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import DashboardSkeleton from "../../components/dashboard/DashboardSkeleton";
 import FinancialSummary from "../../components/dashboard/FinancialSummary";
-// import QuickActions from "../../components/dashboard/QuickActions";
+import QuickActions from "../../components/dashboard/QuickActions";
 import RecentActivity from "../../components/dashboard/RecentActivity";
 import TeamCard from "../../components/dashboard/TeamCard";
 import { useUnreadCount } from "../../hooks/useNotifications";
@@ -92,31 +92,33 @@ export default function DashboardScreen({
           {isLoading && !data ? <DashboardSkeleton /> : null}
           {data ? (
             <>
-              <TeamCard
-                active={active}
-                inactive={inactive}
-                attendance={data.attendance}
-                onAdd={openAddEmployee}
-                onPressEmployees={openEmployees}
-              />
+              {!hasActiveEmployees ? (
+                <TeamCard
+                  active={active}
+                  inactive={inactive}
+                  attendance={data.attendance}
+                  onAdd={openAddEmployee}
+                  onPressEmployees={openEmployees}
+                />
+              ) : (
+                <AttendanceSummary
+                  attendance={data.attendance}
+                  timeZone={timeZone}
+                  activeCount={active}
+                  onPress={openAttendance}
+                />
+              )}
               {hasActiveEmployees ? (
-                <>
-                  <AttendanceSummary
-                    attendance={data.attendance}
-                    timeZone={timeZone}
-                    onPress={openAttendance}
-                  />
-                  <FinancialSummary
-                    salary={data.salary}
-                    advance={data.advance}
-                    timeZone={timeZone}
-                    onPressSalary={() => navigation.navigate("Salary", { paymentFilter: "unpaid" })}
-                    onPressAdvance={() => navigation.navigate("AdvanceOverview")}
-                    onViewDetails={() => navigation.navigate("Salary")}
-                  />
-                </>
+                <FinancialSummary
+                  salary={data.salary}
+                  advance={data.advance}
+                  timeZone={timeZone}
+                  onPressSalary={() => navigation.navigate("Salary", { paymentFilter: "unpaid" })}
+                  onPressAdvance={() => navigation.navigate("AdvanceOverview")}
+                  onViewDetails={() => navigation.navigate("Salary")}
+                />
               ) : null}
-              {/* <QuickActions activeCount={active} /> */}
+              <QuickActions activeCount={active} />
               {hasEmployees ? (
                 <RecentActivity
                   recentPayments={data.recentPayments || []}
@@ -147,12 +149,12 @@ const styles = StyleSheet.create({
     backgroundColor: PAGE_BG,
   },
   content: {
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   body: {
-    paddingTop: spacing.md,
+    paddingTop: spacing.sm,
     paddingHorizontal: spacing.lg,
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   centered: {
     flex: 1,
@@ -160,4 +162,3 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
 });
-

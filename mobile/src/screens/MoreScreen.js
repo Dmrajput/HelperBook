@@ -8,10 +8,17 @@ import { requestOwnerAccountDeletion } from "../services/accountService";
 import { useShop } from "../context/ShopContext";
 import { colors, spacing } from "../theme";
 
-const PAGE_BG = colors.background;
-const HEADER = colors.primary;
-
-function MenuRow({ icon, iconColor, iconBackground, title, subtitle, onPress, danger = false, loading = false, disabled = false }) {
+function MenuRow({
+  icon,
+  iconColor,
+  iconBackground,
+  title,
+  subtitle,
+  onPress,
+  danger = false,
+  loading = false,
+  disabled = false,
+}) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -25,7 +32,7 @@ function MenuRow({ icon, iconColor, iconBackground, title, subtitle, onPress, da
         <Ionicons name={icon} size={18} color={iconColor} />
       </View>
       <View style={styles.copy}>
-        <AppText variant="label" color={danger ? colors.error : colors.text} numberOfLines={1}>
+        <AppText variant="label" color={danger ? colors.error : colors.text} numberOfLines={1} style={styles.rowTitle}>
           {title}
         </AppText>
         {subtitle ? (
@@ -36,8 +43,8 @@ function MenuRow({ icon, iconColor, iconBackground, title, subtitle, onPress, da
       </View>
       {loading ? (
         <ActivityIndicator color={colors.primary} />
-      ) : danger ? null : (
-        <Ionicons name="chevron-forward" size={16} color={colors.placeholder} />
+      ) : (
+        <Ionicons name="chevron-forward" size={16} color={danger ? colors.error : colors.placeholder} />
       )}
     </Pressable>
   );
@@ -46,7 +53,7 @@ function MenuRow({ icon, iconColor, iconBackground, title, subtitle, onPress, da
 function MenuCard({ title, items }) {
   return (
     <View style={styles.section}>
-      <AppText variant="label" color={colors.textSecondary} style={styles.sectionTitle}>
+      <AppText variant="caption" color={colors.textSecondary} style={styles.sectionTitle}>
         {title}
       </AppText>
       <View style={styles.card}>
@@ -67,7 +74,9 @@ export default function MoreScreen() {
   const { logout, isLoggingOut, user } = useAuth();
   const { shop } = useShop();
   const shopName = shop?.name || "Your shop";
-  const ownerName = user?.fullName || "";
+  const ownerName = String(user?.fullName || "").trim();
+  const firstName = ownerName.split(/\s+/)[0] || "Owner";
+  const initial = (firstName.charAt(0) || "H").toUpperCase();
 
   const requestDeletion = () => {
     Alert.alert(
@@ -100,7 +109,7 @@ export default function MoreScreen() {
     {
       title: "Salary",
       subtitle: "Calculate and pay staff",
-      icon: "wallet",
+      icon: "wallet-outline",
       iconColor: colors.success,
       iconBackground: colors.successBackground,
       onPress: () => navigation.navigate("Salary"),
@@ -108,15 +117,15 @@ export default function MoreScreen() {
     {
       title: "Leave",
       subtitle: "Review staff leave",
-      icon: "calendar",
-      iconColor: colors.warning,
-      iconBackground: colors.warningBackground,
+      icon: "calendar-outline",
+      iconColor: "#EA580C",
+      iconBackground: "#FFF7ED",
       onPress: () => navigation.navigate("Leave"),
     },
     {
       title: "Advance / Khata",
       subtitle: "Track employee advances",
-      icon: "book",
+      icon: "book-outline",
       iconColor: colors.secondary,
       iconBackground: colors.secondaryLight,
       onPress: () => navigation.navigate("AdvanceOverview"),
@@ -124,26 +133,26 @@ export default function MoreScreen() {
     {
       title: "Reports",
       subtitle: "Attendance, salary and more",
-      icon: "bar-chart",
-      iconColor: colors.error,
-      iconBackground: colors.errorBackground,
+      icon: "bar-chart-outline",
+      iconColor: "#DB2777",
+      iconBackground: "#FCE7F3",
       onPress: () => navigation.navigate("Reports"),
     },
   ];
 
-  const shopItems = [
+  const workplace = [
     {
       title: "Shop profile",
       subtitle: shop?.name || "View shop details",
-      icon: "storefront",
+      icon: "storefront-outline",
       iconColor: colors.info,
       iconBackground: colors.infoBackground,
       onPress: () => navigation.navigate("ShopProfile"),
     },
     {
-      title: "Sick leave",
+      title: "Sick leave settings",
       subtitle: "Paid or unpaid in salary",
-      icon: "medkit",
+      icon: "medkit-outline",
       iconColor: colors.warning,
       iconBackground: colors.warningBackground,
       onPress: () => navigation.navigate("ShopSettings"),
@@ -151,9 +160,9 @@ export default function MoreScreen() {
     {
       title: "Notifications",
       subtitle: "Recent alerts",
-      icon: "notifications",
-      iconColor: colors.accent,
-      iconBackground: colors.accentLight,
+      icon: "notifications-outline",
+      iconColor: colors.info,
+      iconBackground: colors.infoBackground,
       onPress: () => navigation.navigate("Notifications"),
     },
   ];
@@ -162,58 +171,71 @@ export default function MoreScreen() {
     {
       title: "Subscription",
       subtitle: "Plan and billing",
-      icon: "ribbon",
-      iconColor: colors.secondary,
-      iconBackground: colors.secondaryLight,
+      icon: "ribbon-outline",
+      iconColor: colors.primary,
+      iconBackground: colors.primaryLight,
       onPress: () => navigation.navigate("Subscription"),
+    },
+    {
+      title: isLoggingOut ? "Logging out..." : "Log out",
+      subtitle: "Sign out of this shop",
+      icon: "log-out-outline",
+      iconColor: colors.textSecondary,
+      iconBackground: "#F1F5F9",
+      onPress: logout,
+      loading: isLoggingOut,
+    },
+    {
+      title: "Delete account",
+      subtitle: "Request account removal",
+      icon: "trash-outline",
+      iconColor: colors.error,
+      iconBackground: colors.errorBackground,
+      onPress: requestDeletion,
+      danger: true,
     },
   ];
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerCopy}>
-            <AppText variant="heading" color={colors.textInverse} accessibilityRole="header" style={styles.title}>
-              More
-            </AppText>
-            <AppText variant="caption" color={colors.primaryLight} numberOfLines={1}>
-              {ownerName ? `${ownerName} · ${shopName}` : shopName}
-            </AppText>
-          </View>
-          <View style={styles.mark} accessibilityElementsHidden>
-            <Ionicons name="grid" size={24} color={colors.primary} />
-          </View>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.sm }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerCopy}>
+          <AppText variant="heading" accessibilityRole="header" style={styles.title}>
+            More
+          </AppText>
+          <AppText variant="body" color={colors.textSecondary}>
+            Manage your workplace and account
+          </AppText>
         </View>
-      </View>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.body}>
-          <MenuCard title="Work" items={work} />
-          <MenuCard title="Shop" items={shopItems} />
-          <MenuCard title="Account" items={account} />
-          <View style={styles.card}>
-            <MenuRow
-              title="Delete account"
-              subtitle="Request removal of this owner account"
-              icon="trash-outline"
-              iconColor={colors.error}
-              iconBackground={colors.errorBackground}
-              onPress={requestDeletion}
-              danger
-            />
-            <View style={styles.divider} />
-            <MenuRow
-              title={isLoggingOut ? "Logging out..." : "Log out"}
-              subtitle="Sign out of this shop"
-              icon="log-out-outline"
-              iconColor={colors.error}
-              iconBackground={colors.errorBackground}
-              onPress={logout}
-              danger
-              loading={isLoggingOut}
-            />
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${firstName}, ${shopName}`}
+          onPress={() => navigation.navigate("ShopProfile")}
+          style={({ pressed }) => [styles.profileCard, pressed && styles.pressed]}
+        >
+          <View style={styles.avatar}>
+            <AppText variant="label" color={colors.primary} style={styles.avatarText}>
+              {initial}
+            </AppText>
           </View>
-        </View>
+          <View style={styles.profileCopy}>
+            <AppText variant="label" numberOfLines={1} style={styles.profileName}>
+              {firstName}
+            </AppText>
+            <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+              {shopName}
+            </AppText>
+          </View>
+          <Ionicons name="chevron-down" size={18} color={colors.placeholder} />
+        </Pressable>
+
+        <MenuCard title="Work" items={work} />
+        <MenuCard title="Workplace" items={workplace} />
+        <MenuCard title="Account" items={account} />
       </ScrollView>
     </View>
   );
@@ -222,42 +244,53 @@ export default function MoreScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: PAGE_BG,
+    backgroundColor: colors.background,
   },
-  header: {
-    backgroundColor: HEADER,
+  content: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
+    paddingBottom: spacing.xxl,
+    gap: spacing.lg,
   },
   headerCopy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
+    gap: 4,
   },
   title: {
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+    color: colors.text,
   },
-  mark: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  profileCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
-  content: {
-    paddingBottom: spacing.lg,
+  avatarText: {
+    fontWeight: "800",
+    fontSize: 18,
   },
-  body: {
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
+  profileCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  profileName: {
+    fontSize: 16,
+    fontWeight: "700",
   },
   section: {
     gap: spacing.sm,
@@ -265,26 +298,30 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginLeft: spacing.xs,
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.8,
+    fontWeight: "700",
+    fontSize: 11,
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: spacing.md,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    minHeight: 52,
+    minHeight: 64,
     paddingVertical: spacing.sm,
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.88,
   },
   icon: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -294,9 +331,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 2,
   },
+  rowTitle: {
+    fontWeight: "700",
+  },
   divider: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
-    marginLeft: 48,
+    marginLeft: 52,
   },
 });

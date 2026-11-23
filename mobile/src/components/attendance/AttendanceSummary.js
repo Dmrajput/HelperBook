@@ -1,37 +1,12 @@
 import { StyleSheet, View } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
 
 const TILES = [
-  {
-    key: "present",
-    label: "Present",
-    color: colors.success,
-    background: colors.successBackground,
-    icon: "people",
-  },
-  {
-    key: "absent",
-    label: "Absent",
-    color: colors.error,
-    background: colors.errorBackground,
-    icon: "person-remove",
-  },
-  {
-    key: "halfDay",
-    label: "Half Day",
-    color: "#B45309",
-    background: colors.warningBackground,
-    icon: "time",
-  },
-  {
-    key: "leave",
-    label: "Leave",
-    color: colors.info,
-    background: colors.infoBackground,
-    icon: "airplane",
-  },
+  { key: "present", label: "Present", color: colors.success },
+  { key: "absent", label: "Absent", color: colors.error },
+  { key: "halfDay", label: "Half day", color: colors.warning },
+  { key: "leave", label: "Leave", color: colors.info },
 ];
 
 export default function AttendanceSummary({ summary }) {
@@ -40,18 +15,16 @@ export default function AttendanceSummary({ summary }) {
   }
 
   return (
-    <View style={styles.row}>
-      {TILES.map((tile) => (
-        <View key={tile.key} style={[styles.tile, { backgroundColor: tile.background }]}>
-          <View style={[styles.iconWrap, { backgroundColor: "#FFFFFF" }]}>
-            <Ionicons name={tile.icon} size={14} color={tile.color} />
+    <View style={styles.card}>
+      {TILES.map((tile, index) => (
+        <View key={tile.key} style={[styles.tile, index > 0 && styles.divider]}>
+          <View style={styles.labelRow}>
+            <View style={[styles.dot, { backgroundColor: tile.color }]} />
+            <AppText variant="caption" color={colors.textSecondary} numberOfLines={1} style={styles.label}>
+              {tile.label}
+            </AppText>
           </View>
-          <AppText variant="subtitle" color={tile.color} style={styles.value}>
-            {String(summary[tile.key] ?? 0)}
-          </AppText>
-          <AppText variant="caption" color={tile.color} numberOfLines={1} style={styles.label}>
-            {tile.label}
-          </AppText>
+          <AppText style={styles.value}>{String(summary[tile.key] ?? 0)}</AppText>
         </View>
       ))}
     </View>
@@ -59,36 +32,43 @@ export default function AttendanceSummary({ summary }) {
 }
 
 const styles = StyleSheet.create({
-  row: {
+  card: {
     flexDirection: "row",
-    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
   },
   tile: {
     flex: 1,
     minWidth: 0,
-    borderRadius: 16,
-    paddingVertical: spacing.md,
+    alignItems: "center",
+    gap: 6,
     paddingHorizontal: spacing.xs,
-    alignItems: "center",
-    gap: 4,
   },
-  iconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 2,
+  divider: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: colors.border,
   },
-  value: {
-    fontWeight: "700",
-    fontSize: 20,
-    lineHeight: 24,
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   label: {
     fontSize: 11,
-    lineHeight: 14,
     fontWeight: "600",
-    opacity: 0.9,
+  },
+  value: {
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: "800",
+    color: colors.text,
   },
 });

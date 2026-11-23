@@ -10,11 +10,10 @@ import {
   View,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import AppButton from "../../components/AppButton";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../../components/AppText";
 import AppTextInput from "../../components/AppTextInput";
 import FieldError from "../../components/FieldError";
-import AppScreen from "../../components/AppScreen";
 import { useShop } from "../../context/ShopContext";
 import { colors, spacing } from "../../theme";
 import { pickShopLogo } from "../../utils/pickShopLogo";
@@ -32,7 +31,7 @@ import WorkingScheduleScreen from "./WorkingScheduleScreen";
 function Section({ title, children }) {
   return (
     <View style={styles.section}>
-      <AppText variant="label" color={colors.textSecondary} style={styles.sectionTitle}>
+      <AppText variant="caption" color={colors.textSecondary} style={styles.sectionTitle}>
         {title}
       </AppText>
       <View style={styles.card}>{children}</View>
@@ -47,7 +46,7 @@ function InfoRow({ icon, label, value }) {
   return (
     <View style={styles.infoRow}>
       <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={16} color={colors.primary} />
+        <Ionicons name={icon} size={16} color={colors.info} />
       </View>
       <View style={styles.infoCopy}>
         <AppText variant="caption" color={colors.textSecondary}>
@@ -59,7 +58,35 @@ function InfoRow({ icon, label, value }) {
   );
 }
 
+function ScreenHeader({ title, subtitle, onBack, onAction, actionIcon = "create-outline" }) {
+  return (
+    <View style={styles.headerRow}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={styles.back}>
+        <Ionicons name="chevron-back" size={22} color={colors.text} />
+      </Pressable>
+      <View style={styles.headerCopy}>
+        <AppText variant="heading" accessibilityRole="header" style={styles.title}>
+          {title}
+        </AppText>
+        <AppText variant="body" color={colors.textSecondary} numberOfLines={1}>
+          {subtitle}
+        </AppText>
+      </View>
+      {onAction ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Edit shop" onPress={onAction} style={styles.headerAction}>
+          <Ionicons name={actionIcon} size={20} color={colors.info} />
+        </Pressable>
+      ) : (
+        <View style={styles.headerAction}>
+          <Ionicons name="storefront-outline" size={20} color={colors.info} />
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function ShopProfileScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { shop, updateShop, uploadLogo, removeLogo } = useShop();
   const openedForEdit = Boolean(route?.params?.edit);
   const [editing, setEditing] = useState(openedForEdit);
@@ -77,17 +104,28 @@ export default function ShopProfileScreen({ navigation, route }) {
 
   if (!shop) {
     return (
-      <AppScreen title="Shop profile" subtitle="Set up your shop first" icon="storefront">
-        <View style={styles.empty}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="storefront-outline" size={28} color={colors.primary} />
-          </View>
-          <AppText variant="subtitle" align="center">No shop yet</AppText>
-          <AppText variant="body" color={colors.textSecondary} align="center">
-            Create your shop to see its profile.
-          </AppText>
+      <View style={styles.screen}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+          <ScreenHeader
+            title="Shop profile"
+            subtitle="Set up your shop first"
+            onBack={() => navigation.goBack()}
+          />
         </View>
-      </AppScreen>
+        <View style={styles.emptyWrap}>
+          <View style={styles.empty}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="storefront-outline" size={28} color={colors.info} />
+            </View>
+            <AppText variant="subtitle" align="center">
+              No shop yet
+            </AppText>
+            <AppText variant="body" color={colors.textSecondary} align="center">
+              Create your shop to see its profile.
+            </AppText>
+          </View>
+        </View>
+      </View>
     );
   }
 
@@ -178,18 +216,36 @@ export default function ShopProfileScreen({ navigation, route }) {
   const shopPhone = shop.contact?.shopPhone ? formatIndianPhone(shop.contact.shopPhone) : "";
 
   return (
-    <AppScreen title={editing ? "Edit shop" : "Shop profile"} subtitle={shop.name} icon="storefront">
+    <View style={styles.screen}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <ScreenHeader
+          title={editing ? "Edit shop" : "Shop profile"}
+          subtitle={shop.name}
+          onBack={() => (editing ? cancelEdit() : navigation.goBack())}
+          onAction={editing ? undefined : () => setEditing(true)}
+          actionIcon="create-outline"
+        />
+      </View>
+
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.hero}>
             {shop.logo?.url ? (
               <Image source={{ uri: shop.logo.url }} style={styles.logo} accessibilityLabel="Shop logo" />
             ) : (
               <View style={styles.placeholder} accessibilityLabel="Shop logo">
-                <AppText variant="heading" color={colors.primary}>{initial}</AppText>
+                <AppText variant="heading" color={colors.info}>
+                  {initial}
+                </AppText>
               </View>
             )}
-            <AppText variant="subtitle" align="center">{shop.name}</AppText>
+            <AppText variant="subtitle" align="center" style={styles.shopName}>
+              {shop.name}
+            </AppText>
             <AppText variant="caption" color={colors.textSecondary} align="center">
               {businessLabel(shop)}
             </AppText>
@@ -202,8 +258,10 @@ export default function ShopProfileScreen({ navigation, route }) {
                   onPress={() => changeLogo("gallery")}
                   style={styles.logoAction}
                 >
-                  <Ionicons name="image-outline" size={16} color={colors.primary} />
-                  <AppText variant="caption" color={colors.primary}>Gallery</AppText>
+                  <Ionicons name="image-outline" size={16} color={colors.info} />
+                  <AppText variant="caption" color={colors.info}>
+                    Gallery
+                  </AppText>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
@@ -212,8 +270,10 @@ export default function ShopProfileScreen({ navigation, route }) {
                   onPress={() => changeLogo("camera")}
                   style={styles.logoAction}
                 >
-                  <Ionicons name="camera-outline" size={16} color={colors.primary} />
-                  <AppText variant="caption" color={colors.primary}>Camera</AppText>
+                  <Ionicons name="camera-outline" size={16} color={colors.info} />
+                  <AppText variant="caption" color={colors.info}>
+                    Camera
+                  </AppText>
                 </Pressable>
                 {shop.logo?.url ? (
                   <Pressable
@@ -224,7 +284,9 @@ export default function ShopProfileScreen({ navigation, route }) {
                     style={styles.logoAction}
                   >
                     <Ionicons name="trash-outline" size={16} color={colors.error} />
-                    <AppText variant="caption" color={colors.error}>Remove</AppText>
+                    <AppText variant="caption" color={colors.error}>
+                      Remove
+                    </AppText>
                   </Pressable>
                 ) : null}
               </View>
@@ -332,7 +394,9 @@ export default function ShopProfileScreen({ navigation, route }) {
               </Section>
               <Section title="Hours">
                 <WorkingScheduleScreen form={form} onChange={updateForm} errors={errors} />
-                <AppText variant="caption" color={colors.textSecondary}>Currency ₹ INR</AppText>
+                <AppText variant="caption" color={colors.textSecondary}>
+                  Currency ₹ INR
+                </AppText>
               </Section>
             </>
           ) : (
@@ -357,41 +421,123 @@ export default function ShopProfileScreen({ navigation, route }) {
           )}
           <FieldError message={formError} />
         </ScrollView>
-        <View style={styles.footer}>
+
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
           {editing ? (
             <>
-              <AppButton label={openedForEdit ? "Back" : "Cancel"} variant="secondary" onPress={cancelEdit} disabled={saving} />
-              <AppButton label={saving ? "Saving..." : "Save"} onPress={saveShop} disabled={saving || Boolean(logoState)} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={openedForEdit ? "Back" : "Cancel"}
+                disabled={saving}
+                onPress={cancelEdit}
+                style={({ pressed }) => [styles.footerSecondary, pressed && !saving && styles.pressed]}
+              >
+                <AppText variant="label" color={colors.primary}>
+                  {openedForEdit ? "Back" : "Cancel"}
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Save shop"
+                accessibilityState={{ disabled: saving || Boolean(logoState), busy: saving }}
+                disabled={saving || Boolean(logoState)}
+                onPress={saveShop}
+                style={({ pressed }) => [
+                  styles.footerPrimary,
+                  pressed && !saving && styles.pressed,
+                  (saving || logoState) && styles.footerDisabled,
+                ]}
+              >
+                <Ionicons name="save-outline" size={18} color={saving || logoState ? colors.disabledText : colors.textInverse} />
+                <AppText variant="label" color={saving || logoState ? colors.disabledText : colors.textInverse}>
+                  {saving ? "Saving..." : "Save"}
+                </AppText>
+              </Pressable>
             </>
           ) : (
-            <AppButton label="Edit shop" onPress={() => setEditing(true)} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit shop"
+              onPress={() => setEditing(true)}
+              style={({ pressed }) => [styles.footerPrimary, pressed && styles.pressed]}
+            >
+              <Ionicons name="create-outline" size={18} color={colors.textInverse} />
+              <AppText variant="label" color={colors.textInverse}>
+                Edit shop
+              </AppText>
+            </Pressable>
           )}
         </View>
       </KeyboardAvoidingView>
-    </AppScreen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   flex: {
     flex: 1,
   },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  back: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  title: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  headerAction: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.infoBackground,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   scroll: {
     gap: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
+  },
+  emptyWrap: {
+    paddingHorizontal: spacing.lg,
   },
   empty: {
     alignItems: "center",
     gap: spacing.sm,
     padding: spacing.xl,
     borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
     backgroundColor: colors.surface,
   },
   emptyIcon: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.infoBackground,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.xs,
@@ -401,6 +547,8 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: colors.surface,
     borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.lg,
   },
   logo: {
@@ -413,10 +561,13 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 24,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.infoBackground,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.sm,
+  },
+  shopName: {
+    fontWeight: "700",
   },
   logoActions: {
     flexDirection: "row",
@@ -439,10 +590,13 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
     textTransform: "uppercase",
     letterSpacing: 0.4,
+    fontWeight: "700",
   },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.md,
     gap: spacing.md,
   },
@@ -455,7 +609,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.infoBackground,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -467,5 +621,33 @@ const styles = StyleSheet.create({
   footer: {
     gap: spacing.sm,
     paddingTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  footerSecondary: {
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  footerPrimary: {
+    minHeight: 52,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  footerDisabled: {
+    backgroundColor: colors.disabled,
+  },
+  pressed: {
+    opacity: 0.9,
   },
 });

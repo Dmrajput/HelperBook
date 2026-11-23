@@ -81,7 +81,13 @@ export default function MainTabs() {
                 onPress={() => setTab(item.key)}
                 style={[styles.tab, selected && styles.tabSelected]}
               >
-                <Ionicons name={selected ? item.icon : `${item.icon}-outline`} size={18} color={selected ? colors.primary : colors.textSecondary} />
+                <View style={[styles.iconWrap, selected && styles.iconWrapSelected]}>
+                  <Ionicons
+                    name={selected ? item.icon : `${item.icon}-outline`}
+                    size={18}
+                    color={selected ? colors.primary : colors.textSecondary}
+                  />
+                </View>
                 <AppText
                   variant="label"
                   color={selected ? colors.primary : colors.textSecondary}
@@ -128,18 +134,27 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 52,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 14,
-    gap: 1,
+    gap: 2,
     paddingVertical: 4,
   },
-  tabSelected: {
+  tabSelected: {},
+  iconWrap: {
+    width: 36,
+    height: 28,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconWrapSelected: {
     backgroundColor: colors.primaryLight,
   },
   tabLabel: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "600",
   },
 });

@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppText from "../../components/AppText";
 import ErrorView from "../../components/ErrorView";
-import AppScreen from "../../components/AppScreen";
 import BillingIntervalToggle from "../../components/subscription/BillingIntervalToggle";
 import CurrentPlanCard from "../../components/subscription/CurrentPlanCard";
 import PlanCard from "../../components/subscription/PlanCard";
@@ -28,15 +28,28 @@ function requestId() {
 }
 
 export default function SubscriptionScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { subscription, plans, loading, error, refreshSubscription } = useSubscription();
   const [interval, setInterval] = useState("monthly");
   const [busy, setBusy] = useState("");
   const [checkout, setCheckout] = useState(null);
   const [paymentState, setPaymentState] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   const orderedPlans = useMemo(() => sortPlans(plans), [plans]);
   const yearlyAvailable = plans.some((plan) => plan.yearlyAvailable);
   const maxSave = maxYearlySavePercent(plans);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await refreshSubscription();
+    } catch (refreshError) {
+      Alert.alert("Subscription", refreshError.message || "Unable to refresh subscription.");
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function runChange(plan) {
     if (busy) return;
@@ -181,90 +194,154 @@ export default function SubscriptionScreen({ navigation }) {
   }
 
   return (
-    <AppScreen title="Subscription" subtitle="Plan and billing" icon="ribbon">
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loading ? <ActivityIndicator color={colors.primary} /> : null}
-        {error ? (
-          <ErrorView
-            title="Unable to verify your subscription."
-            message="Please check your internet connection and try again."
-            onRetry={refreshSubscription}
-          />
-        ) : null}
-        {paymentState ? <AppText variant="body">{paymentState}</AppText> : null}
-        {subscription?.status === "expired" ? (
-          <View style={styles.notice}>
-            <AppText variant="body">Your subscription has expired.</AppText>
-            <AppText variant="body" color={colors.textSecondary}>
-              You're currently on the Free plan.
+    <View style={styles.screen}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={styles.headerRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => navigation.goBack()}
+            style={styles.back}
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <View style={styles.headerCopy}>
+            <AppText variant="heading" accessibilityRole="header" style={styles.title}>
+              Subscription
+            </AppText>
+            <AppText variant="body" color={colors.textSecondary} numberOfLines={1}>
+              Plan and billing
             </AppText>
           </View>
-        ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Payment history"
+            onPress={() => navigation.navigate("PaymentHistory")}
+            style={styles.headerAction}
+          >
+            <Ionicons name="time-outline" size={20} color={colors.primary} />
+          </Pressable>
+        </View>
+      </View>
 
-        <TrialBanner subscription={subscription} />
-        <CurrentPlanCard
-          subscription={subscription}
-          busy={busy}
-          onCancel={cancelPlan}
-          onResume={resumePlan}
-        />
-
-        <AppText variant="subtitle">Choose a plan</AppText>
-        <BillingIntervalToggle
-          value={interval}
-          onChange={setInterval}
-          maxSavePercent={yearlyAvailable ? maxSave : 0}
-        />
-        {!yearlyAvailable ? (
-          <AppText variant="caption" color={colors.textSecondary}>
-            Yearly billing can be enabled from admin plan pricing. Monthly plans are available now.
-          </AppText>
-        ) : null}
-
-        {orderedPlans.map((plan) => {
-          const current =
-            subscription &&
-            !subscription.isTrial &&
-            subscription.status !== "expired" &&
-            subscription.plan.id === plan.id &&
-            (plan.id === "free" || subscription.billingInterval === interval);
-          return (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              interval={interval}
-              current={current}
-              actionLabel={actionLabel(plan, current)}
-              disabled={Boolean(busy) || current}
-              onPress={() => confirmPlan(plan)}
+      <View style={styles.flex}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {loading && !subscription ? <ActivityIndicator color={colors.primary} /> : null}
+          {error ? (
+            <ErrorView
+              title="Unable to verify your subscription."
+              message="Please check your internet connection and try again."
+              onRetry={refreshSubscription}
             />
-          );
-        })}
+          ) : null}
 
-        <PlanFeaturesRow />
-        <PlanComparison plans={orderedPlans} />
+          {paymentState ? (
+            <View style={styles.paymentState}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <AppText variant="caption" color={colors.primary}>
+                {paymentState}
+              </AppText>
+            </View>
+          ) : null}
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate("PaymentHistory")}
-          style={({ pressed }) => [styles.historyBtn, pressed && styles.pressed]}
-        >
-          <Ionicons name="time-outline" size={18} color={colors.primary} />
-          <AppText variant="label" color={colors.primary}>
-            Payment History
-          </AppText>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate("SubscriptionHistory")}
-          style={({ pressed }) => [styles.historyBtn, pressed && styles.pressed]}
-        >
-          <Ionicons name="document-text-outline" size={18} color={colors.primary} />
-          <AppText variant="label" color={colors.primary}>
-            Subscription History
-          </AppText>
-        </Pressable>
-      </ScrollView>
+          {subscription?.status === "expired" ? (
+            <View style={styles.notice}>
+              <Ionicons name="alert-circle-outline" size={18} color="#9A5B12" />
+              <View style={styles.noticeCopy}>
+                <AppText variant="label" style={styles.noticeTitle}>
+                  Subscription expired
+                </AppText>
+                <AppText variant="caption" color={colors.textSecondary}>
+                  You're currently on the Free plan.
+                </AppText>
+              </View>
+            </View>
+          ) : null}
+
+          <TrialBanner subscription={subscription} />
+          <CurrentPlanCard
+            subscription={subscription}
+            busy={busy}
+            onCancel={cancelPlan}
+            onResume={resumePlan}
+          />
+
+          <View style={styles.sectionHeader}>
+            <AppText variant="label" style={styles.sectionTitle}>
+              Choose a plan
+            </AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {orderedPlans.length ? `${orderedPlans.length} plans` : "Loading"}
+            </AppText>
+          </View>
+
+          <BillingIntervalToggle
+            value={interval}
+            onChange={setInterval}
+            maxSavePercent={yearlyAvailable ? maxSave : 0}
+          />
+          {!yearlyAvailable ? (
+            <AppText variant="caption" color={colors.textSecondary}>
+              Yearly billing can be enabled from admin plan pricing. Monthly plans are available now.
+            </AppText>
+          ) : null}
+
+          {orderedPlans.map((plan) => {
+            const current =
+              subscription &&
+              !subscription.isTrial &&
+              subscription.status !== "expired" &&
+              subscription.plan.id === plan.id &&
+              (plan.id === "free" || subscription.billingInterval === interval);
+            return (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                interval={interval}
+                current={current}
+                actionLabel={actionLabel(plan, current)}
+                disabled={Boolean(busy) || current}
+                onPress={() => confirmPlan(plan)}
+              />
+            );
+          })}
+
+          <PlanFeaturesRow />
+          <PlanComparison plans={orderedPlans} />
+        </ScrollView>
+
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Payment history"
+            onPress={() => navigation.navigate("PaymentHistory")}
+            style={({ pressed }) => [styles.footerSecondary, pressed && styles.pressed]}
+          >
+            <Ionicons name="time-outline" size={18} color={colors.primary} />
+            <AppText variant="label" color={colors.primary}>
+              Payment history
+            </AppText>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Subscription history"
+            onPress={() => navigation.navigate("SubscriptionHistory")}
+            style={({ pressed }) => [styles.footerSecondary, pressed && styles.pressed]}
+          >
+            <Ionicons name="document-text-outline" size={18} color={colors.primary} />
+            <AppText variant="label" color={colors.primary}>
+              Subscription history
+            </AppText>
+          </Pressable>
+        </View>
+      </View>
+
       <RazorpayCheckout
         checkout={checkout}
         onResult={onPaymentResult}
@@ -273,29 +350,112 @@ export default function SubscriptionScreen({ navigation }) {
           setPaymentState("Payment failed");
         }}
       />
-    </AppScreen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md, paddingBottom: spacing.xxl, paddingTop: spacing.lg },
-  notice: {
-    backgroundColor: colors.warningBackground,
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  flex: { flex: 1 },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  back: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  title: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  headerAction: {
+    width: 44,
+    height: 44,
     borderRadius: 14,
-    gap: spacing.xs,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scroll: {
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+  },
+  paymentState: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 14,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  notice: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    backgroundColor: colors.warningBackground,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
     padding: spacing.md,
   },
-  historyBtn: {
+  noticeCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  noticeTitle: {
+    fontWeight: "700",
+  },
+  sectionHeader: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sectionTitle: {
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  footer: {
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
     backgroundColor: colors.surface,
-    borderColor: colors.border,
+  },
+  footerSecondary: {
+    minHeight: 48,
     borderRadius: 14,
     borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     flexDirection: "row",
-    gap: spacing.sm,
+    alignItems: "center",
     justifyContent: "center",
-    minHeight: 48,
-    paddingHorizontal: spacing.lg,
+    gap: 8,
   },
-  pressed: { opacity: 0.88 },
+  pressed: {
+    opacity: 0.9,
+  },
 });

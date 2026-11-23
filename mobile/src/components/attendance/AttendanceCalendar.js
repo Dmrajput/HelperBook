@@ -73,6 +73,11 @@ export default function AttendanceCalendar({ year, month, days, today, onSelectD
 const styles = StyleSheet.create({
   wrap: {
     gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
   },
   week: {
     flexDirection: "row",
@@ -80,6 +85,7 @@ const styles = StyleSheet.create({
   weekday: {
     width: "14.28%",
     textAlign: "center",
+    fontWeight: "700",
   },
   grid: {
     flexDirection: "row",
@@ -91,9 +97,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 2,
+    borderRadius: 10,
   },
   today: {
-    borderRadius: 8,
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
     borderColor: colors.primary,
   },

@@ -3,34 +3,72 @@ import AppText from "../AppText";
 import { colors, spacing } from "../../theme";
 import { formatInr } from "../../utils/dashboardFormat";
 
-function Line({ label, value }) {
-  return (
-    <View style={styles.row}>
-      <AppText variant="body" color={colors.textSecondary}>
-        {label}
-      </AppText>
-      <AppText variant="body">{formatInr(value)}</AppText>
-    </View>
-  );
-}
+const TILES = [
+  { key: "totalGiven", label: "Given", color: colors.secondary },
+  { key: "totalRepaid", label: "Repaid", color: colors.success },
+  { key: "totalSalaryDeducted", label: "Deducted", color: colors.warning },
+];
 
 export default function AdvanceSummaryCard({ summary }) {
   const values = summary || {};
+
   return (
     <View style={styles.card}>
-      <Line label="Total given" value={values.totalGiven} />
-      <Line label="Repaid" value={values.totalRepaid} />
-      <Line label="Salary deducted" value={values.totalSalaryDeducted} />
+      {TILES.map((tile, index) => (
+        <View key={tile.key} style={[styles.tile, index > 0 && styles.divider]}>
+          <View style={styles.labelRow}>
+            <View style={[styles.dot, { backgroundColor: tile.color }]} />
+            <AppText variant="caption" color={colors.textSecondary} numberOfLines={1} style={styles.label}>
+              {tile.label}
+            </AppText>
+          </View>
+          <AppText style={styles.value} numberOfLines={1}>
+            {formatInr(values[tile.key])}
+          </AppText>
+        </View>
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    flexDirection: "row",
     backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: spacing.md,
-    gap: spacing.sm,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
   },
-  row: { flexDirection: "row", justifyContent: "space-between", gap: spacing.md },
+  tile: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  divider: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: colors.border,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  value: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: colors.text,
+  },
 });

@@ -23,7 +23,7 @@ export default function AttendanceEmployeeCard({ employee, date, value, notes, o
     <View style={styles.card}>
       <View style={styles.top}>
         <View style={[styles.avatar, locked && styles.avatarMuted]}>
-          <AppText variant="label" color={locked ? colors.textSecondary : colors.primary}>
+          <AppText variant="label" color={locked ? colors.textSecondary : colors.primary} style={styles.initial}>
             {initial}
           </AppText>
         </View>
@@ -46,7 +46,6 @@ export default function AttendanceEmployeeCard({ employee, date, value, notes, o
           }
           style={({ pressed }) => [styles.recordButton, pressed && styles.pressed]}
         >
-          <Ionicons name="calendar-outline" size={15} color={colors.primary} />
           <AppText variant="caption" color={colors.primary} style={styles.recordLabel}>
             Records
           </AppText>
@@ -68,11 +67,11 @@ export default function AttendanceEmployeeCard({ employee, date, value, notes, o
 
       {!locked ? (
         <View style={styles.noteField}>
-          <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.placeholder} />
+          <Ionicons name="chatbubble-ellipses-outline" size={15} color={colors.placeholder} />
           <TextInput
             value={notes}
             onChangeText={(nextNotes) => onChange({ status: value, notes: nextNotes })}
-            placeholder="Add note (optional)"
+            placeholder="Add note"
             placeholderTextColor={colors.placeholder}
             editable={!disabled}
             maxLength={500}
@@ -88,16 +87,11 @@ export default function AttendanceEmployeeCard({ employee, date, value, notes, o
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
+    borderRadius: 18,
     padding: spacing.md,
     gap: spacing.md,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
     borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.9)",
+    borderColor: colors.border,
   },
   top: {
     flexDirection: "row",
@@ -115,6 +109,9 @@ const styles = StyleSheet.create({
   avatarMuted: {
     backgroundColor: colors.disabled,
   },
+  initial: {
+    fontWeight: "800",
+  },
   copy: {
     flex: 1,
     minWidth: 0,
@@ -122,15 +119,14 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
+    fontWeight: "700",
   },
   recordButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    minHeight: 34,
-    paddingHorizontal: spacing.sm,
-    borderRadius: 12,
-    backgroundColor: colors.primaryLight,
+    gap: 2,
+    minHeight: 32,
+    paddingHorizontal: 2,
   },
   recordLabel: {
     fontWeight: "700",
@@ -143,18 +139,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    minHeight: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "#F8FAFC",
-    paddingHorizontal: spacing.md,
+    minHeight: 36,
   },
   noteInput: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 36,
     color: colors.text,
-    fontSize: 14,
-    paddingVertical: spacing.sm,
+    fontSize: 13,
+    paddingVertical: 0,
   },
 });

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import AppButton from "../../components/AppButton";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AppText from "../../components/AppText";
 import FieldError from "../../components/FieldError";
 import { WEEKDAYS } from "../../constants/shop";
@@ -26,14 +26,22 @@ function TimeField({ label, value, onChange }) {
 
   return (
     <View style={styles.timeField}>
-      <AppText variant="label">{label}</AppText>
+      <AppText variant="label" style={styles.fieldLabel}>
+        {label}
+      </AppText>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}, ${formatTime(value)}`}
         onPress={() => setOpen(true)}
         style={styles.timeButton}
       >
-        <AppText>{formatTime(value)}</AppText>
+        <View style={styles.timeIcon}>
+          <Ionicons name="time-outline" size={16} color={colors.info} />
+        </View>
+        <AppText variant="body" style={styles.timeValue}>
+          {formatTime(value)}
+        </AppText>
+        <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
       </Pressable>
       {open ? (
         <DateTimePicker
@@ -52,7 +60,16 @@ function TimeField({ label, value, onChange }) {
         />
       ) : null}
       {open && Platform.OS === "ios" ? (
-        <AppButton label="Done" variant="secondary" onPress={() => setOpen(false)} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Done"
+          onPress={() => setOpen(false)}
+          style={({ pressed }) => [styles.doneButton, pressed && styles.pressed]}
+        >
+          <AppText variant="label" color={colors.primary}>
+            Done
+          </AppText>
+        </Pressable>
       ) : null}
     </View>
   );
@@ -85,18 +102,32 @@ export default function WorkingScheduleScreen({ form, onChange, errors }) {
               onPress={() => toggleDay(day.id)}
               style={[styles.day, selected && styles.daySelected]}
             >
-              <AppText variant="caption" align="center" color={selected ? colors.textInverse : colors.text}>
+              <AppText
+                variant="caption"
+                align="center"
+                color={selected ? colors.primary : colors.text}
+                style={styles.dayLabel}
+              >
                 {day.label}
               </AppText>
-              <AppText variant="caption" align="center" color={selected ? colors.textInverse : colors.primary}>
-                {selected ? "✓" : " "}
-              </AppText>
+              <Ionicons
+                name={selected ? "checkmark" : "ellipse-outline"}
+                size={14}
+                color={selected ? colors.primary : colors.border}
+              />
             </Pressable>
           );
         })}
       </View>
-      <AppText variant="body">Weekly off: {weeklyOff.length ? weeklyOff.join(", ") : "None"}</AppText>
+
+      <View style={styles.offCard}>
+        <Ionicons name="moon-outline" size={16} color={colors.textSecondary} />
+        <AppText variant="caption" color={colors.textSecondary} style={styles.offText}>
+          Weekly off: {weeklyOff.length ? weeklyOff.join(", ") : "None"}
+        </AppText>
+      </View>
       <FieldError message={errors.workingDays} />
+
       <TimeField label="Opening time" value={form.startTime} onChange={(startTime) => onChange({ startTime })} />
       <TimeField label="Closing time" value={form.endTime} onChange={(endTime) => onChange({ endTime })} />
       <FieldError message={errors.hours} />
@@ -106,7 +137,7 @@ export default function WorkingScheduleScreen({ form, onChange, errors }) {
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   days: {
     flexDirection: "row",
@@ -114,30 +145,74 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   day: {
-    minWidth: 44,
-    minHeight: 52,
+    minWidth: 48,
+    minHeight: 56,
     paddingHorizontal: spacing.sm,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
+    gap: 2,
   },
   daySelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryLight,
     borderColor: colors.primary,
+  },
+  dayLabel: {
+    fontWeight: "700",
+  },
+  offCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  offText: {
+    flex: 1,
   },
   timeField: {
     gap: spacing.sm,
+  },
+  fieldLabel: {
+    fontWeight: "700",
   },
   timeButton: {
     minHeight: 52,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: colors.surface,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  timeIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: colors.infoBackground,
+    alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.lg,
+  },
+  timeValue: {
+    flex: 1,
+    fontWeight: "600",
+  },
+  doneButton: {
+    alignSelf: "flex-end",
+    minHeight: 40,
+    paddingHorizontal: spacing.md,
+    justifyContent: "center",
+  },
+  pressed: {
+    opacity: 0.88,
   },
 });

@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
@@ -205,6 +205,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontWeight: "700",
+    fontSize: 16,
   },
   sectionBody: {
     gap: spacing.md,
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: colors.background,
     justifyContent: "center",
     paddingHorizontal: spacing.lg,
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "flex-start",
     backgroundColor: colors.infoBackground,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: spacing.sm,
   },
   hintText: {
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
   statusChip: {
     flex: 1,
     minHeight: 44,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center",

@@ -39,9 +39,9 @@ export function greetingLine(fullName, timeZone = DEFAULT_TIME_ZONE) {
     .split(/\s+/)[0];
   const period = greetingPeriod(timeZone);
   if (!name) {
-    return `Good ${period} 👋`;
+    return `Good ${period}`;
   }
-  return `Good ${period}, ${name} 👋`;
+  return `Good ${period}, ${name}`;
 }
 
 export function todayLabel(timeZone = DEFAULT_TIME_ZONE) {

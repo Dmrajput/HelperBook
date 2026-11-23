@@ -5,32 +5,40 @@ import SectionHeader from "./SectionHeader";
 import { colors, spacing } from "../../theme";
 import { formatInr, payPeriodLabel, peopleLabel } from "../../utils/dashboardFormat";
 
-function salarySubtitle(salary, period) {
-  if (!salary?.hasFinalized) return `No pending salary payments`;
-  if (salary.allPaid) return `All salaries paid · ${period}`;
-  return `${peopleLabel(salary.pendingEmployees, "Ready to pay")} · ${period}`;
-}
-
-function MoneyCard({ title, value, subtitle, icon, background, iconColor, iconBackground, onPress }) {
+function MoneyCard({ title, value, subtitle, footnote, icon, iconColor, iconBackground, statusOk, onPress }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${value}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, { backgroundColor: background }, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <View style={[styles.icon, { backgroundColor: iconBackground }]}>
-        <Ionicons name={icon} size={16} color={iconColor} />
+        <Ionicons name={icon} size={18} color={iconColor} />
       </View>
-      <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+      <AppText variant="caption" color={colors.textSecondary} numberOfLines={1} style={styles.cardTitle}>
         {title}
       </AppText>
       <AppText style={styles.value} numberOfLines={1}>
         {value}
       </AppText>
-      <AppText variant="caption" color={colors.textSecondary} numberOfLines={2} style={styles.subtitle}>
-        {subtitle}
-      </AppText>
+      {statusOk ? (
+        <View style={styles.statusRow}>
+          <Ionicons name="checkmark-circle" size={14} color={colors.success} />
+          <AppText variant="caption" color={colors.success} numberOfLines={1} style={styles.statusText}>
+            {subtitle}
+          </AppText>
+        </View>
+      ) : (
+        <AppText variant="caption" color={colors.textSecondary} numberOfLines={2} style={styles.subtitle}>
+          {subtitle}
+        </AppText>
+      )}
+      {footnote ? (
+        <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
+          {footnote}
+        </AppText>
+      ) : null}
     </Pressable>
   );
 }
@@ -44,6 +52,16 @@ export default function FinancialSummary({
   onViewDetails,
 }) {
   const period = payPeriodLabel(timeZone);
+  const salaryOk = Boolean(salary?.hasFinalized && salary?.allPaid);
+  const salarySubtitle = !salary?.hasFinalized
+    ? "No pending salary payments"
+    : salary.allPaid
+      ? "All salaries paid"
+      : peopleLabel(salary.pendingEmployees, "Ready to pay");
+
+  const advanceAmount = Number(advance?.outstandingAmount) || 0;
+  const advanceSubtitle =
+    advanceAmount > 0 ? peopleLabel(advance?.employeesWithOutstanding, "Outstanding advances") : "No outstanding advances";
 
   return (
     <View style={styles.section}>
@@ -52,23 +70,19 @@ export default function FinancialSummary({
         <MoneyCard
           title="Salary to pay"
           value={formatInr(salary?.pendingAmount)}
-          subtitle={salarySubtitle(salary, period)}
+          subtitle={salarySubtitle}
+          footnote={period}
           icon="wallet-outline"
-          background={colors.surface}
           iconColor={colors.primary}
           iconBackground={colors.primaryLight}
+          statusOk={salaryOk}
           onPress={onPressSalary}
         />
         <MoneyCard
           title="Advance balance"
           value={formatInr(advance?.outstandingAmount)}
-          subtitle={
-            (Number(advance?.outstandingAmount) || 0) > 0
-              ? peopleLabel(advance?.employeesWithOutstanding, "Outstanding advances")
-              : "No outstanding advances"
-          }
+          subtitle={advanceSubtitle}
           icon="cash-outline"
-          background={colors.surface}
           iconColor={colors.secondary}
           iconBackground={colors.secondaryLight}
           onPress={onPressAdvance}
@@ -89,29 +103,43 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: 0,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: spacing.md,
-    gap: 2,
+    gap: 4,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
   icon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
   },
+  cardTitle: {
+    fontWeight: "600",
+  },
   value: {
-    fontSize: 20,
-    lineHeight: 24,
-    fontWeight: "700",
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "800",
     color: colors.text,
   },
   subtitle: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  statusText: {
+    flex: 1,
+    fontWeight: "700",
+    fontSize: 12,
   },
   pressed: {
     opacity: 0.9,
