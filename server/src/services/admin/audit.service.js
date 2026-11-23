@@ -1,6 +1,9 @@
 import AdminAuditLog from "../../models/AdminAuditLog.js";
 
-export async function writeAudit(admin, { action, resourceType, resourceId, reason, beforeSummary, afterSummary, requestId }) {
+export async function writeAudit(
+  admin,
+  { action, resourceType, resourceId, reason, beforeSummary, afterSummary, requestId, ipAddress }
+) {
   return AdminAuditLog.create({
     adminId: admin._id || admin.id,
     action,
@@ -10,5 +13,6 @@ export async function writeAudit(admin, { action, resourceType, resourceId, reas
     beforeSummary: beforeSummary || null,
     afterSummary: afterSummary || null,
     requestId: requestId || "",
+    ipAddress: ipAddress || "",
   });
 }
