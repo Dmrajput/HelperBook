@@ -10,18 +10,18 @@ import { colors, spacing } from "../../theme";
 import { formatInr } from "../../utils/dashboardFormat";
 
 const STATUS_COPY = {
-  present: { title: "You're present today", subtitle: "Attendance marked for today", tone: "success" },
-  absent: { title: "Marked absent today", subtitle: "Contact your shop if this looks wrong", tone: "danger" },
-  half_day: { title: "Half day today", subtitle: "Attendance marked for today", tone: "warning" },
-  leave: { title: "On leave today", subtitle: "Enjoy your day off", tone: "info" },
-  not_marked: { title: "Today's Attendance", subtitle: "Mark your attendance for today", tone: "primary" },
+  present: { title: "You're present today", subtitle: "Attendance marked for today", icon: "checkmark-circle", color: colors.success, background: colors.successBackground },
+  absent: { title: "Marked absent today", subtitle: "Contact your shop if this looks wrong", icon: "close-circle", color: colors.error, background: colors.errorBackground },
+  half_day: { title: "Half day today", subtitle: "Attendance marked for today", icon: "time", color: colors.warning, background: colors.warningBackground },
+  leave: { title: "On leave today", subtitle: "Enjoy your day off", icon: "sunny-outline", color: colors.info, background: colors.infoBackground },
+  not_marked: { title: "Today's Attendance", subtitle: "Mark your attendance for today", icon: "calendar-outline", color: colors.primary, background: colors.primaryLight },
 };
 
 function greeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning,";
-  if (hour < 17) return "Good afternoon,";
-  return "Good evening,";
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 function SectionCard({ title, icon, actionLabel, onAction, children }) {
@@ -60,27 +60,6 @@ function StatTile({ label, value, icon, color, background }) {
         {label}
       </AppText>
     </View>
-  );
-}
-
-function PrimaryChip({ label, onPress, disabled = false }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.primaryChip,
-        pressed && !disabled && styles.pressed,
-        disabled && styles.primaryChipDisabled,
-      ]}
-    >
-      <AppText variant="label" color={disabled ? colors.disabledText : colors.textInverse} numberOfLines={1}>
-        {label}
-      </AppText>
-    </Pressable>
   );
 }
 
@@ -160,29 +139,19 @@ export default function EmployeeHomeScreen({ navigation, onOpenTab }) {
   return (
     <View style={styles.screen}>
       <ScrollView
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.textInverse} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
           <View style={styles.headerTop}>
-            <View style={styles.identity}>
-              <View style={styles.avatar}>
-                <AppText variant="heading" color={colors.primary} style={styles.avatarLetter}>
-                  {initial}
-                </AppText>
+            <View style={styles.shopRow}>
+              <View style={styles.shopIcon}>
+                <Ionicons name="storefront-outline" size={14} color={colors.primary} />
               </View>
-              <View style={styles.identityCopy}>
-                <AppText variant="caption" color="rgba(255,255,255,0.85)">
-                  {greeting()}
-                </AppText>
-                <AppText variant="subtitle" color={colors.textInverse} numberOfLines={1} style={styles.name}>
-                  {`${name} 👋`}
-                </AppText>
-                <AppText variant="caption" color="rgba(255,255,255,0.8)" numberOfLines={1}>
-                  {home?.shop?.name || "Your shop"}
-                </AppText>
-              </View>
+              <AppText variant="label" numberOfLines={1} style={styles.shopName}>
+                {home?.shop?.name || "Your shop"}
+              </AppText>
             </View>
             <View style={styles.headerActions}>
               <Pressable
@@ -191,7 +160,7 @@ export default function EmployeeHomeScreen({ navigation, onOpenTab }) {
                 onPress={() => navigation.navigate("EmployeeNotifications")}
                 style={styles.headerBtn}
               >
-                <Ionicons name="notifications-outline" size={20} color={colors.textInverse} />
+                <Ionicons name="notifications-outline" size={20} color={colors.text} />
                 {unread > 0 ? <View style={styles.dot} /> : null}
               </Pressable>
               <Pressable
@@ -200,14 +169,37 @@ export default function EmployeeHomeScreen({ navigation, onOpenTab }) {
                 onPress={() => onOpenTab?.("Profile")}
                 style={styles.headerBtn}
               >
-                <Ionicons name="settings-outline" size={20} color={colors.textInverse} />
+                <Ionicons name="settings-outline" size={20} color={colors.text} />
               </Pressable>
             </View>
           </View>
 
-          <View style={styles.todayCard}>
-            <View style={styles.todayIcon}>
-              <Ionicons name="calendar" size={22} color={colors.primary} />
+          <View style={styles.identity}>
+            <View style={styles.avatar}>
+              <AppText variant="heading" color={colors.primary} style={styles.avatarLetter}>
+                {initial}
+              </AppText>
+            </View>
+            <View style={styles.identityCopy}>
+              <AppText variant="caption" color={colors.textSecondary}>
+                {greeting()}
+              </AppText>
+              <AppText variant="heading" accessibilityRole="header" numberOfLines={1} style={styles.name}>
+                {name}
+              </AppText>
+              <AppText variant="body" color={colors.textSecondary} numberOfLines={1}>
+                Your work overview
+              </AppText>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.body}>
+          {error ? <ErrorView message={error} onRetry={load} /> : null}
+
+          <View style={[styles.todayCard, { backgroundColor: todayCopy.background }]}>
+            <View style={[styles.todayIcon, { backgroundColor: colors.surface }]}>
+              <Ionicons name={todayCopy.icon} size={22} color={todayCopy.color} />
             </View>
             <View style={styles.todayCopy}>
               <AppText variant="label" style={styles.todayTitle} numberOfLines={1}>
@@ -217,31 +209,38 @@ export default function EmployeeHomeScreen({ navigation, onOpenTab }) {
                 {todayCopy.subtitle}
               </AppText>
             </View>
-            {canMark ? (
-              <PrimaryChip label={marking ? "Marking..." : "Mark Now →"} onPress={markToday} disabled={marking} />
-            ) : (
-              <PrimaryChip label="View →" onPress={() => onOpenTab?.("Attendance")} />
-            )}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={canMark ? (marking ? "Marking" : "Mark now") : "View attendance"}
+              accessibilityState={{ disabled: marking }}
+              disabled={marking}
+              onPress={canMark ? markToday : () => onOpenTab?.("Attendance")}
+              style={({ pressed }) => [
+                styles.primaryChip,
+                pressed && !marking && styles.pressed,
+                marking && styles.primaryChipDisabled,
+              ]}
+            >
+              <AppText variant="label" color={marking ? colors.disabledText : colors.textInverse} numberOfLines={1}>
+                {canMark ? (marking ? "Marking..." : "Mark now") : "View"}
+              </AppText>
+            </Pressable>
           </View>
-        </View>
 
-        <View style={styles.body}>
-          {error ? <ErrorView message={error} onRetry={load} /> : null}
-
-          <SectionCard title="This Month Attendance" icon="calendar-outline" actionLabel="View All ›" onAction={() => onOpenTab?.("Attendance")}>
+          <SectionCard title="This month" icon="calendar-outline" actionLabel="View all" onAction={() => onOpenTab?.("Attendance")}>
             <View style={styles.statRow}>
               <StatTile label="Present" value={month.present} icon="person" color={colors.success} background={colors.successBackground} />
               <StatTile label="Absent" value={month.absent} icon="close" color={colors.error} background={colors.errorBackground} />
-              <StatTile label="Half Day" value={month.halfDay} icon="time" color={colors.warning} background={colors.warningBackground} />
+              <StatTile label="Half day" value={month.halfDay} icon="time" color={colors.warning} background={colors.warningBackground} />
               <StatTile label="Leave" value={month.leave} icon="calendar" color={colors.info} background={colors.infoBackground} />
             </View>
           </SectionCard>
 
-          <SectionCard title="Salary" icon="wallet-outline" actionLabel="View Details ›" onAction={() => onOpenTab?.("Salary")}>
+          <SectionCard title="Salary" icon="wallet-outline" actionLabel="Details" onAction={() => onOpenTab?.("Salary")}>
             <View style={styles.salaryRow}>
               <View style={styles.salaryPanel}>
                 <AppText variant="caption" color={colors.textSecondary}>
-                  Current Salary
+                  Current
                 </AppText>
                 <AppText variant="subtitle" style={styles.salaryAmount} numberOfLines={1}>
                   {currentSalary ? formatInr(currentSalary.amount) : "—"}
@@ -257,7 +256,7 @@ export default function EmployeeHomeScreen({ navigation, onOpenTab }) {
                 accessibilityLabel="Latest salary"
               >
                 <AppText variant="caption" color={colors.textSecondary}>
-                  Latest Salary
+                  Latest
                 </AppText>
                 <View style={styles.latestRow}>
                   <AppText variant="label" style={styles.salaryAmount} numberOfLines={2}>
@@ -295,8 +294,8 @@ export default function EmployeeHomeScreen({ navigation, onOpenTab }) {
 
           <SectionCard
             title="Advance / Khata"
-            icon="layers-outline"
-            actionLabel="View Khata ›"
+            icon="book-outline"
+            actionLabel="View"
             onAction={() => navigation.navigate("EmployeeAdvance")}
           >
             <View style={styles.advancePanel}>
@@ -314,7 +313,7 @@ export default function EmployeeHomeScreen({ navigation, onOpenTab }) {
             </View>
           </SectionCard>
 
-          <SectionCard title="Leave" icon="calendar-outline" actionLabel="View Details ›" onAction={() => onOpenTab?.("Leave")}>
+          <SectionCard title="Leave" icon="sunny-outline" actionLabel="Details" onAction={() => onOpenTab?.("Leave")}>
             <View style={styles.leaveRow}>
               <View style={styles.leaveCopy}>
                 {home?.upcomingLeave ? (
@@ -336,7 +335,16 @@ export default function EmployeeHomeScreen({ navigation, onOpenTab }) {
                   </>
                 )}
               </View>
-              <PrimaryChip label="Request Leave →" onPress={() => navigation.navigate("EmployeeCreateLeave")} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Request leave"
+                onPress={() => navigation.navigate("EmployeeCreateLeave")}
+                style={({ pressed }) => [styles.primaryChip, pressed && styles.pressed]}
+              >
+                <AppText variant="label" color={colors.textInverse} numberOfLines={1}>
+                  Request
+                </AppText>
+              </Pressable>
             </View>
           </SectionCard>
         </View>
@@ -354,45 +362,34 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   header: {
-    backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl + 28,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
+    backgroundColor: colors.background,
   },
   headerTop: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.md,
-    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
-  identity: {
+  shopRow: {
     flex: 1,
+    minWidth: 0,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
-    minWidth: 0,
+    gap: 8,
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.surface,
+  shopIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarLetter: {
-    fontSize: 20,
-    lineHeight: 24,
-    fontWeight: "700",
-  },
-  identityCopy: {
+  shopName: {
     flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  name: {
     fontWeight: "700",
   },
   headerActions: {
@@ -402,8 +399,10 @@ const styles = StyleSheet.create({
   headerBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -416,27 +415,53 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.error,
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: colors.surface,
+  },
+  identity: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarLetter: {
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: "800",
+  },
+  identityCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  name: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+  },
+  body: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
   },
   todayCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: spacing.md,
-    marginBottom: -36,
-    shadowColor: "#000000",
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   todayIcon: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -448,11 +473,6 @@ const styles = StyleSheet.create({
   todayTitle: {
     fontWeight: "700",
   },
-  body: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl + 12,
-    gap: spacing.md,
-  },
   sectionCard: {
     backgroundColor: colors.surface,
     borderRadius: 18,
@@ -460,11 +480,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     gap: spacing.sm,
-    shadowColor: "#000000",
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -590,7 +605,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     alignItems: "center",
     justifyContent: "center",
-    maxWidth: 140,
+    maxWidth: 120,
   },
   primaryChipDisabled: {
     backgroundColor: colors.disabled,

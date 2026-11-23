@@ -112,17 +112,17 @@ function EmployeeTabs({ navigation }) {
 
 export default function EmployeeNavigator() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="EmployeeTabs" component={EmployeeTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="EmployeeAttendance" component={EmployeeAttendanceScreen} options={{ title: "Attendance" }} />
-      <Stack.Screen name="EmployeeSalary" component={EmployeeSalaryScreen} options={{ title: "Salary" }} />
-      <Stack.Screen name="EmployeeSalaryDetail" component={EmployeeSalaryScreen} options={{ title: "Salary" }} />
-      <Stack.Screen name="EmployeeAdvance" component={EmployeeAdvanceScreen} options={{ title: "Advance" }} />
-      <Stack.Screen name="EmployeeCreateLeave" component={EmployeeCreateLeaveScreen} options={{ title: "Request Leave" }} />
-      <Stack.Screen name="EmployeeLeaveDetail" component={EmployeeLeaveDetailScreen} options={{ title: "Leave" }} />
-      <Stack.Screen name="EmployeeSalaryReceipt" component={EmployeeSalaryReceiptScreen} options={{ title: "Receipt" }} />
-      <Stack.Screen name="EmployeeNotifications" component={EmployeeNotificationsScreen} options={{ title: "Notifications" }} />
-      <Stack.Screen name="EmployeeChangePassword" component={EmployeeChangePasswordScreen} options={{ headerShown: false }} />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="EmployeeTabs" component={EmployeeTabs} />
+      <Stack.Screen name="EmployeeAttendance" component={EmployeeAttendanceScreen} />
+      <Stack.Screen name="EmployeeSalary" component={EmployeeSalaryScreen} />
+      <Stack.Screen name="EmployeeSalaryDetail" component={EmployeeSalaryScreen} />
+      <Stack.Screen name="EmployeeAdvance" component={EmployeeAdvanceScreen} />
+      <Stack.Screen name="EmployeeCreateLeave" component={EmployeeCreateLeaveScreen} />
+      <Stack.Screen name="EmployeeLeaveDetail" component={EmployeeLeaveDetailScreen} />
+      <Stack.Screen name="EmployeeSalaryReceipt" component={EmployeeSalaryReceiptScreen} />
+      <Stack.Screen name="EmployeeNotifications" component={EmployeeNotificationsScreen} />
+      <Stack.Screen name="EmployeeChangePassword" component={EmployeeChangePasswordScreen} />
     </Stack.Navigator>
   );
 }
