@@ -15,6 +15,7 @@ const STATUS_COPY = {
   half_day: { title: "Half day today", subtitle: "Attendance marked for today", icon: "time", color: colors.warning, background: colors.warningBackground },
   leave: { title: "On leave today", subtitle: "Enjoy your day off", icon: "sunny-outline", color: colors.info, background: colors.infoBackground },
   not_marked: { title: "Today's Attendance", subtitle: "Mark your attendance for today", icon: "calendar-outline", color: colors.primary, background: colors.primaryLight },
+  owner_marks: { title: "Today's Attendance", subtitle: "Your shop owner marks attendance", icon: "calendar-outline", color: colors.primary, background: colors.primaryLight },
 };
 
 function greeting() {
@@ -114,12 +115,15 @@ export default function EmployeeHomeScreen({ navigation, onOpenTab }) {
   const name = home?.employee?.name || "there";
   const initial = String(name).trim().charAt(0).toUpperCase() || "E";
   const todayStatus = home?.attendanceToday || "not_marked";
-  const todayCopy = STATUS_COPY[todayStatus] || STATUS_COPY.not_marked;
   const month = home?.monthAttendance || {};
   const currentSalary = home?.currentSalary;
   const latestSalary = home?.latestSalary;
   const unread = Number(home?.unreadCount) || 0;
   const canMark = Boolean(home?.canMarkToday);
+  const todayCopy =
+    todayStatus === "not_marked" && home?.employeesCanMarkAttendance === false
+      ? STATUS_COPY.owner_marks
+      : STATUS_COPY[todayStatus] || STATUS_COPY.not_marked;
 
   let latestLabel = "No records yet";
   let latestBadge = null;

@@ -37,6 +37,7 @@ import SubscriptionScreen from "../screens/subscription/SubscriptionScreen";
 import SalaryReportScreen from "../screens/reports/SalaryReportScreen";
 import SalaryScreen from "../screens/salary/SalaryScreen";
 import ShopProfileScreen from "../screens/shop/ShopProfileScreen";
+import AttendanceSettingsScreen from "../screens/shop/AttendanceSettingsScreen";
 import ShopSettingsScreen from "../screens/shop/ShopSettingsScreen";
 
 const Stack = createNativeStackNavigator();
@@ -52,6 +53,7 @@ export default function AppNavigator() {
       <Stack.Screen name="EditEmployee" component={EditEmployeeScreen} />
       <Stack.Screen name="ShopProfile" component={ShopProfileScreen} />
       <Stack.Screen name="ShopSettings" component={ShopSettingsScreen} />
+      <Stack.Screen name="AttendanceSettings" component={AttendanceSettingsScreen} />
       <Stack.Screen name="AttendanceDay" component={AttendanceScreen} />
       <Stack.Screen name="BulkAttendance" component={BulkAttendanceScreen} />
       <Stack.Screen name="MonthlyAttendance" component={MonthlyAttendanceScreen} />

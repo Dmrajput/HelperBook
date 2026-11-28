@@ -18,6 +18,10 @@ export function createShop(payload) {
   return request(() => apiClient.post("/shops", payload));
 }
 
+export function updateAttendanceSettings(settings) {
+  return request(() => apiClient.patch("/shops/me/attendance-settings", settings));
+}
+
 export function updateMyShop(payload) {
   return request(() => apiClient.put("/shops/me", payload));
 }

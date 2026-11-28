@@ -38,6 +38,26 @@ function toMinutes(value) {
   return hours * 60 + minutes;
 }
 
+function requiredBoolean(value, message) {
+  if (typeof value !== "boolean") {
+    throw new AppError(message, 400);
+  }
+  return value;
+}
+
+export function validateAttendanceSettings(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new AppError("Please check your attendance settings.", 400);
+  }
+  return {
+    autoMarkPresent: requiredBoolean(body.autoMarkPresent, "Choose whether unmarked staff are marked present."),
+    employeesCanMarkAttendance: requiredBoolean(
+      body.employeesCanMarkAttendance,
+      "Choose whether employees can mark their own attendance."
+    ),
+  };
+}
+
 export function validateSickLeaveTreatment(body) {
   const value = typeof body?.sickLeaveTreatment === "string" ? body.sickLeaveTreatment.trim() : "";
   if (value !== "paid" && value !== "unpaid") {

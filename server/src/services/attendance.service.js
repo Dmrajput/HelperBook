@@ -110,8 +110,38 @@ export async function getAttendanceByDate(userId, dateKey) {
     Employee.find({ shopId: shop._id }).select("name role customRole status joiningDate").sort({ name: 1, _id: 1 }).lean(),
     Attendance.find({ shopId: shop._id, date: storedDate }).lean(),
   ]);
-  const recordByEmployee = new Map(records.map((record) => [String(record.employeeId), record]));
+  let recordByEmployee = new Map(records.map((record) => [String(record.employeeId), record]));
   const onLeave = await approvedEmployeeIdsOnDate(shop._id, storedDate);
+  if (shop.settings?.attendanceSettings?.autoMarkPresent === true && isWorkingDay(shop, dateKey)) {
+    const missing = employees.filter((employee) => {
+      const id = String(employee._id);
+      return (
+        employee.status === "active" &&
+        dateKey >= keyFromDate(employee.joiningDate) &&
+        !recordByEmployee.has(id) &&
+        !onLeave.has(id)
+      );
+    });
+    if (missing.length > 0) {
+      await Attendance.insertMany(
+        missing.map((employee) => ({
+          shopId: shop._id,
+          employeeId: employee._id,
+          date: storedDate,
+          status: "present",
+          notes: "Auto-marked present",
+          markedBy: userId,
+          selfMarked: false,
+        })),
+        { ordered: false }
+      ).catch((error) => {
+        const onlyDuplicates = error?.writeErrors?.every((item) => Number(item?.code) === 11000) || Number(error?.code) === 11000;
+        if (!onlyDuplicates) throw error;
+      });
+      const refreshed = await Attendance.find({ shopId: shop._id, date: storedDate }).lean();
+      recordByEmployee = new Map(refreshed.map((record) => [String(record.employeeId), record]));
+    }
+  }
   const visible = employees.filter(
     (employee) =>
       employee.status === "active" ||

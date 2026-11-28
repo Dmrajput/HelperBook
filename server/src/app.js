@@ -36,7 +36,13 @@ app.use("/uploads", (req, res, next) => {
   express.static(getLocalUploadRoot(), { index: false })(req, res, next);
 });
 app.get("/api/ready", getReady);
-app.get("/privacy", (req, res) => sendLegalPage(res, "privacy-policy.md", "HelperBook privacy policy"));
+app.get("/privacy", (req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    res.redirect(301, "https://helperbook.in/privacy");
+    return;
+  }
+  sendLegalPage(res, "privacy-policy.md", "HelperBook privacy policy");
+});
 app.get("/terms", (req, res) => sendLegalPage(res, "terms-of-service.md", "HelperBook terms of service"));
 app.get("/delete-account", (req, res) => sendLegalPage(res, "account-deletion.md", "Delete a HelperBook account"));
 app.use("/api", routes);

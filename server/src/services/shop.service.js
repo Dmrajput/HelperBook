@@ -1,4 +1,5 @@
 import Shop from "../models/Shop.js";
+import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import { getImageStorage } from "./storage/storage.provider.js";
 import { AppError } from "../utils/appError.js";
@@ -8,6 +9,22 @@ import { assertLogoFile } from "../utils/imageFile.js";
 const SHOP_EXISTS = "A shop already exists for this account.";
 const SHOP_REQUIRED = "Create your shop before updating it.";
 const LOGO_FAILED = "Unable to upload logo. Please try again.";
+
+function attendanceSettingsView(shop, activeEmployeeCount) {
+  const settings = shop.settings?.attendanceSettings || {};
+  return {
+    autoMarkPresent: settings.autoMarkPresent === true,
+    employeesCanMarkAttendance: settings.employeesCanMarkAttendance === true,
+    ...(Number.isInteger(activeEmployeeCount) ? { activeEmployeeCount } : {}),
+  };
+}
+
+async function withAttendanceCount(shop, user) {
+  const publicShop = toPublicShop(shop, user);
+  const activeEmployeeCount = await Employee.countDocuments({ shopId: shop._id, status: "active" });
+  publicShop.settings.attendanceSettings = attendanceSettingsView(shop, activeEmployeeCount);
+  return publicShop;
+}
 
 function duplicateShopError(error) {
   return Number(error?.code) === 11000;
@@ -63,6 +80,7 @@ export function toPublicShop(shop, user) {
       leaveSettings: {
         sickLeaveTreatment: shop.settings.leaveSettings?.sickLeaveTreatment === "paid" ? "paid" : "unpaid",
       },
+      attendanceSettings: attendanceSettingsView(shop),
     },
     isActive: shop.isActive,
     createdAt: shop.createdAt,
@@ -113,7 +131,7 @@ export async function getMyShop(userId) {
   if (!shop) {
     return null;
   }
-  return toPublicShop(shop, user);
+  return withAttendanceCount(shop, user);
 }
 
 export async function updateMyShop(userId, payload) {
@@ -136,6 +154,10 @@ export async function updateMyShop(userId, payload) {
     leaveSettings: {
       sickLeaveTreatment: shop.settings?.leaveSettings?.sickLeaveTreatment === "paid" ? "paid" : "unpaid",
     },
+    attendanceSettings: {
+      autoMarkPresent: shop.settings?.attendanceSettings?.autoMarkPresent === true,
+      employeesCanMarkAttendance: shop.settings?.attendanceSettings?.employeesCanMarkAttendance === true,
+    },
   };
   await shop.save();
   await saveOwnerName(user, payload.owner.fullName);
@@ -151,7 +173,22 @@ export async function updateLeaveSettings(userId, sickLeaveTreatment) {
   shop.settings.leaveSettings = { sickLeaveTreatment };
   shop.markModified("settings");
   await shop.save();
-  return toPublicShop(shop, user);
+  return withAttendanceCount(shop, user);
+}
+
+export async function updateAttendanceSettings(userId, settings) {
+  const user = await requireOwner(userId);
+  const shop = await Shop.findOne({ ownerId: user._id, isActive: true });
+  if (!shop) {
+    throw new AppError(SHOP_REQUIRED, 404);
+  }
+  shop.settings.attendanceSettings = {
+    autoMarkPresent: settings.autoMarkPresent,
+    employeesCanMarkAttendance: settings.employeesCanMarkAttendance,
+  };
+  shop.markModified("settings");
+  await shop.save();
+  return withAttendanceCount(shop, user);
 }
 
 export async function deleteMyShop(userId) {

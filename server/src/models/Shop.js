@@ -74,6 +74,10 @@ const settingsSchema = new mongoose.Schema(
     leaveSettings: {
       sickLeaveTreatment: { type: String, enum: ["paid", "unpaid"], default: "unpaid" },
     },
+    attendanceSettings: {
+      autoMarkPresent: { type: Boolean, default: false },
+      employeesCanMarkAttendance: { type: Boolean, default: false },
+    },
   },
   { _id: false }
 );

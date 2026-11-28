@@ -328,8 +328,13 @@ function latestSalaryView(record, payment) {
   };
 }
 
+function employeesCanMarkAttendance(shop) {
+  return shop?.settings?.attendanceSettings?.employeesCanMarkAttendance === true;
+}
+
 export async function getHome(employee) {
   const profile = await getProfile(employee);
+  const shop = await Shop.findById(employee.shopId).select("settings");
   const today = todayKey();
   const month = currentMonth();
   const [attendance, monthAttendance, latestAny, outstanding, upcoming, unreadCount] = await Promise.all([
@@ -373,7 +378,8 @@ export async function getHome(employee) {
   return {
     ...profile,
     attendanceToday: attendance?.status || "not_marked",
-    canMarkToday: !attendance && employee.status === "active",
+    employeesCanMarkAttendance: employeesCanMarkAttendance(shop),
+    canMarkToday: employeesCanMarkAttendance(shop) && !attendance && employee.status === "active",
     monthAttendance: monthAttendance.summary,
     currentSalary: profile.employee.salary,
     salary: finalized ? salaryView(finalized, finalizedPayment) : null,
@@ -397,6 +403,9 @@ export async function markTodayAttendance(employee) {
     throw new AppError("Your account is inactive. Attendance cannot be marked.", 403);
   }
   const shop = await shopFor(employee);
+  if (!employeesCanMarkAttendance(shop)) {
+    throw new AppError("Your shop owner marks attendance. You cannot mark it yourself.", 403);
+  }
   const today = todayKey(shop.settings?.timezone || "Asia/Kolkata");
   const storedDate = dateFromKey(today);
   await assertNoApprovedLeave(employee.shopId, employee._id, storedDate);

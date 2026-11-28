@@ -9,7 +9,7 @@
       "destination": "/admin/index.html"
     },
     {
-      "source": "/((?!admin|assets/).*)",
+      "source": "/((?!admin|assets/|play-privacy).*)",
       "destination": "/index.html"
     }
   ]

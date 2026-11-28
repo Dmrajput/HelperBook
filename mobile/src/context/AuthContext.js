@@ -21,6 +21,7 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [startupError, setStartupError] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [authEntry, setAuthEntry] = useState("owner");
 
   const clearSession = useCallback(async () => {
     await clearTokens();
@@ -151,10 +152,11 @@ export function AuthProvider({ children }) {
     }
 
     setIsLoggingOut(true);
+    const role = user?.role === "employee" ? "employee" : await getSessionRole();
+    setAuthEntry(role === "employee" ? "employee" : "owner");
     try {
       await unregisterCurrentPushToken();
       const refreshToken = await getRefreshToken();
-      const role = await getSessionRole();
       if (refreshToken && role === "employee") {
         await logoutEmployee(refreshToken);
       } else if (refreshToken) {
@@ -166,7 +168,7 @@ export function AuthProvider({ children }) {
       await clearSession();
       setIsLoggingOut(false);
     }
-  }, [clearSession, isLoggingOut]);
+  }, [clearSession, isLoggingOut, user]);
 
   const patchUser = useCallback((partial) => {
     setUser((current) => (current ? { ...current, ...partial } : current));
@@ -180,6 +182,7 @@ export function AuthProvider({ children }) {
       isLoading,
       startupError,
       isLoggingOut,
+      authEntry,
       login,
       register,
       requestPasswordReset,
@@ -195,6 +198,7 @@ export function AuthProvider({ children }) {
       isLoading,
       startupError,
       isLoggingOut,
+      authEntry,
       login,
       register,
       requestPasswordReset,

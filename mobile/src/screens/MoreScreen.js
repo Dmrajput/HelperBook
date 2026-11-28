@@ -150,6 +150,14 @@ export default function MoreScreen() {
       onPress: () => navigation.navigate("ShopProfile"),
     },
     {
+      title: "Attendance settings",
+      subtitle: "Auto present and employee check-in",
+      icon: "calendar-outline",
+      iconColor: colors.primary,
+      iconBackground: colors.primaryLight,
+      onPress: () => navigation.navigate("AttendanceSettings"),
+    },
+    {
       title: "Sick leave settings",
       subtitle: "Paid or unpaid in salary",
       icon: "medkit-outline",

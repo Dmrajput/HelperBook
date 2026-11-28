@@ -3,6 +3,7 @@ import {
   createShop,
   deleteLogo,
   getMyShop,
+  patchAttendanceSettings,
   patchLeaveSettings,
   updateMyShop,
   uploadLogo,
@@ -17,6 +18,7 @@ router.post("/", createShop);
 router.get("/me", getMyShop);
 router.put("/me", updateMyShop);
 router.patch("/me/leave-settings", patchLeaveSettings);
+router.patch("/me/attendance-settings", patchAttendanceSettings);
 router.post("/me/logo", logoUpload, uploadLogo);
 router.delete("/me/logo", deleteLogo);
 

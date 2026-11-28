@@ -52,7 +52,7 @@ function PasswordField({ label, value, onChangeText, show, onToggle, editable })
 export default function EmployeeChangePasswordScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const forced = Boolean(route?.params?.forced);
-  const { logout, patchUser } = useAuth();
+  const { logout } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -90,7 +90,6 @@ export default function EmployeeChangePasswordScreen({ navigation, route }) {
         newPassword,
         confirmPassword,
       });
-      patchUser?.({ mustChangePassword: false });
       Alert.alert("Password updated", "Sign in again with your new password.", [
         {
           text: "OK",
